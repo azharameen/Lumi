@@ -1,0 +1,78 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Pet Body / Head Glowing Silhouette -->
+    <path
+        android:pathData="M 54,28 C 34,28 22,44 22,60 C 22,78 36,88 54,88 C 72,88 86,78 86,60 C 86,44 74,28 54,28 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:startX="22"
+                android:startY="28"
+                android:endX="86"
+                android:endY="88"
+                android:type="linear">
+                <item android:color="#FF7BF0FF" android:offset="0.0" />
+                <item android:color="#FF9D65FF" android:offset="0.6" />
+                <item android:color="#FFFF70A6" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Little antenna / sprout light -->
+    <path
+        android:pathData="M 54,28 C 54,22 58,16 62,16 C 64,16 66,18 66,20 C 66,24 58,26 54,28 Z"
+        android:fillColor="#FFFFD166" />
+    <path
+        android:pathData="M 64,18 m -3,0 a 3,3 0 1,0 6,0 a 3,3 0 1,0 -6,0"
+        android:fillColor="#FFFFFCF2" />
+
+    <!-- Cute Big Shiny Left Eye -->
+    <path
+        android:pathData="M 40,56 m -6.5,0 a 6.5,6.5 0 1,0 13,0 a 6.5,6.5 0 1,0 -13,0"
+        android:fillColor="#FF181028" />
+    <path
+        android:pathData="M 38,53 m -2.5,0 a 2.5,2.5 0 1,0 5,0 a 2.5,2.5 0 1,0 -5,0"
+        android:fillColor="#FFFFFFFF" />
+    <path
+        android:pathData="M 42,58 m -1,0 a 1,1 0 1,0 2,0 a 1,1 0 1,0 -2,0"
+        android:fillColor="#FFFFFFFF" />
+
+    <!-- Cute Big Shiny Right Eye -->
+    <path
+        android:pathData="M 68,56 m -6.5,0 a 6.5,6.5 0 1,0 13,0 a 6.5,6.5 0 1,0 -13,0"
+        android:fillColor="#FF181028" />
+    <path
+        android:pathData="M 66,53 m -2.5,0 a 2.5,2.5 0 1,0 5,0 a 2.5,2.5 0 1,0 -5,0"
+        android:fillColor="#FFFFFFFF" />
+    <path
+        android:pathData="M 70,58 m -1,0 a 1,1 0 1,0 2,0 a 1,1 0 1,0 -2,0"
+        android:fillColor="#FFFFFFFF" />
+
+    <!-- Rosy Cheeks -->
+    <path
+        android:pathData="M 31,64 m -3.5,0 a 3.5,3.5 0 1,0 7,0 a 3.5,3.5 0 1,0 -7,0"
+        android:fillColor="#4DFF4081" />
+    <path
+        android:pathData="M 77,64 m -3.5,0 a 3.5,3.5 0 1,0 7,0 a 3.5,3.5 0 1,0 -7,0"
+        android:fillColor="#4DFF4081" />
+
+    <!-- Happy Smile Mouth -->
+    <path
+        android:pathData="M 49,63 C 51,68 57,68 59,63"
+        android:strokeColor="#FF181028"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <!-- Sparkles -->
+    <path
+        android:pathData="M 78,34 L 80,38 L 84,40 L 80,42 L 78,46 L 76,42 L 72,40 L 76,38 Z"
+        android:fillColor="#FFFFEB3B" />
+    <path
+        android:pathData="M 28,38 L 29.5,41 L 32.5,42.5 L 29.5,44 L 28,47 L 26.5,44 L 23.5,42.5 L 26.5,41 Z"
+        android:fillColor="#FFFF80AB" />
+</vector>

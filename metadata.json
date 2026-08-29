@@ -1,0 +1,6 @@
+{
+  "name": "Lumi AI Friend",
+  "description": "An agentic AI pet companion with voice, vision, daily scheduling, wellness insights, and floating screen overlay.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

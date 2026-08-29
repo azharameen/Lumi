@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Lumi AI Friend</string>
+    <string name="shortcut_voice_short">Voice Chat</string>
+    <string name="shortcut_voice_long">Talk with Lumi</string>
+    <string name="shortcut_water_short">+1 Water</string>
+    <string name="shortcut_water_long">Quick Hydration Log</string>
+    <string name="shortcut_breath_short">Breathing</string>
+    <string name="shortcut_breath_long">Start 4-7-8 Breathing</string>
+    <string name="shortcut_pet_short">Screen Pet</string>
+    <string name="shortcut_pet_long">Toggle Floating Lumi</string>
+</resources>

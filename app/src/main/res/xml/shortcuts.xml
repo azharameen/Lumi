@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="shortcut_voice_chat"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_voice_short"
+        android:shortcutLongLabel="@string/shortcut_voice_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example"
+            android:targetClass="com.example.MainActivity">
+            <extra android:name="SHORTCUT_ACTION" android:value="VOICE_CHAT" />
+            <extra android:name="NAVIGATE_TAB" android:value="1" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="shortcut_quick_water"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_water_short"
+        android:shortcutLongLabel="@string/shortcut_water_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example"
+            android:targetClass="com.example.MainActivity">
+            <extra android:name="SHORTCUT_ACTION" android:value="QUICK_WATER" />
+            <extra android:name="NAVIGATE_TAB" android:value="2" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="shortcut_breathing"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_breath_short"
+        android:shortcutLongLabel="@string/shortcut_breath_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example"
+            android:targetClass="com.example.MainActivity">
+            <extra android:name="SHORTCUT_ACTION" android:value="START_BREATHING" />
+            <extra android:name="NAVIGATE_TAB" android:value="0" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="shortcut_toggle_overlay"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_pet_short"
+        android:shortcutLongLabel="@string/shortcut_pet_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.example"
+            android:targetClass="com.example.MainActivity">
+            <extra android:name="SHORTCUT_ACTION" android:value="TOGGLE_OVERLAY" />
+            <extra android:name="NAVIGATE_TAB" android:value="0" />
+        </intent>
+    </shortcut>
+</shortcuts>

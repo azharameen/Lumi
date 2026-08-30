@@ -71,8 +71,8 @@ import com.example.ui.viewmodel.LumiViewModel
 
 @Composable
 fun TasksScreen(
-    viewModel: LumiViewModel,
-    onNavigateToChat: () -> Unit
+    viewModel: com.example.ui.viewmodel.LifeHubViewModel,
+    onNavigateToChat: (String?) -> Unit
 ) {
     val tasks by viewModel.allTasks.collectAsStateWithLifecycle()
     var selectedCategory by remember { mutableStateOf("All") }
@@ -124,8 +124,8 @@ fun TasksScreen(
                         color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.clickable {
-                            viewModel.sendMessage("Review my current tasks list and prioritize them by urgency and impact with actionable time blocks")
-                            onNavigateToChat()
+                            onNavigateToChat("Review my current tasks list and prioritize them by urgency and impact with actionable time blocks")
+                            onNavigateToChat(null)
                         }
                     ) {
                         Row(

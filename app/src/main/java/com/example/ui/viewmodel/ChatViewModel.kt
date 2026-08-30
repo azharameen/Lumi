@@ -11,6 +11,7 @@ import com.example.service.VoiceEngine
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import androidx.paging.cachedIn
 import kotlinx.coroutines.launch
 
 class ChatViewModel(application: Application) : AndroidViewModel(application) {
@@ -18,6 +19,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val voiceEngine = VoiceEngine(application)
     private val userProfileManager = com.example.domain.account.UserProfileManager(application)
     val userProfile = userProfileManager.userProfile
+
+    val pagedChatMessages = repository.pagedChatMessages.cachedIn(viewModelScope)
 
     val chatMessages: StateFlow<List<ChatMessageEntity>> = repository.chatMessages.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()

@@ -17,8 +17,10 @@ interface LumiRepository {
     val allTasks: Flow<List<TaskEntity>>
     val allCalendarEvents: Flow<List<CalendarEventEntity>>
     val allWellnessLogs: Flow<List<WellnessLogEntity>>
+    val pagedWellnessLogs: Flow<androidx.paging.PagingData<WellnessLogEntity>>
     val allMemories: Flow<List<PetMemoryEntity>>
     val chatMessages: Flow<List<ChatMessageEntity>>
+    val pagedChatMessages: Flow<androidx.paging.PagingData<ChatMessageEntity>>
 
     suspend fun sendMessage(userText: String, image: Bitmap? = null): ChatMessageEntity
     suspend fun petTheCharacter()

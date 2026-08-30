@@ -61,10 +61,10 @@ import com.example.ui.viewmodel.LumiViewModel
 
 @Composable
 fun WardrobeScreen(onClose: () -> Unit = {}, 
-    viewModel: LumiViewModel
+    petViewModel: com.example.ui.viewmodel.PetViewModel, wellnessViewModel: com.example.ui.viewmodel.WellnessViewModel
 ) {
-    val petStatus by viewModel.petStatus.collectAsStateWithLifecycle()
-    val memories by viewModel.allMemories.collectAsStateWithLifecycle()
+    val petStatus by petViewModel.petStatus.collectAsStateWithLifecycle()
+    val memories by wellnessViewModel.allMemories.collectAsStateWithLifecycle()
 
     val evolutionStageTitle = when (petStatus.level) {
         1 -> "Sprout Spirit"
@@ -118,8 +118,8 @@ fun WardrobeScreen(onClose: () -> Unit = {},
                     LumiPetView(
                         petStatus = petStatus,
                         size = 180.dp,
-                        onPetTouched = { viewModel.onPetTouched() },
-                        onPetPetted = { viewModel.onPetPetted() }
+                        onPetTouched = { petViewModel.onPetTouched() },
+                        onPetPetted = { petViewModel.onPetPetted() }
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -227,7 +227,7 @@ fun WardrobeScreen(onClose: () -> Unit = {},
                                 shape = RoundedCornerShape(14.dp),
                                 border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary) else null,
                                 modifier = Modifier
-                                    .clickable { viewModel.setBloubShape(shape) }
+                                    .clickable { petViewModel.setBloubShape(shape) }
                                     .testTag("shape_${shape.name}")
                             ) {
                                 Column(
@@ -277,7 +277,7 @@ fun WardrobeScreen(onClose: () -> Unit = {},
                                 shape = RoundedCornerShape(14.dp),
                                 border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, Color(skin.primaryHex)) else null,
                                 modifier = Modifier
-                                    .clickable { viewModel.setBloubSkinColor(skin) }
+                                    .clickable { petViewModel.setBloubSkinColor(skin) }
                                     .testTag("skin_${skin.name}")
                             ) {
                                 Row(

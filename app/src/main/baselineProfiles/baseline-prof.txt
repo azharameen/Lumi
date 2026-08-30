@@ -1,0 +1,5 @@
+HPLcom/example/MainActivity;
+HPLcom/example/ui/screens/**
+HPLcom/example/ui/viewmodel/**
+HPLcom/example/data/**
+HPLcom/example/domain/**

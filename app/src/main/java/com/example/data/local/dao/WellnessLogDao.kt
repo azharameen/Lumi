@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.paging.PagingSource
 import androidx.room.Update
 import com.example.data.local.entity.WellnessLogEntity
 import kotlinx.coroutines.flow.Flow
@@ -12,6 +13,9 @@ import kotlinx.coroutines.flow.Flow
 interface WellnessLogDao {
     @Query("SELECT * FROM wellness_logs ORDER BY timestamp DESC")
     fun getAllLogs(): Flow<List<WellnessLogEntity>>
+
+    @Query("SELECT * FROM wellness_logs ORDER BY timestamp DESC")
+    fun getPagedWellnessLogs(): PagingSource<Int, WellnessLogEntity>
 
     @Query("SELECT * FROM wellness_logs ORDER BY timestamp DESC LIMIT 1")
     fun getLatestLog(): Flow<WellnessLogEntity?>

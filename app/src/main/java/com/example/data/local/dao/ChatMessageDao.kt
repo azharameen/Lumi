@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.paging.PagingSource
 import com.example.data.local.entity.ChatMessageEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -12,6 +13,10 @@ import kotlinx.coroutines.flow.Flow
 interface ChatMessageDao {
     @Query("SELECT * FROM chat_messages ORDER BY timestamp ASC")
     fun getAllMessages(): Flow<List<ChatMessageEntity>>
+    
+    @Query("SELECT * FROM chat_messages ORDER BY timestamp DESC")
+    fun getPagedMessages(): PagingSource<Int, ChatMessageEntity>
+
 
     @Query("SELECT * FROM chat_messages ORDER BY timestamp DESC LIMIT 30")
     suspend fun getRecentMessagesDirect(): List<ChatMessageEntity>

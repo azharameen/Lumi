@@ -11,11 +11,14 @@ import com.example.service.BiometricVaultManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import androidx.paging.cachedIn
 import kotlinx.coroutines.launch
 
 class WellnessViewModel(application: Application) : AndroidViewModel(application) {
     val repository: LumiRepository = LumiRepositoryImpl.getInstance(application)
     val biometricVault = BiometricVaultManager(application)
+
+    val pagedWellnessLogs = repository.pagedWellnessLogs.cachedIn(viewModelScope)
 
     val allWellnessLogs: StateFlow<List<WellnessLogEntity>> = repository.allWellnessLogs.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()

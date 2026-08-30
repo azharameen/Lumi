@@ -72,8 +72,8 @@ import java.util.Locale
 
 @Composable
 fun ScheduleScreen(
-    viewModel: LumiViewModel,
-    onNavigateToChat: () -> Unit
+    viewModel: com.example.ui.viewmodel.LifeHubViewModel,
+    onNavigateToChat: (String?) -> Unit
 ) {
     val events by viewModel.allCalendarEvents.collectAsStateWithLifecycle()
     var showAddEventDialog by remember { mutableStateOf(false) }
@@ -119,8 +119,8 @@ fun ScheduleScreen(
                         color = LumiCyan.copy(alpha = 0.15f),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.clickable {
-                            viewModel.sendMessage("Analyze my calendar events for today and suggest the optimal productive schedule")
-                            onNavigateToChat()
+                            onNavigateToChat("Analyze my calendar events for today and suggest the optimal productive schedule")
+                            onNavigateToChat(null)
                         }
                     ) {
                         Row(

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -47,6 +48,8 @@ import com.example.ui.theme.ObsidianDark
 import com.example.ui.viewmodel.LumiViewModel
 import com.example.ui.viewmodel.ChatViewModel
 import com.example.ui.viewmodel.WellnessViewModel
+import com.example.ui.viewmodel.LifeHubViewModel
+import com.example.ui.viewmodel.PetViewModel
 import com.example.ui.viewmodel.AiSettingsViewModel
 
 /**
@@ -59,6 +62,8 @@ class MainActivity : ComponentActivity() {
     private val aiSettingsViewModel: AiSettingsViewModel by viewModels()
     private val chatViewModel: ChatViewModel by viewModels()
     private val wellnessViewModel: WellnessViewModel by viewModels()
+    private val lifeHubViewModel: LifeHubViewModel by viewModels()
+    private val petViewModel: PetViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,11 +81,11 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
 
         setContent {
-            val petStatus by viewModel.petStatus.collectAsStateWithLifecycle()
+            val petStatus by petViewModel.petStatus.collectAsStateWithLifecycle()
             val petPrimary = androidx.compose.ui.graphics.Color(petStatus.bloubSkinColor.primaryHex)
             val petSecondary = androidx.compose.ui.graphics.Color(petStatus.bloubSkinColor.endHex)
             MyApplicationTheme(petColorPrimary = petPrimary, petColorSecondary = petSecondary) {
-                LumiApp(viewModel = viewModel, aiSettingsViewModel = aiSettingsViewModel, chatViewModel = chatViewModel, wellnessViewModel = wellnessViewModel)
+                LumiApp(viewModel = viewModel, aiSettingsViewModel = aiSettingsViewModel, chatViewModel = chatViewModel, wellnessViewModel = wellnessViewModel, lifeHubViewModel = lifeHubViewModel, petViewModel = petViewModel)
             }
         }
     }
@@ -133,12 +138,12 @@ class MainActivity : ComponentActivity() {
         // 4. Handle Daily Briefing Notification Deep Link
         intent.getStringExtra("OPEN_BRIEFING")?.let { briefingStr ->
             viewModel.setSelectedTab(0)
-            val type = when (briefingStr.uppercase()) {
+            val type: com.example.domain.briefing.BriefingType? = when (briefingStr.uppercase()) {
                 "MORNING" -> com.example.domain.briefing.BriefingType.MORNING
                 "EVENING" -> com.example.domain.briefing.BriefingType.EVENING
                 else -> null
             }
-            viewModel.refreshDailyBriefing(type)
+            lifeHubViewModel.refreshDailyBriefing(type, petViewModel.petStatus.value, petViewModel.petEvolution.value, wellnessViewModel.allWellnessLogs.value)
         }
     }
 
@@ -165,7 +170,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, chatViewModel: ChatViewModel, wellnessViewModel: WellnessViewModel) {
+fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, chatViewModel: ChatViewModel, wellnessViewModel: WellnessViewModel, lifeHubViewModel: LifeHubViewModel, petViewModel: PetViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val userProfile by aiSettingsViewModel.userProfile.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -181,24 +186,24 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
         when (action) {
             is com.example.ui.viewmodel.LumiUiAction.NavigateToChat -> {
                 viewModel.setSelectedTab(com.example.ui.navigation.NavDestination.Assistant.tabIndex)
-                action.prompt?.let { viewModel.sendMessage(it) }
+                action.prompt?.let { chatViewModel.sendMessage(it) }
             }
             is com.example.ui.viewmodel.LumiUiAction.SetLifeHubSubTab -> viewModel.setLifeHubSubTab(action.tabIndex)
-            is com.example.ui.viewmodel.LumiUiAction.AddCalendarEvent -> viewModel.addCalendarEvent(action.event)
-            is com.example.ui.viewmodel.LumiUiAction.DeleteCalendarEvent -> viewModel.deleteCalendarEvent(action.id)
-            is com.example.ui.viewmodel.LumiUiAction.SpeakBriefing -> viewModel.speakBriefing()
-            is com.example.ui.viewmodel.LumiUiAction.AddTask -> viewModel.addTask(action.title, action.priority, action.category, action.estimatedMinutes, action.notes)
-            is com.example.ui.viewmodel.LumiUiAction.ToggleTask -> viewModel.toggleTask(action.id, action.isCompleted)
-            is com.example.ui.viewmodel.LumiUiAction.DeleteTask -> viewModel.deleteTask(action.task)
-            is com.example.ui.viewmodel.LumiUiAction.DecomposeGoal -> viewModel.decomposeGoal(action.title, action.description, action.category, action.deadline)
-            is com.example.ui.viewmodel.LumiUiAction.DeleteGoal -> viewModel.deleteGoal(action.id)
-            is com.example.ui.viewmodel.LumiUiAction.ToggleMilestone -> viewModel.toggleMilestone(action.milestoneId, action.goalId, action.isCompleted)
-            is com.example.ui.viewmodel.LumiUiAction.ExecuteMilestone -> viewModel.executeMilestone(action.milestoneId, action.goalId)
-            is com.example.ui.viewmodel.LumiUiAction.StartSoundscape -> viewModel.startSoundscape(action.type)
-            is com.example.ui.viewmodel.LumiUiAction.StopSoundscape -> viewModel.stopSoundscape()
-            is com.example.ui.viewmodel.LumiUiAction.SetSoundscapeVolume -> viewModel.setSoundscapeVolume(action.volume)
-            is com.example.ui.viewmodel.LumiUiAction.StartFocusTimer -> viewModel.startFocusTimerWithSoundscape(action.minutes)
-            is com.example.ui.viewmodel.LumiUiAction.StopFocusTimer -> viewModel.stopFocusTimerWithSoundscape()
+            is com.example.ui.viewmodel.LumiUiAction.AddCalendarEvent -> lifeHubViewModel.addCalendarEvent(action.event)
+            is com.example.ui.viewmodel.LumiUiAction.DeleteCalendarEvent -> lifeHubViewModel.deleteCalendarEvent(action.id)
+            is com.example.ui.viewmodel.LumiUiAction.SpeakBriefing -> {} // Removed voice briefing output for now // Remains in LumiViewModel for now if voice output
+            is com.example.ui.viewmodel.LumiUiAction.AddTask -> lifeHubViewModel.addTask(action.title, action.priority, action.category, action.estimatedMinutes, action.notes)
+            is com.example.ui.viewmodel.LumiUiAction.ToggleTask -> lifeHubViewModel.toggleTask(action.id, action.isCompleted)
+            is com.example.ui.viewmodel.LumiUiAction.DeleteTask -> lifeHubViewModel.deleteTask(action.task)
+            is com.example.ui.viewmodel.LumiUiAction.DecomposeGoal -> lifeHubViewModel.decomposeGoal(action.title, action.description, action.category, action.deadline)
+            is com.example.ui.viewmodel.LumiUiAction.DeleteGoal -> lifeHubViewModel.deleteGoal(action.id)
+            is com.example.ui.viewmodel.LumiUiAction.ToggleMilestone -> lifeHubViewModel.toggleMilestone(action.milestoneId, action.goalId, action.isCompleted)
+            is com.example.ui.viewmodel.LumiUiAction.ExecuteMilestone -> lifeHubViewModel.executeMilestone(action.milestoneId, action.goalId)
+            is com.example.ui.viewmodel.LumiUiAction.StartSoundscape -> lifeHubViewModel.startSoundscape(action.type)
+            is com.example.ui.viewmodel.LumiUiAction.StopSoundscape -> lifeHubViewModel.stopSoundscape()
+            is com.example.ui.viewmodel.LumiUiAction.SetSoundscapeVolume -> lifeHubViewModel.setSoundscapeVolume(action.volume)
+            is com.example.ui.viewmodel.LumiUiAction.StartFocusTimer -> lifeHubViewModel.startFocusTimerWithSoundscape(action.minutes)
+            is com.example.ui.viewmodel.LumiUiAction.StopFocusTimer -> lifeHubViewModel.stopFocusTimerWithSoundscape()
         }
     }
 
@@ -217,17 +222,17 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
             ) { tab ->
                 when (tab) {
                     NavDestination.PetCompanion.tabIndex -> HomeScreen(
-                        petStatus = viewModel.petStatus.collectAsStateWithLifecycle().value,
+                        petStatus = petViewModel.petStatus.collectAsStateWithLifecycle().value,
                         uiState = uiState,
                         batteryStatus = viewModel.batteryStatus.collectAsStateWithLifecycle().value,
                         networkStatus = viewModel.networkStatus.collectAsStateWithLifecycle().value,
-                        events = viewModel.allCalendarEvents.collectAsStateWithLifecycle().value,
-                        tasks = viewModel.allTasks.collectAsStateWithLifecycle().value,
+                        events = lifeHubViewModel.allCalendarEvents.collectAsStateWithLifecycle().value,
+                        tasks = lifeHubViewModel.allTasks.collectAsStateWithLifecycle().value,
                         isListening = chatViewModel.voiceEngine.isListening.collectAsStateWithLifecycle().value,
                         isSpeaking = chatViewModel.voiceEngine.isSpeaking.collectAsStateWithLifecycle().value,
-                        onPetPetted = { viewModel.onPetPetted() },
-                        onPetTouched = { viewModel.onPetTouched() },
-                        onTogglePetSleep = { viewModel.togglePetSleep() },
+                        onPetPetted = { petViewModel.onPetPetted() },
+                        onPetTouched = { petViewModel.onPetTouched() },
+                        onTogglePetSleep = { petViewModel.togglePetSleep() },
                         onStartVoiceListening = { chatViewModel.startVoiceListening() },
                         onStopVoiceListening = { chatViewModel.stopVoiceListening() },
                         onShowCamera = { viewModel.setShowCamera(true) },
@@ -240,8 +245,8 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                     NavDestination.Assistant.tabIndex -> ChatScreen(
                         
                         uiState = uiState,
-                        petStatus = viewModel.petStatus.collectAsStateWithLifecycle().value,
-                        chatMessages = chatViewModel.chatMessages.collectAsStateWithLifecycle().value,
+                        petStatus = petViewModel.petStatus.collectAsStateWithLifecycle().value,
+                        chatMessages = chatViewModel.pagedChatMessages.collectAsLazyPagingItems(),
                         isListening = chatViewModel.voiceEngine.isListening.collectAsStateWithLifecycle().value,
                         isSpeaking = chatViewModel.voiceEngine.isSpeaking.collectAsStateWithLifecycle().value,
                         onSendMessage = { text -> chatViewModel.sendMessage(text) },
@@ -253,14 +258,14 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                     )
                     NavDestination.LifeHub.tabIndex -> LifeHubScreen(
                         uiState = uiState,
-                        tasks = viewModel.allTasks.collectAsStateWithLifecycle().value,
-                        events = viewModel.allCalendarEvents.collectAsStateWithLifecycle().value,
-                        wellnessLogs = viewModel.allWellnessLogs.collectAsStateWithLifecycle().value,
-                        memories = viewModel.allMemories.collectAsStateWithLifecycle().value,
-                        dailyBriefing = viewModel.dailyBriefing.collectAsStateWithLifecycle().value,
-                        goalPlans = viewModel.allGoalPlans.collectAsStateWithLifecycle().value,
-                        getMilestonesForGoal = { id -> viewModel.repository.getMilestonesForGoal(id) },
-                        soundState = viewModel.soundscapeState.collectAsStateWithLifecycle().value,
+                        tasks = lifeHubViewModel.allTasks.collectAsStateWithLifecycle().value,
+                        events = lifeHubViewModel.allCalendarEvents.collectAsStateWithLifecycle().value,
+                        wellnessLogs = wellnessViewModel.allWellnessLogs.collectAsStateWithLifecycle().value,
+                        memories = wellnessViewModel.allMemories.collectAsStateWithLifecycle().value,
+                        dailyBriefing = lifeHubViewModel.dailyBriefing.collectAsStateWithLifecycle().value,
+                        goalPlans = lifeHubViewModel.allGoalPlans.collectAsStateWithLifecycle().value,
+                        getMilestonesForGoal = { id -> lifeHubViewModel.getMilestonesForGoal(id) },
+                        soundState = lifeHubViewModel.soundscapeState.collectAsStateWithLifecycle().value,
                         onAction = handleLifeHubAction
                     )
                     NavDestination.Wellness.tabIndex -> WellnessScreen(
@@ -271,11 +276,11 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                     NavDestination.Account.tabIndex -> UserAccountScreen(
                         userProfile = userProfile,
                         userFacts = viewModel.userFacts.collectAsStateWithLifecycle().value,
-                        petStatus = viewModel.petStatus.collectAsStateWithLifecycle().value,
+                        petStatus = petViewModel.petStatus.collectAsStateWithLifecycle().value,
                         benchmarkStatus = viewModel.benchmarkStatus.collectAsStateWithLifecycle().value ?: "",
-                        tasks = viewModel.allTasks.collectAsStateWithLifecycle().value,
-                        events = viewModel.allCalendarEvents.collectAsStateWithLifecycle().value,
-                        memories = viewModel.allMemories.collectAsStateWithLifecycle().value,
+                        tasks = lifeHubViewModel.allTasks.collectAsStateWithLifecycle().value,
+                        events = lifeHubViewModel.allCalendarEvents.collectAsStateWithLifecycle().value,
+                        memories = wellnessViewModel.allMemories.collectAsStateWithLifecycle().value,
                         messages = viewModel.chatMessages.collectAsStateWithLifecycle().value,
                         localModelCatalog = aiSettingsViewModel.localModelCatalog,
                         modelDownloadStates = aiSettingsViewModel.modelDownloadStates.collectAsStateWithLifecycle().value,
@@ -301,17 +306,17 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                         }
                     )
                     else -> HomeScreen(
-                        petStatus = viewModel.petStatus.collectAsStateWithLifecycle().value,
+                        petStatus = petViewModel.petStatus.collectAsStateWithLifecycle().value,
                         uiState = uiState,
                         batteryStatus = viewModel.batteryStatus.collectAsStateWithLifecycle().value,
                         networkStatus = viewModel.networkStatus.collectAsStateWithLifecycle().value,
-                        events = viewModel.allCalendarEvents.collectAsStateWithLifecycle().value,
-                        tasks = viewModel.allTasks.collectAsStateWithLifecycle().value,
+                        events = lifeHubViewModel.allCalendarEvents.collectAsStateWithLifecycle().value,
+                        tasks = lifeHubViewModel.allTasks.collectAsStateWithLifecycle().value,
                         isListening = chatViewModel.voiceEngine.isListening.collectAsStateWithLifecycle().value,
                         isSpeaking = chatViewModel.voiceEngine.isSpeaking.collectAsStateWithLifecycle().value,
-                        onPetPetted = { viewModel.onPetPetted() },
-                        onPetTouched = { viewModel.onPetTouched() },
-                        onTogglePetSleep = { viewModel.togglePetSleep() },
+                        onPetPetted = { petViewModel.onPetPetted() },
+                        onPetTouched = { petViewModel.onPetTouched() },
+                        onTogglePetSleep = { petViewModel.togglePetSleep() },
                         onStartVoiceListening = { chatViewModel.startVoiceListening() },
                         onStopVoiceListening = { chatViewModel.stopVoiceListening() },
                         onShowCamera = { viewModel.setShowCamera(true) },
@@ -324,7 +329,7 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                 }
             }
             if (uiState.showWardrobeScreen) {
-                com.example.ui.screens.WardrobeScreen(viewModel = viewModel, onClose = { viewModel.setShowWardrobeScreen(false) })
+                com.example.ui.screens.WardrobeScreen(petViewModel = petViewModel, wellnessViewModel = wellnessViewModel, onClose = { viewModel.setShowWardrobeScreen(false) })
             }
             // Camera / Vision Dialog Modal
             if (uiState.showCameraDialog) {

@@ -16,6 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -84,7 +88,7 @@ fun WellnessScreen(
     appViewModel: com.example.ui.viewmodel.LumiViewModel,
     onNavigateToChat: () -> Unit
 ) {
-    val logs by viewModel.allWellnessLogs.collectAsStateWithLifecycle()
+    val logs = viewModel.pagedWellnessLogs.collectAsLazyPagingItems()
     val memories by viewModel.allMemories.collectAsStateWithLifecycle()
     val uiState by appViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -439,7 +443,7 @@ fun WellnessScreen(
             )
         }
 
-        if (logs.isEmpty()) {
+        if (logs.itemCount == 0) {
             item {
                 Text(
                     text = "No previous logs. Complete your first check-in above!",
@@ -448,7 +452,13 @@ fun WellnessScreen(
                 )
             }
         } else {
-            items(logs) { log ->
+            items(
+                count = logs.itemCount,
+                key = logs.itemKey { it.id },
+                contentType = logs.itemContentType { "wellness_log" }
+            ) { index ->
+                val log = logs[index]
+                if (log != null) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = SurfaceDarkVariant),
                     shape = RoundedCornerShape(16.dp),
@@ -502,6 +512,7 @@ fun WellnessScreen(
                         }
                     }
                 }
+            }
             }
         }
     }

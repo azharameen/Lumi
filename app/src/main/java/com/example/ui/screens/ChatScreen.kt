@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -72,7 +76,7 @@ import java.util.Locale
 fun ChatScreen(
     uiState: com.example.ui.viewmodel.LumiUiState,
     petStatus: com.example.domain.model.PetStatus,
-    chatMessages: List<com.example.data.local.entity.ChatMessageEntity>,
+    chatMessages: LazyPagingItems<com.example.data.local.entity.ChatMessageEntity>,
     isListening: Boolean,
     isSpeaking: Boolean,
     onSendMessage: (String) -> Unit,
@@ -86,9 +90,9 @@ fun ChatScreen(
 
     val listState = rememberLazyListState()
 
-    LaunchedEffect(chatMessages.size) {
-        if (chatMessages.isNotEmpty()) {
-            listState.animateScrollToItem(chatMessages.size - 1)
+    LaunchedEffect(chatMessages.itemCount) {
+        if (chatMessages.itemCount > 0) {
+            listState.animateScrollToItem(0) // Items are reversed, newest at 0
         }
     }
 
@@ -167,8 +171,15 @@ fun ChatScreen(
             contentPadding = PaddingValues(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(chatMessages) { msg ->
-                ChatMessageBubble(message = msg)
+            items(
+                count = chatMessages.itemCount,
+                key = chatMessages.itemKey { it.id },
+                contentType = chatMessages.itemContentType { "chat_message" }
+            ) { index ->
+                val msg = chatMessages[index]
+                if (msg != null) {
+                    ChatMessageBubble(message = msg)
+                }
             }
         }
 

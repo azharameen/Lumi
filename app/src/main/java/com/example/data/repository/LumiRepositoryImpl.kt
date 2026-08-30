@@ -98,8 +98,20 @@ class LumiRepositoryImpl private constructor(
     override val allTasks: Flow<List<TaskEntity>> = database.taskDao().getAllTasks()
     override val allCalendarEvents: Flow<List<CalendarEventEntity>> = database.calendarEventDao().getAllEvents()
     override val allWellnessLogs: Flow<List<WellnessLogEntity>> = database.wellnessLogDao().getAllLogs()
+
+    override val pagedWellnessLogs: Flow<androidx.paging.PagingData<WellnessLogEntity>> = androidx.paging.Pager(
+        config = androidx.paging.PagingConfig(pageSize = 20, enablePlaceholders = false),
+        pagingSourceFactory = { database.wellnessLogDao().getPagedWellnessLogs() }
+    ).flow
+
     override val allMemories: Flow<List<PetMemoryEntity>> = database.petMemoryDao().getAllMemories()
     override val chatMessages: Flow<List<ChatMessageEntity>> = database.chatMessageDao().getAllMessages()
+    
+    override val pagedChatMessages: kotlinx.coroutines.flow.Flow<androidx.paging.PagingData<com.example.data.local.entity.ChatMessageEntity>> = androidx.paging.Pager(
+        config = androidx.paging.PagingConfig(pageSize = 20, enablePlaceholders = false),
+        pagingSourceFactory = { database.chatMessageDao().getPagedMessages() }
+    ).flow
+
 
     override val petStatus: Flow<PetStatus> = combine(
         combine(petEvolution, _currentEmotion, _isSpeaking) { evo, emotion, speaking ->

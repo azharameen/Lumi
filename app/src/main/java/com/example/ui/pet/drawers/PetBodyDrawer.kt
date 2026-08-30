@@ -14,10 +14,10 @@ import com.example.domain.model.BloubShape
 import com.example.domain.model.PetEmotion
 
 /**
- * High-craft 3D procedural body renderer for the 3 signature shapes:
+ * Normalized 3D procedural body renderer for signature shapes:
  * SPHERE, CUBE, CAPSULE.
- * Features multi-layer clay gradients, glossy specular highlights,
- * ambient bounce lighting, and responsive drop shadows.
+ * All coordinates, stroke widths, and lighting gradients are strictly
+ * relative to the Canvas DrawScope and baseRadius.
  */
 fun DrawScope.drawPetAura(
     cx: Float,
@@ -26,18 +26,18 @@ fun DrawScope.drawPetAura(
     auraPulse: Float,
     auraColor: Color
 ) {
-    // Outer atmospheric glow
+    val auraRadius = baseRadius * 1.72f * auraPulse
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(
-                auraColor.copy(alpha = 0.45f),
-                auraColor.copy(alpha = 0.18f),
+                auraColor.copy(alpha = 0.42f),
+                auraColor.copy(alpha = 0.16f),
                 Color.Transparent
             ),
             center = Offset(cx, cy),
-            radius = baseRadius * 1.75f * auraPulse
+            radius = auraRadius
         ),
-        radius = baseRadius * 1.75f * auraPulse,
+        radius = auraRadius,
         center = Offset(cx, cy)
     )
 }
@@ -48,21 +48,25 @@ fun DrawScope.drawPetShadow(
     baseRadius: Float,
     squishX: Float,
     squishY: Float,
-    floatingOffsetY: Float = 0f
+    floatingOffsetRatio: Float = 0f
 ) {
-    // Ground shadow scales and blurs with height offset
-    val heightFactor = (1f - (floatingOffsetY / 40f)).coerceIn(0.6f, 1.25f)
-    val shadowWidth = baseRadius * 1.5f * squishX * heightFactor
-    val shadowHeight = 26f * squishY * heightFactor
-    val shadowAlpha = (0.35f * heightFactor).coerceIn(0.12f, 0.45f)
+    // Ground shadow scales and softens dynamically with normalized vertical displacement
+    val heightFactor = (1f - (floatingOffsetRatio * 0.6f)).coerceIn(0.55f, 1.25f)
+    val shadowWidth = baseRadius * 1.52f * squishX * heightFactor
+    val shadowHeight = baseRadius * 0.24f * squishY * heightFactor
+    val shadowAlpha = (0.32f * heightFactor).coerceIn(0.10f, 0.45f)
+    val shadowY = canvasHeight - (baseRadius * 0.16f)
 
     drawOval(
         brush = Brush.radialGradient(
-            colors = listOf(Color(0xFF000000).copy(alpha = shadowAlpha), Color.Transparent),
-            center = Offset(cx, canvasHeight - 20f),
-            radius = shadowWidth / 2
+            colors = listOf(
+                Color.Black.copy(alpha = shadowAlpha),
+                Color.Transparent
+            ),
+            center = Offset(cx, shadowY),
+            radius = shadowWidth * 0.5f
         ),
-        topLeft = Offset(cx - shadowWidth / 2, canvasHeight - 20f - shadowHeight / 2),
+        topLeft = Offset(cx - (shadowWidth * 0.5f), shadowY - (shadowHeight * 0.5f)),
         size = Size(shadowWidth, shadowHeight)
     )
 }
@@ -79,14 +83,14 @@ fun DrawScope.drawPetBody(
 ) {
     val bodyPath = generateShapePath(cx, cy, baseRadius, shape, breathProgress)
 
-    // 1. Base 3D Shaded Gradient Fill (rich clay lighting with subtle top highlight)
-    val highlightOffset = Offset(cx - baseRadius * 0.32f, cy - baseRadius * 0.36f)
+    // 1. Base 3D Clay Gradient Fill (proportional highlight focal offset)
+    val highlightOffset = Offset(cx - (baseRadius * 0.32f), cy - (baseRadius * 0.36f))
 
     drawPath(
         path = bodyPath,
         brush = Brush.radialGradient(
             colors = listOf(
-                Color.White.copy(alpha = 0.95f),
+                Color.White.copy(alpha = 0.94f),
                 gradStart,
                 gradMid,
                 gradEnd,
@@ -104,31 +108,32 @@ fun DrawScope.drawPetBody(
             colors = listOf(
                 Color.Transparent,
                 Color.White.copy(alpha = 0.28f),
-                gradStart.copy(alpha = 0.4f)
+                gradStart.copy(alpha = 0.38f)
             ),
-            center = Offset(cx, cy + baseRadius * 0.95f),
+            center = Offset(cx, cy + (baseRadius * 0.92f)),
             radius = baseRadius * 0.85f
         )
     )
 
-    // 3. Signature Glossy Specular Highlights (Top-left shiny gel/clay reflection)
+    // 3. Signature Glossy Specular Highlights
     drawShapeGlossyHighlights(cx, cy, baseRadius, shape)
 
-    // 4. Subtle Outer Rim Polish
+    // 4. Subtle Outer Rim Polish with normalized stroke thickness
+    val rimStrokeWidth = (baseRadius * 0.024f).coerceAtLeast(1.5f)
     drawPath(
         path = bodyPath,
         brush = Brush.radialGradient(
             colors = listOf(Color.Transparent, Color.White.copy(alpha = 0.35f)),
-            center = Offset(cx + baseRadius * 0.5f, cy + baseRadius * 0.5f),
-            radius = baseRadius * 0.95f
+            center = Offset(cx + (baseRadius * 0.48f), cy + (baseRadius * 0.48f)),
+            radius = baseRadius * 0.96f
         ),
-        style = Stroke(width = 3f)
+        style = Stroke(width = rimStrokeWidth)
     )
 }
 
 /**
- * Generates the clean, accurate, and appealing vector geometry for each of the 3 shapes:
- * SPHERE, CUBE, CAPSULE.
+ * Generates normalized vector geometry for each shape:
+ * SPHERE, CUBE, CAPSULE without magic numbers.
  */
 private fun generateShapePath(
     cx: Float,
@@ -137,25 +142,23 @@ private fun generateShapePath(
     shape: BloubShape,
     breath: Float
 ): Path {
-    val bOffset = (breath - 0.5f) * 3f
+    val bOffset = (breath - 0.5f) * (r * 0.035f)
     return Path().apply {
         when (shape) {
             BloubShape.SPHERE -> {
-                // 1. Perfect 3D volumetric round sphere
-                val radius = r * 1.02f + bOffset
+                val radius = (r * 1.02f) + bOffset
                 addOval(
                     Rect(
-                        cx - radius,
-                        cy - radius,
-                        cx + radius,
-                        cy + radius
+                        left = cx - radius,
+                        top = cy - radius,
+                        right = cx + radius,
+                        bottom = cy + radius
                     )
                 )
             }
 
             BloubShape.CUBE -> {
-                // 2. Modern cute rounded cube / clay box
-                val size = r * 0.94f + bOffset
+                val size = (r * 0.94f) + bOffset
                 val corner = r * 0.36f
                 addRoundRect(
                     RoundRect(
@@ -169,9 +172,8 @@ private fun generateShapePath(
             }
 
             BloubShape.CAPSULE -> {
-                // 3. Smooth tall rounded pill/capsule
                 val pillWidth = r * 0.82f
-                val pillHeight = r * 1.12f + bOffset
+                val pillHeight = (r * 1.12f) + bOffset
                 addRoundRect(
                     RoundRect(
                         left = cx - pillWidth,
@@ -187,7 +189,7 @@ private fun generateShapePath(
 }
 
 /**
- * Shape-tailored glossy specular light reflections.
+ * Normalized glossy specular light reflections scaled strictly by baseRadius.
  */
 private fun DrawScope.drawShapeGlossyHighlights(
     cx: Float,
@@ -195,8 +197,8 @@ private fun DrawScope.drawShapeGlossyHighlights(
     r: Float,
     shape: BloubShape
 ) {
-    val glossCenterX = cx - r * 0.36f
-    val glossCenterY = cy - r * 0.42f
+    val glossCenterX = cx - (r * 0.36f)
+    val glossCenterY = cy - (r * 0.42f)
     val glossWidth = r * 0.34f
     val glossHeight = r * 0.18f
 
@@ -209,9 +211,9 @@ private fun DrawScope.drawShapeGlossyHighlights(
                 Color.Transparent
             ),
             center = Offset(glossCenterX, glossCenterY),
-            radius = glossWidth / 1.3f
+            radius = glossWidth * 0.75f
         ),
-        topLeft = Offset(glossCenterX - glossWidth / 2, glossCenterY - glossHeight / 2),
+        topLeft = Offset(glossCenterX - (glossWidth * 0.5f), glossCenterY - (glossHeight * 0.5f)),
         size = Size(glossWidth, glossHeight)
     )
 
@@ -219,7 +221,7 @@ private fun DrawScope.drawShapeGlossyHighlights(
     drawCircle(
         color = Color.White.copy(alpha = 0.92f),
         radius = r * 0.055f,
-        center = Offset(glossCenterX + glossWidth * 0.42f, glossCenterY + glossHeight * 0.45f)
+        center = Offset(glossCenterX + (glossWidth * 0.42f), glossCenterY + (glossHeight * 0.45f))
     )
 }
 
@@ -229,7 +231,7 @@ fun DrawScope.drawPetCheeks(
     baseRadius: Float,
     emotion: PetEmotion
 ) {
-    val cheekOffsetY = cy + baseRadius * 0.16f
+    val cheekOffsetY = cy + (baseRadius * 0.16f)
     val cheekDistance = baseRadius * 0.52f
     val cheekRadius = baseRadius * 0.18f
     val cheekColor = when (emotion) {

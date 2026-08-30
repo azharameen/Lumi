@@ -11,13 +11,13 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -45,6 +45,7 @@ import com.example.ui.pet.drawers.drawPetEye
 import com.example.ui.pet.drawers.drawPetMouth
 import com.example.ui.pet.drawers.drawPetShadow
 import com.example.ui.pet.drawers.drawSparkleParticle
+import com.example.ui.pet.drawers.drawStarParticle
 import com.example.ui.pet.models.PetParticle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -53,8 +54,9 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 /**
- * Living Jetpack Compose view representing Bloub / Lumi mascot with organic clay physics,
- * procedural breathing, interactive gaze saccades, emotional expressions, and responsive jelly dynamics.
+ * High-performance Jetpack Compose Canvas mascot view representing Lumi / Bloub.
+ * Implements 100% normalized procedural graphics, clay lighting, jelly spring physics,
+ * dynamic gaze tracking, and zero-allocation draw loops.
  */
 @Composable
 fun LumiPetView(
@@ -74,13 +76,21 @@ fun LumiPetView(
     var targetGazeY by remember { mutableFloatStateOf(0f) }
     val activeGazeX = if (enableInternalGestures) targetGazeX else externalGazeX
     val activeGazeY = if (enableInternalGestures) targetGazeY else externalGazeY
-    val animatedGazeX by animateFloatAsState(targetValue = activeGazeX, animationSpec = spring(stiffness = 320f), label = "GazeX")
-    val animatedGazeY by animateFloatAsState(targetValue = activeGazeY, animationSpec = spring(stiffness = 320f), label = "GazeY")
+    val animatedGazeX by animateFloatAsState(
+        targetValue = activeGazeX,
+        animationSpec = spring(stiffness = 320f),
+        label = "GazeX"
+    )
+    val animatedGazeY by animateFloatAsState(
+        targetValue = activeGazeY,
+        animationSpec = spring(stiffness = 320f),
+        label = "GazeY"
+    )
 
-    // Interactive squish & jelly bounce physics
+    // Interactive squish & jelly bounce physics (normalized ratios)
     val squishX = remember { Animatable(1f) }
     val squishY = remember { Animatable(1f) }
-    val jumpOffsetY = remember { Animatable(0f) }
+    val jumpProgress = remember { Animatable(0f) }
     val rotationZ = remember { Animatable(0f) }
 
     // Natural periodic blinking with occasional double-blinks
@@ -100,7 +110,7 @@ fun LumiPetView(
         }
     }
 
-    // Breathing & floating physics
+    // Breathing, floating & aura transitions (normalized 0f..1f and -1f..1f ranges)
     val infiniteTransition = rememberInfiniteTransition(label = "BloubPhysics")
     val breathProgress by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -112,9 +122,9 @@ fun LumiPetView(
         label = "Breath"
     )
 
-    val floatingOffset by infiniteTransition.animateFloat(
-        initialValue = -10f,
-        targetValue = 10f,
+    val floatingProgress by infiniteTransition.animateFloat(
+        initialValue = -1f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(3000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
@@ -142,7 +152,7 @@ fun LumiPetView(
         label = "MouthTalk"
     )
 
-    // Particle manager loop
+    // Optimized Particle System
     val particles = remember { mutableStateListOf<PetParticle>() }
     LaunchedEffect(Unit) {
         while (true) {
@@ -162,20 +172,27 @@ fun LumiPetView(
         }
     }
 
-    fun spawnParticles(type: String, count: Int, baseColor: Color) {
+    // Cache cosmetic colors from PetStatus to eliminate allocation inside draw loop
+    val skin = petStatus.bloubSkinColor
+    val gradStart = remember(skin.primaryHex) { Color(skin.primaryHex) }
+    val gradMid = remember(skin.midHex) { Color(skin.midHex) }
+    val gradEnd = remember(skin.endHex) { Color(skin.endHex) }
+    val auraColor = remember(skin.glowHex) { Color(skin.glowHex) }
+
+    fun spawnParticles(type: String, count: Int, baseColor: Color, baseRadius: Float) {
         for (i in 0 until count) {
             val angle = Random.nextDouble(0.0, Math.PI * 2)
-            val speed = Random.nextFloat() * 4.2f + 1.2f
+            val speed = baseRadius * (Random.nextFloat() * 0.035f + 0.015f)
             particles.add(
                 PetParticle(
                     x = 0f,
-                    y = -15f,
+                    y = -baseRadius * 0.15f,
                     vx = (cos(angle) * speed).toFloat(),
-                    vy = (sin(angle) * speed - 2.8f).toFloat(),
+                    vy = (sin(angle) * speed - (baseRadius * 0.025f)).toFloat(),
                     alpha = 1.0f,
                     type = type,
                     color = baseColor,
-                    size = Random.nextFloat() * 12f + 10f,
+                    size = baseRadius * (Random.nextFloat() * 0.14f + 0.10f),
                     rotation = Random.nextFloat() * 360f
                 )
             )
@@ -183,37 +200,36 @@ fun LumiPetView(
     }
 
     val gestureModifier = if (enableInternalGestures) {
-        Modifier
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        onPetTouched()
-                        coroutineScope.launch {
-                            // Organic jelly squish & wobble
-                            squishX.animateTo(1.24f, tween(75))
-                            squishX.animateTo(0.88f, tween(95))
-                            squishX.animateTo(1.08f, tween(110))
-                            squishX.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 450f))
-                        }
-                        coroutineScope.launch {
-                            squishY.animateTo(0.78f, tween(75))
-                            squishY.animateTo(1.18f, tween(95))
-                            squishY.animateTo(0.94f, tween(110))
-                            squishY.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 450f))
-                        }
-                        coroutineScope.launch {
-                            jumpOffsetY.animateTo(-26f, tween(110))
-                            jumpOffsetY.animateTo(0f, spring(dampingRatio = 0.55f, stiffness = 320f))
-                        }
-                        coroutineScope.launch {
-                            rotationZ.animateTo(if (Random.nextBoolean()) 6f else -6f, tween(80))
-                            rotationZ.animateTo(0f, spring(dampingRatio = 0.5f, stiffness = 300f))
-                        }
-                        spawnParticles("HEART", 5, Color(petStatus.bloubSkinColor.primaryHex))
+        Modifier.pointerInput(Unit) {
+            detectTapGestures(
+                onTap = {
+                    onPetTouched()
+                    coroutineScope.launch {
+                        squishX.animateTo(1.24f, tween(75))
+                        squishX.animateTo(0.88f, tween(95))
+                        squishX.animateTo(1.08f, tween(110))
+                        squishX.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 450f))
                     }
-                )
-            }
-            
+                    coroutineScope.launch {
+                        squishY.animateTo(0.78f, tween(75))
+                        squishY.animateTo(1.18f, tween(95))
+                        squishY.animateTo(0.94f, tween(110))
+                        squishY.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 450f))
+                    }
+                    coroutineScope.launch {
+                        jumpProgress.animateTo(1f, tween(110))
+                        jumpProgress.animateTo(0f, spring(dampingRatio = 0.55f, stiffness = 320f))
+                    }
+                    coroutineScope.launch {
+                        rotationZ.animateTo(if (Random.nextBoolean()) 6f else -6f, tween(80))
+                        rotationZ.animateTo(0f, spring(dampingRatio = 0.5f, stiffness = 300f))
+                    }
+                    // Estimate approximate baseRadius based on size.toPx()
+                    val approxRadius = size.toPx() * 0.38f
+                    spawnParticles("HEART", 5, gradStart, approxRadius)
+                }
+            )
+        }
     } else {
         Modifier
     }
@@ -225,20 +241,25 @@ fun LumiPetView(
             .then(gestureModifier)
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val cx = this.size.width / 2f
-            val currentFloatY = floatingOffset + jumpOffsetY.value
-            val cy = this.size.height / 2f + currentFloatY
-            val baseRadius = (this.size.width / 2.7f) * (0.95f + breathProgress * 0.06f)
+            val minDimension = minOf(this.size.width, this.size.height)
+            val baseRadius = (minDimension * 0.38f) * (0.95f + (breathProgress * 0.06f))
+            val cx = this.size.width * 0.5f
 
-            // Setup clay gradient colors based on Bloub skin color and emotional lighting
-            val skin = petStatus.bloubSkinColor
-            val gradStart = Color(skin.primaryHex)
-            val gradMid = Color(skin.midHex)
-            val gradEnd = Color(skin.endHex)
-            val auraColor = Color(skin.glowHex)
+            val floatingDisplacement = floatingProgress * (baseRadius * 0.07f)
+            val jumpDisplacement = jumpProgress.value * (-baseRadius * 0.22f)
+            val currentFloatY = floatingDisplacement + jumpDisplacement
+            val cy = (this.size.height * 0.5f) + currentFloatY
+
+            val floatingOffsetRatio = (currentFloatY / (baseRadius * 0.25f)).coerceIn(-1.5f, 1.5f)
 
             // 1. Atmosphere Aura Glow
-            drawPetAura(cx, cy, baseRadius, auraPulse, auraColor)
+            drawPetAura(
+                cx = cx,
+                cy = cy,
+                baseRadius = baseRadius,
+                auraPulse = auraPulse,
+                auraColor = auraColor
+            )
 
             // 2. Dynamic Ground Soft Shadow
             drawPetShadow(
@@ -247,11 +268,15 @@ fun LumiPetView(
                 baseRadius = baseRadius,
                 squishX = squishX.value,
                 squishY = squishY.value,
-                floatingOffsetY = currentFloatY
+                floatingOffsetRatio = floatingOffsetRatio
             )
 
-            // 3. Main Bloub Character with spring dynamics
-            scale(scaleX = squishX.value, scaleY = squishY.value, pivot = Offset(cx, cy + baseRadius)) {
+            // 3. Main Character Body & Expressions with spring dynamics
+            scale(
+                scaleX = squishX.value,
+                scaleY = squishY.value,
+                pivot = Offset(cx, cy + baseRadius)
+            ) {
                 rotate(degrees = rotationZ.value, pivot = Offset(cx, cy)) {
                     // 3D Procedural Clay Body
                     drawPetBody(
@@ -268,13 +293,22 @@ fun LumiPetView(
                     val faceCenterY = cy
 
                     // Blushing Cheeks
-                    drawPetCheeks(cx, faceCenterY, baseRadius, petStatus.currentEmotion)
+                    drawPetCheeks(
+                        cx = cx,
+                        cy = faceCenterY,
+                        baseRadius = baseRadius,
+                        emotion = petStatus.currentEmotion
+                    )
 
-                    // Big Glossy Bloub Eyes
+                    // Big Glossy Eyes
                     val eyeDistance = baseRadius * 0.35f
-                    val eyeOffsetY = faceCenterY - baseRadius * 0.08f
+                    val eyeOffsetY = faceCenterY - (baseRadius * 0.08f)
                     val eyeRadiusX = baseRadius * 0.14f
-                    val eyeRadiusY = if (isBlinking) 2.2f else baseRadius * 0.16f
+                    val eyeRadiusY = if (isBlinking) {
+                        (baseRadius * 0.02f).coerceAtLeast(1.5f)
+                    } else {
+                        baseRadius * 0.16f
+                    }
 
                     // Left Eye
                     drawPetEye(
@@ -303,7 +337,7 @@ fun LumiPetView(
                     )
 
                     // Cute Animated Mouth
-                    val mouthY = faceCenterY + baseRadius * 0.22f
+                    val mouthY = faceCenterY + (baseRadius * 0.22f)
                     drawPetMouth(
                         center = Offset(cx, mouthY),
                         emotion = petStatus.currentEmotion,
@@ -314,13 +348,17 @@ fun LumiPetView(
                 }
             }
 
-            // 4. Floating Particles (Hearts, Sparkles)
-            for (p in particles) {
-                translate(left = cx + p.x, top = cy + p.y) {
-                    when (p.type) {
-                        "HEART" -> drawHeartParticle(p.size, p.color.copy(alpha = p.alpha))
-                        "SPARKLE" -> drawSparkleParticle(p.size, p.color.copy(alpha = p.alpha), p.rotation)
-                        else -> drawCircle(p.color.copy(alpha = p.alpha), radius = p.size / 2)
+            // 4. Floating Particles (Hearts, Sparkles, Stars)
+            if (particles.isNotEmpty()) {
+                for (p in particles) {
+                    translate(left = cx + p.x, top = cy + p.y) {
+                        val particleColor = p.color.copy(alpha = p.alpha)
+                        when (p.type) {
+                            "HEART" -> drawHeartParticle(p.size, particleColor)
+                            "SPARKLE" -> drawSparkleParticle(p.size, particleColor, p.rotation)
+                            "STAR" -> drawStarParticle(p.size, particleColor, p.rotation)
+                            else -> drawCircle(particleColor, radius = p.size * 0.5f)
+                        }
                     }
                 }
             }

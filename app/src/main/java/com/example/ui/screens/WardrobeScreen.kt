@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,7 +22,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Psychology
@@ -29,49 +29,61 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.domain.model.BloubShape
 import com.example.domain.model.BloubSkinColor
 import com.example.ui.pet.LumiPetView
-
 import com.example.ui.theme.LumiGold
 import com.example.ui.theme.LumiPink
-
 import com.example.ui.theme.ObsidianDark
 import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.SurfaceDarkVariant
 import com.example.ui.theme.SurfaceHighlight
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
-import com.example.ui.viewmodel.LumiViewModel
+import com.example.ui.viewmodel.PetViewModel
+import com.example.ui.viewmodel.WellnessViewModel
 
+/**
+ * Customization Studio & Evolution Wardrobe Screen.
+ * Allows instant procedural styling, 3D shape morphing, clay skin palettes,
+ * and memory vault inspection with optimized list keys and zero-allocation updates.
+ */
 @Composable
-fun WardrobeScreen(onClose: () -> Unit = {}, 
-    petViewModel: com.example.ui.viewmodel.PetViewModel, wellnessViewModel: com.example.ui.viewmodel.WellnessViewModel
+fun WardrobeScreen(
+    onClose: () -> Unit = {},
+    petViewModel: PetViewModel,
+    wellnessViewModel: WellnessViewModel
 ) {
     val petStatus by petViewModel.petStatus.collectAsStateWithLifecycle()
     val memories by wellnessViewModel.allMemories.collectAsStateWithLifecycle()
 
-    val evolutionStageTitle = when (petStatus.level) {
-        1 -> "Sprout Spirit"
-        2 -> "Starlight Orb"
-        3 -> "Harmonic Luminary"
-        4 -> "Celestial Guardian"
-        else -> "Cosmic Oracle"
+    val evolutionStageTitle = remember(petStatus.level) {
+        when (petStatus.level) {
+            1 -> "Sprout Spirit"
+            2 -> "Starlight Orb"
+            3 -> "Harmonic Luminary"
+            4 -> "Celestial Guardian"
+            else -> "Cosmic Oracle"
+        }
     }
 
     LazyColumn(
@@ -83,10 +95,17 @@ fun WardrobeScreen(onClose: () -> Unit = {},
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Header
-        item {
+        item(key = "header") {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                androidx.compose.material3.IconButton(onClick = onClose) {
-                    Icon(imageVector = androidx.compose.material.icons.Icons.Default.Close, contentDescription = "Close", tint = TextPrimary)
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier.testTag("close_wardrobe_button")
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = TextPrimary
+                    )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
@@ -98,14 +117,14 @@ fun WardrobeScreen(onClose: () -> Unit = {},
             }
             Text(
                 text = "Customize 3D shapes, clay skin palettes & review Lumi's memory bank",
-                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.primary,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(start = 56.dp)
             )
         }
-        
+
         // Live Pet Showcase
-        item {
+        item(key = "pet_showcase") {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
                 shape = RoundedCornerShape(24.dp),
@@ -156,14 +175,19 @@ fun WardrobeScreen(onClose: () -> Unit = {},
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    val progress = (petStatus.exp.toFloat() / petStatus.expToNextLevel).coerceIn(0f, 1f)
+                    val progress = remember(petStatus.exp, petStatus.expToNextLevel) {
+                        if (petStatus.expToNextLevel > 0) {
+                            (petStatus.exp.toFloat() / petStatus.expToNextLevel).coerceIn(0f, 1f)
+                        } else 1f
+                    }
+
                     LinearProgressIndicator(
                         progress = { progress },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(8.dp)
                             .clip(CircleShape),
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.primary,
                         trackColor = SurfaceHighlight
                     )
                 }
@@ -171,7 +195,7 @@ fun WardrobeScreen(onClose: () -> Unit = {},
         }
 
         // Stats Grid
-        item {
+        item(key = "stats_grid") {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -194,14 +218,14 @@ fun WardrobeScreen(onClose: () -> Unit = {},
                     title = "Interactions",
                     value = "${petStatus.totalInteractions}",
                     icon = Icons.Default.AutoAwesome,
-                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
             }
         }
 
         // 1. Morphing Shape Customizer (Sphere, Cube, Capsule)
-        item {
+        item(key = "shape_customizer") {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
                 shape = RoundedCornerShape(20.dp),
@@ -210,7 +234,7 @@ fun WardrobeScreen(onClose: () -> Unit = {},
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "3D MORPHING SHAPE",
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
@@ -220,12 +244,15 @@ fun WardrobeScreen(onClose: () -> Unit = {},
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(BloubShape.entries) { shape ->
+                        items(
+                            items = BloubShape.entries,
+                            key = { it.name }
+                        ) { shape ->
                             val isSelected = petStatus.bloubShape == shape
                             Surface(
-                                color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else SurfaceDarkVariant,
+                                color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else SurfaceDarkVariant,
                                 shape = RoundedCornerShape(14.dp),
-                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary) else null,
+                                border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
                                 modifier = Modifier
                                     .clickable { petViewModel.setBloubShape(shape) }
                                     .testTag("shape_${shape.name}")
@@ -238,7 +265,7 @@ fun WardrobeScreen(onClose: () -> Unit = {},
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = shape.displayName,
-                                        color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else TextPrimary,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else TextPrimary,
                                         fontSize = 11.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
@@ -251,7 +278,7 @@ fun WardrobeScreen(onClose: () -> Unit = {},
         }
 
         // 2. Clay Color Palettes
-        item {
+        item(key = "color_customizer") {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
                 shape = RoundedCornerShape(20.dp),
@@ -270,12 +297,15 @@ fun WardrobeScreen(onClose: () -> Unit = {},
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(BloubSkinColor.entries) { skin ->
+                        items(
+                            items = BloubSkinColor.entries,
+                            key = { it.name }
+                        ) { skin ->
                             val isSelected = petStatus.bloubSkinColor == skin
                             Surface(
                                 color = if (isSelected) Color(skin.primaryHex).copy(alpha = 0.25f) else SurfaceDarkVariant,
                                 shape = RoundedCornerShape(14.dp),
-                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, Color(skin.primaryHex)) else null,
+                                border = if (isSelected) BorderStroke(1.5.dp, Color(skin.primaryHex)) else null,
                                 modifier = Modifier
                                     .clickable { petViewModel.setBloubSkinColor(skin) }
                                     .testTag("skin_${skin.name}")
@@ -313,7 +343,7 @@ fun WardrobeScreen(onClose: () -> Unit = {},
         }
 
         // Long Term Memory Vault
-        item {
+        item(key = "memory_header") {
             Text(
                 text = "Lumi's Long-Term Memory Vault",
                 color = TextPrimary,
@@ -323,7 +353,7 @@ fun WardrobeScreen(onClose: () -> Unit = {},
         }
 
         if (memories.isEmpty()) {
-            item {
+            item(key = "memory_empty") {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = SurfaceDark),
                     shape = RoundedCornerShape(16.dp),
@@ -333,7 +363,11 @@ fun WardrobeScreen(onClose: () -> Unit = {},
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(imageVector = Icons.Default.Psychology, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary)
+                        Icon(
+                            imageVector = Icons.Default.Psychology,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = "Lumi remembers your daily habits, preferred meeting times, and productivity rhythms automatically as you chat and interact.",
@@ -344,7 +378,10 @@ fun WardrobeScreen(onClose: () -> Unit = {},
                 }
             }
         } else {
-            items(memories) { mem ->
+            items(
+                items = memories,
+                key = { it.id }
+            ) { mem ->
                 Card(
                     colors = CardDefaults.cardColors(containerColor = SurfaceDarkVariant),
                     shape = RoundedCornerShape(14.dp),
@@ -357,7 +394,7 @@ fun WardrobeScreen(onClose: () -> Unit = {},
                         ) {
                             Text(
                                 text = mem.category.uppercase(),
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -384,7 +421,7 @@ fun WardrobeScreen(onClose: () -> Unit = {},
 private fun StatCard(
     title: String,
     value: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     color: Color,
     modifier: Modifier = Modifier
 ) {
@@ -397,10 +434,24 @@ private fun StatCard(
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp))
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(20.dp)
+            )
             Spacer(modifier = Modifier.height(6.dp))
-            Text(text = value, color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Text(text = title, color = TextSecondary, fontSize = 10.sp)
+            Text(
+                text = value,
+                color = TextPrimary,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = title,
+                color = TextSecondary,
+                fontSize = 10.sp
+            )
         }
     }
 }

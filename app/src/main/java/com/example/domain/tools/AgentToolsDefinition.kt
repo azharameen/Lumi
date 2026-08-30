@@ -5,6 +5,10 @@ import com.example.data.remote.GeminiParametersSchema
 import com.example.data.remote.GeminiPropertySchema
 import com.example.data.remote.GeminiToolWrapper
 
+/**
+ * Formal, enterprise-grade Gemini tool and function declaration catalog.
+ * Provides strict JSON schema parameters for accurate LLM tool calling.
+ */
 object AgentToolsDefinition {
 
     val availableTools: List<GeminiToolWrapper> = listOf(
@@ -168,7 +172,8 @@ object AgentToolsDefinition {
                         properties = mapOf(
                             "repo" to GeminiPropertySchema(type = "STRING", description = "Repository in owner/repo format"),
                             "title" to GeminiPropertySchema(type = "STRING", description = "Issue title"),
-                            "body" to GeminiPropertySchema(type = "STRING", description = "Issue details and specs")
+                            "body" to GeminiPropertySchema(type = "STRING", description = "Issue details and specs"),
+                            "labels" to GeminiPropertySchema(type = "ARRAY", description = "Optional issue labels")
                         ),
                         required = listOf("repo", "title")
                     )

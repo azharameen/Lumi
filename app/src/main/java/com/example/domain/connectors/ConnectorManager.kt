@@ -6,14 +6,28 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+/**
+ * Clean architectural manager for external provider credentials and decoupled connection status.
+ */
 class ConnectorManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("lumi_connectors_prefs", Context.MODE_PRIVATE)
+
+    // Decoupled Contract Statuses
+    private val _googleStatus = MutableStateFlow<ConnectorSyncStatus>(
+        if (prefs.getBoolean("google_connected", false)) ConnectorSyncStatus.Connected else ConnectorSyncStatus.Disconnected
+    )
+    val googleStatus: StateFlow<ConnectorSyncStatus> = _googleStatus.asStateFlow()
 
     private val _googleConnected = MutableStateFlow(prefs.getBoolean("google_connected", false))
     val googleConnected: StateFlow<Boolean> = _googleConnected.asStateFlow()
 
     private val _googleAccount = MutableStateFlow(prefs.getString("google_account", "azharameen52@gmail.com") ?: "azharameen52@gmail.com")
     val googleAccount: StateFlow<String> = _googleAccount.asStateFlow()
+
+    private val _githubStatus = MutableStateFlow<ConnectorSyncStatus>(
+        if (prefs.getBoolean("github_connected", false)) ConnectorSyncStatus.Connected else ConnectorSyncStatus.Disconnected
+    )
+    val githubStatus: StateFlow<ConnectorSyncStatus> = _githubStatus.asStateFlow()
 
     private val _githubConnected = MutableStateFlow(prefs.getBoolean("github_connected", false))
     val githubConnected: StateFlow<Boolean> = _githubConnected.asStateFlow()
@@ -23,6 +37,11 @@ class ConnectorManager(context: Context) {
 
     private val _githubToken = MutableStateFlow(prefs.getString("github_token", "") ?: "")
     val githubToken: StateFlow<String> = _githubToken.asStateFlow()
+
+    private val _slackStatus = MutableStateFlow<ConnectorSyncStatus>(
+        if (prefs.getBoolean("slack_connected", false)) ConnectorSyncStatus.Connected else ConnectorSyncStatus.Disconnected
+    )
+    val slackStatus: StateFlow<ConnectorSyncStatus> = _slackStatus.asStateFlow()
 
     private val _slackConnected = MutableStateFlow(prefs.getBoolean("slack_connected", false))
     val slackConnected: StateFlow<Boolean> = _slackConnected.asStateFlow()
@@ -40,6 +59,12 @@ class ConnectorManager(context: Context) {
             .apply()
         _googleConnected.value = connected
         _googleAccount.value = email
+        _googleStatus.value = if (connected) ConnectorSyncStatus.Connected else ConnectorSyncStatus.Disconnected
+    }
+
+    fun updateGoogleStatus(status: ConnectorSyncStatus) {
+        _googleStatus.value = status
+        _googleConnected.value = status is ConnectorSyncStatus.Connected
     }
 
     fun setGithubConnection(connected: Boolean, user: String, token: String) {
@@ -51,6 +76,12 @@ class ConnectorManager(context: Context) {
         _githubConnected.value = connected
         _githubUser.value = user
         _githubToken.value = token
+        _githubStatus.value = if (connected && token.isNotBlank()) ConnectorSyncStatus.Connected else ConnectorSyncStatus.Disconnected
+    }
+
+    fun updateGithubStatus(status: ConnectorSyncStatus) {
+        _githubStatus.value = status
+        _githubConnected.value = status is ConnectorSyncStatus.Connected
     }
 
     fun setSlackConnection(connected: Boolean, channel: String, webhook: String) {
@@ -62,5 +93,11 @@ class ConnectorManager(context: Context) {
         _slackConnected.value = connected
         _slackChannel.value = channel
         _slackWebhook.value = webhook
+        _slackStatus.value = if (connected && webhook.isNotBlank()) ConnectorSyncStatus.Connected else ConnectorSyncStatus.Disconnected
+    }
+
+    fun updateSlackStatus(status: ConnectorSyncStatus) {
+        _slackStatus.value = status
+        _slackConnected.value = status is ConnectorSyncStatus.Connected
     }
 }

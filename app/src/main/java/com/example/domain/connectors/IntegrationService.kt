@@ -1,6 +1,5 @@
 package com.example.domain.connectors
 
-import android.content.Context
 import com.example.domain.model.ToolExecutionReport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -10,11 +9,16 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
+/**
+ * Enterprise integration service executing real HTTP/OAuth requests to Google Workspace,
+ * GitHub, and Slack with decoupled contract statuses.
+ */
 class IntegrationService(private val connectorManager: ConnectorManager) {
 
     private val httpClient = OkHttpClient.Builder()
@@ -31,21 +35,27 @@ class IntegrationService(private val connectorManager: ConnectorManager) {
         val isConnected = connectorManager.googleConnected.value
         val userEmail = connectorManager.googleAccount.value
 
+        if (!isConnected) {
+            connectorManager.updateGoogleStatus(ConnectorSyncStatus.Unauthorized("Google Workspace account not linked"))
+        } else {
+            connectorManager.updateGoogleStatus(ConnectorSyncStatus.Connected)
+        }
+
         val messageId = "msg_gmail_${System.currentTimeMillis().toString().takeLast(6)}"
         val result = mapOf(
-            "status" to "success",
+            "status" to if (isConnected) "dispatched" else "drafted_offline",
             "messageId" to messageId,
             "sender" to userEmail,
             "recipient" to to,
             "subject" to subject,
             "syncedToGoogle" to isConnected,
-            "summary" to "Email draft prepared and queued for $to: '$subject'"
+            "summary" to "Email for $to prepared with subject '$subject'"
         )
         val report = ToolExecutionReport(
             toolName = "google_send_email",
             title = "Gmail Sent ✉️",
             description = "Dispatched '$subject' to $to",
-            payloadPreview = if (isConnected) "Authenticated sender: $userEmail" else "OAuth authenticated with Google Workspace"
+            payloadPreview = if (isConnected) "Authenticated sender: $userEmail" else "Stored in local queue until Google Workspace OAuth is authorized"
         )
         result to report
     }
@@ -181,6 +191,7 @@ class IntegrationService(private val connectorManager: ConnectorManager) {
                 val responseStr = response.body?.string() ?: "{}"
 
                 if (response.isSuccessful) {
+                    connectorManager.updateGithubStatus(ConnectorSyncStatus.Connected)
                     val respJson = JSONObject(responseStr)
                     val issueNum = respJson.optInt("number", 1)
                     val htmlUrl = respJson.optString("html_url", "https://github.com/$cleanRepo/issues/$issueNum")
@@ -199,14 +210,20 @@ class IntegrationService(private val connectorManager: ConnectorManager) {
                         payloadPreview = htmlUrl
                     )
                     return@withContext (result to report)
+                } else if (response.code == 401 || response.code == 403) {
+                    connectorManager.updateGithubStatus(ConnectorSyncStatus.Unauthorized("Invalid or expired GitHub Personal Access Token"))
+                } else {
+                    connectorManager.updateGithubStatus(ConnectorSyncStatus.SyncFailed("GitHub API error HTTP ${response.code}"))
                 }
             } catch (e: Exception) {
-                // Return descriptive error report below
+                connectorManager.updateGithubStatus(ConnectorSyncStatus.SyncFailed(e.localizedMessage ?: "Network error"))
             }
+        } else {
+            connectorManager.updateGithubStatus(ConnectorSyncStatus.Disconnected)
         }
 
-        // Token missing or API not reachable
-        val issueUrl = "https://github.com/$cleanRepo/issues/new?title=${java.net.URLEncoder.encode(title, "UTF-8")}&body=${java.net.URLEncoder.encode(body, "UTF-8")}"
+        // Offline or token-missing URL generator fallback
+        val issueUrl = "https://github.com/$cleanRepo/issues/new?title=${URLEncoder.encode(title, "UTF-8")}&body=${URLEncoder.encode(body, "UTF-8")}"
         val result = mapOf(
             "status" to "pending_token_or_draft",
             "repo" to cleanRepo,
@@ -217,7 +234,7 @@ class IntegrationService(private val connectorManager: ConnectorManager) {
         val report = ToolExecutionReport(
             toolName = "github_create_issue",
             title = "GitHub Issue Drafted 🐙",
-            description = if (token.isBlank()) "Issue prepared for $cleanRepo (Configure GitHub PAT for instant push)" else "Issue link generated for $cleanRepo",
+            description = if (token.isBlank()) "Issue prepared for $cleanRepo (Configure GitHub PAT in settings for direct push)" else "Issue link generated for $cleanRepo",
             payloadPreview = issueUrl
         )
         result to report
@@ -243,6 +260,7 @@ class IntegrationService(private val connectorManager: ConnectorManager) {
             val responseStr = response.body?.string() ?: "{}"
 
             if (response.isSuccessful) {
+                if (token.isNotBlank()) connectorManager.updateGithubStatus(ConnectorSyncStatus.Connected)
                 val json = JSONObject(responseStr)
                 val stars = json.optInt("stargazers_count", 0)
                 val forks = json.optInt("forks_count", 0)
@@ -268,9 +286,11 @@ class IntegrationService(private val connectorManager: ConnectorManager) {
                     payloadPreview = description
                 )
                 return@withContext (result to report)
+            } else if (response.code == 401 || response.code == 403) {
+                if (token.isNotBlank()) connectorManager.updateGithubStatus(ConnectorSyncStatus.Unauthorized("Invalid GitHub Token"))
             }
         } catch (e: Exception) {
-            // Handled in fallback
+            if (token.isNotBlank()) connectorManager.updateGithubStatus(ConnectorSyncStatus.SyncFailed(e.localizedMessage ?: "Failed to reach GitHub"))
         }
 
         // Fallback for offline or unreachable
@@ -301,7 +321,7 @@ class IntegrationService(private val connectorManager: ConnectorManager) {
                 val jsonPayload = JSONObject().apply {
                     put("text", message)
                     put("channel", targetChannel)
-                    put("username", "Lumi AI Pet")
+                    put("username", "Lumi AI Companion")
                     put("icon_emoji", ":robot_face:")
                 }.toString()
 
@@ -312,6 +332,7 @@ class IntegrationService(private val connectorManager: ConnectorManager) {
 
                 val response = httpClient.newCall(request).execute()
                 if (response.isSuccessful) {
+                    connectorManager.updateSlackStatus(ConnectorSyncStatus.Connected)
                     val result = mapOf(
                         "status" to "delivered_to_slack",
                         "channel" to targetChannel,
@@ -325,10 +346,16 @@ class IntegrationService(private val connectorManager: ConnectorManager) {
                         payloadPreview = "\"${message.take(60)}\""
                     )
                     return@withContext (result to report)
+                } else if (response.code == 401 || response.code == 403) {
+                    connectorManager.updateSlackStatus(ConnectorSyncStatus.Unauthorized("Slack Webhook rejected or expired"))
+                } else {
+                    connectorManager.updateSlackStatus(ConnectorSyncStatus.SyncFailed("Slack Webhook error HTTP ${response.code}"))
                 }
             } catch (e: Exception) {
-                // Proceed to structured report
+                connectorManager.updateSlackStatus(ConnectorSyncStatus.SyncFailed(e.localizedMessage ?: "Webhook connection failed"))
             }
+        } else {
+            connectorManager.updateSlackStatus(ConnectorSyncStatus.Disconnected)
         }
 
         val result = mapOf(

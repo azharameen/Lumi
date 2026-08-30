@@ -155,6 +155,52 @@ fun PrivacyAndVaultSection(
         contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Floating Overlay Settings
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Floating Companion Overlay",
+                        color = LumiPink,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                            Icon(Icons.Default.Layers, contentDescription = null, tint = LumiPink, modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("Lumi Floating Pet", color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("Keep Lumi active on screen over other apps", color = TextSecondary, fontSize = 12.sp)
+                            }
+                        }
+
+                        Switch(
+                            checked = isOverlayEnabled,
+                            onCheckedChange = onToggleOverlay,
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = ObsidianDark,
+                                checkedTrackColor = LumiPink,
+                                uncheckedThumbColor = TextTertiary,
+                                uncheckedTrackColor = SurfaceDarkVariant
+                            )
+                        )
+                    }
+                }
+            }
+        }
+
         // Security & Biometric Lock
         item {
             Card(

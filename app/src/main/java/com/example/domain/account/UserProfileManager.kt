@@ -52,6 +52,7 @@ class UserProfileManager(context: Context) {
             enableHapticFeedback = prefs.getBoolean("enable_haptic_feedback", true),
             enableAmbientLocation = prefs.getBoolean("enable_ambient_location", true),
             enableLocalAiFallback = prefs.getBoolean("enable_local_ai_fallback", true),
+            enableOverlay = prefs.getBoolean("enable_overlay", true),
             hasCompletedOnboarding = prefs.getBoolean("has_completed_onboarding", false)
         )
     }
@@ -120,6 +121,7 @@ class UserProfileManager(context: Context) {
             .putBoolean("enable_haptic_feedback", profile.enableHapticFeedback)
             .putBoolean("enable_ambient_location", profile.enableAmbientLocation)
             .putBoolean("enable_local_ai_fallback", profile.enableLocalAiFallback)
+            .putBoolean("enable_overlay", profile.enableOverlay)
             .putBoolean("has_completed_onboarding", profile.hasCompletedOnboarding)
             .apply()
 

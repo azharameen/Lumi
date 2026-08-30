@@ -116,6 +116,11 @@ class LumiViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
         }
+        viewModelScope.launch {
+            userProfile.collect { profile ->
+                _uiState.update { it.copy(isOverlayEnabled = profile.enableOverlay) }
+            }
+        }
         
     }
 
@@ -129,7 +134,12 @@ class LumiViewModel(application: Application) : AndroidViewModel(application) {
     fun setShowCamera(show: Boolean) { _uiState.value = _uiState.value.copy(showCameraDialog = show) }
     fun setShowBreathing(show: Boolean) { _uiState.value = _uiState.value.copy(showBreathingDialog = show) }
     fun setShowOverlayPermission(show: Boolean) { _uiState.value = _uiState.value.copy(showOverlayPermissionDialog = show) }
-    fun setOverlayEnabled(enabled: Boolean) { _uiState.value = _uiState.value.copy(isOverlayEnabled = enabled) }
+    fun setOverlayEnabled(enabled: Boolean) { 
+        _uiState.value = _uiState.value.copy(isOverlayEnabled = enabled) 
+        viewModelScope.launch {
+            userProfileManager.updateField { it.copy(enableOverlay = enabled) }
+        }
+    }
     fun toggleVoiceOutput() { _uiState.value = _uiState.value.copy(isTtsVoiceOutputEnabled = !_uiState.value.isTtsVoiceOutputEnabled) }
     fun dismissClipboardSnippet() { _uiState.value = _uiState.value.copy(detectedClipboardText = null) }
     fun dismissSharedBanner() { _uiState.value = _uiState.value.copy(sharedIncomingBanner = null) }

@@ -84,6 +84,7 @@ data class UserProfileData(
     val enableHapticFeedback: Boolean = true,
     val enableAmbientLocation: Boolean = true,
     val enableLocalAiFallback: Boolean = true,
+    val enableOverlay: Boolean = true,
     val hasCompletedOnboarding: Boolean = false
 )
 

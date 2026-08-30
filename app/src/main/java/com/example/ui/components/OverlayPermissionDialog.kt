@@ -93,19 +93,20 @@ fun OverlayPermissionDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
                         val intent = Intent(
                             Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                             Uri.parse("package:${context.packageName}")
                         )
                         context.startActivity(intent)
+                    } else {
+                        onGranted()
                     }
-                    onDismiss()
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = LumiCyan, contentColor = ObsidianDark),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Open Settings", fontWeight = FontWeight.Bold)
+                Text("Continue", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

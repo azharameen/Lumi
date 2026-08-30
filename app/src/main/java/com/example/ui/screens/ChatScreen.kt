@@ -52,10 +52,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entity.ChatMessageEntity
 import com.example.ui.components.VoiceWaveformVisualizer
-import com.example.ui.theme.LumiCyan
+
 import com.example.ui.theme.LumiGreen
 import com.example.ui.theme.LumiPink
-import com.example.ui.theme.LumiViolet
+
 import com.example.ui.theme.ObsidianDark
 import com.example.ui.theme.SlateDark
 import com.example.ui.theme.SurfaceDark
@@ -63,21 +63,26 @@ import com.example.ui.theme.SurfaceDarkVariant
 import com.example.ui.theme.SurfaceHighlight
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
-import com.example.ui.viewmodel.LumiViewModel
+
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 @Composable
 fun ChatScreen(
-    viewModel: LumiViewModel
+    uiState: com.example.ui.viewmodel.LumiUiState,
+    petStatus: com.example.domain.model.PetStatus,
+    chatMessages: List<com.example.data.local.entity.ChatMessageEntity>,
+    isListening: Boolean,
+    isSpeaking: Boolean,
+    onSendMessage: (String) -> Unit,
+    onSetInputText: (String) -> Unit,
+    onShowCamera: () -> Unit,
+    onStartVoiceListening: () -> Unit,
+    onStopVoiceListening: () -> Unit,
+    onToggleVoiceOutput: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val chatMessages by viewModel.chatMessages.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
-    val isListening by viewModel.voiceEngine.isListening.collectAsState()
-    val isSpeaking by viewModel.voiceEngine.isSpeaking.collectAsState()
-    val audioLevel by viewModel.voiceEngine.audioWaveformLevel.collectAsState()
-    val petStatus by viewModel.petStatus.collectAsState()
 
     val listState = rememberLazyListState()
 
@@ -117,7 +122,7 @@ fun ChatScreen(
                     Box(
                         modifier = Modifier
                             .size(38.dp)
-                            .background(LumiCyan.copy(alpha = 0.2f), CircleShape),
+                            .background(androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f), CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(text = "✨", fontSize = 18.sp)
@@ -132,7 +137,7 @@ fun ChatScreen(
                         )
                         Text(
                             text = if (petStatus.isThinking) "Thinking deeply..." else petStatus.currentEmotion.displayName,
-                            color = LumiCyan,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             fontSize = 11.sp
                         )
                     }
@@ -140,13 +145,13 @@ fun ChatScreen(
 
                 // Voice output toggle
                 IconButton(
-                    onClick = { viewModel.toggleVoiceOutput() },
+                    onClick = { onToggleVoiceOutput() },
                     modifier = Modifier.testTag("toggle_voice_output")
                 ) {
                     Icon(
                         imageVector = if (uiState.isTtsVoiceOutputEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
                         contentDescription = "Voice Toggle",
-                        tint = if (uiState.isTtsVoiceOutputEnabled) LumiCyan else TextSecondary
+                        tint = if (uiState.isTtsVoiceOutputEnabled) androidx.compose.material3.MaterialTheme.colorScheme.primary else TextSecondary
                     )
                 }
             }
@@ -179,7 +184,7 @@ fun ChatScreen(
             ) {
                 VoiceWaveformVisualizer(
                     isActive = true,
-                    audioLevel = audioLevel
+                    audioLevel = 0f
                 )
             }
         }
@@ -196,11 +201,11 @@ fun ChatScreen(
                 Surface(
                     color = SurfaceDarkVariant,
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.clickable { viewModel.sendMessage(prompt) }
+                    modifier = Modifier.clickable { onSendMessage(prompt) }
                 ) {
                     Text(
                         text = prompt,
-                        color = LumiCyan,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                     )
@@ -223,20 +228,20 @@ fun ChatScreen(
             ) {
                 // Camera Vision
                 IconButton(
-                    onClick = { viewModel.setShowCamera(true) },
+                    onClick = { onShowCamera() },
                     modifier = Modifier.testTag("chat_camera_button")
                 ) {
                     Icon(
                         imageVector = Icons.Default.CameraAlt,
                         contentDescription = "Camera Vision",
-                        tint = LumiCyan
+                        tint = androidx.compose.material3.MaterialTheme.colorScheme.primary
                     )
                 }
 
                 // Voice Mic
                 IconButton(
                     onClick = {
-                        if (isListening) viewModel.stopVoiceListening() else viewModel.startVoiceListening()
+                        if (isListening) onStopVoiceListening() else onStartVoiceListening()
                     },
                     modifier = Modifier
                         .background(if (isListening) LumiPink else Color.Transparent, CircleShape)
@@ -245,7 +250,7 @@ fun ChatScreen(
                     Icon(
                         imageVector = if (isListening) Icons.Default.MicOff else Icons.Default.Mic,
                         contentDescription = "Voice Input",
-                        tint = if (isListening) ObsidianDark else LumiViolet
+                        tint = if (isListening) ObsidianDark else androidx.compose.material3.MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -253,10 +258,10 @@ fun ChatScreen(
 
                 OutlinedTextField(
                     value = uiState.inputText,
-                    onValueChange = { viewModel.setInputText(it) },
+                    onValueChange = { onSetInputText(it) },
                     placeholder = { Text("Ask Lumi anything...", color = TextSecondary, fontSize = 13.sp) },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = LumiCyan,
+                        focusedBorderColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = SurfaceHighlight,
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
@@ -274,11 +279,11 @@ fun ChatScreen(
                     onClick = {
                         val text = uiState.inputText
                         if (text.isNotBlank()) {
-                            viewModel.sendMessage(text)
+                            onSendMessage(text)
                         }
                     },
                     modifier = Modifier
-                        .background(LumiCyan, CircleShape)
+                        .background(androidx.compose.material3.MaterialTheme.colorScheme.primary, CircleShape)
                         .testTag("chat_send_button")
                 ) {
                     Icon(
@@ -308,16 +313,16 @@ fun ChatMessageBubble(message: ChatMessageEntity) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 4.dp)
             ) {
-                Text(text = "Lumi", color = LumiCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Lumi", color = androidx.compose.material3.MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.width(6.dp))
                 message.petEmotion.let { emo ->
                     Surface(
-                        color = LumiViolet.copy(alpha = 0.2f),
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
                         shape = RoundedCornerShape(4.dp)
                     ) {
                         Text(
                             text = emo,
-                            color = LumiViolet,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             fontSize = 9.sp,
                             modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                         )
@@ -325,12 +330,12 @@ fun ChatMessageBubble(message: ChatMessageEntity) {
                 }
                 Spacer(modifier = Modifier.width(6.dp))
                 Surface(
-                    color = if (isGemmaOnDevice) LumiGreen.copy(alpha = 0.15f) else LumiCyan.copy(alpha = 0.15f),
+                    color = if (isGemmaOnDevice) LumiGreen.copy(alpha = 0.15f) else androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                     shape = RoundedCornerShape(4.dp)
                 ) {
                     Text(
                         text = if (isGemmaOnDevice) "⚡ Gemma 2B (Local)" else "☁️ Gemini 2.5 Flash",
-                        color = if (isGemmaOnDevice) LumiGreen else LumiCyan,
+                        color = if (isGemmaOnDevice) LumiGreen else androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
@@ -340,7 +345,7 @@ fun ChatMessageBubble(message: ChatMessageEntity) {
         }
 
         Surface(
-            color = if (isUser) LumiViolet else SurfaceDarkVariant,
+            color = if (isUser) androidx.compose.material3.MaterialTheme.colorScheme.primary else SurfaceDarkVariant,
             shape = RoundedCornerShape(
                 topStart = 16.dp,
                 topEnd = 16.dp,
@@ -357,7 +362,7 @@ fun ChatMessageBubble(message: ChatMessageEntity) {
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(imageVector = Icons.Default.CameraAlt, contentDescription = null, tint = LumiCyan, modifier = Modifier.size(14.dp))
+                        Icon(imageVector = Icons.Default.CameraAlt, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(text = "Captured Image Shared", color = TextPrimary, fontSize = 11.sp)
                     }
@@ -391,7 +396,7 @@ fun ChatMessageBubble(message: ChatMessageEntity) {
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = message.toolResultJson ?: message.toolUsedName,
-                                color = LumiCyan,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Medium
                             )

@@ -46,18 +46,18 @@ import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.SurfaceDarkVariant
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
-import com.example.ui.viewmodel.LumiViewModel
+
 
 @Composable
 fun ProactiveDailyBriefingCard(
-    viewModel: LumiViewModel,
+    briefing: com.example.domain.briefing.DailyBriefing?,
+    onSpeakBriefing: () -> Unit,
     onNavigateToChat: (String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val dailyBriefing by viewModel.dailyBriefing.collectAsState()
-    var isExpanded by remember { mutableStateOf(false) }
+        var isExpanded by remember { mutableStateOf(false) }
 
-    val briefing = dailyBriefing ?: return
+    val dailyBriefing = briefing ?: return
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -104,13 +104,13 @@ fun ProactiveDailyBriefingCard(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = briefing.title,
+                                text = dailyBriefing.title,
                                 color = LumiGold,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = briefing.greeting,
+                                text = dailyBriefing.greeting,
                                 color = TextPrimary,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
@@ -120,7 +120,7 @@ fun ProactiveDailyBriefingCard(
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(
-                            onClick = { viewModel.speakBriefing() },
+                            onClick = { onSpeakBriefing() },
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
@@ -147,7 +147,7 @@ fun ProactiveDailyBriefingCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = briefing.focusGoal,
+                    text = dailyBriefing.focusGoal,
                     color = TextPrimary.copy(alpha = 0.9f),
                     fontSize = 13.sp,
                     lineHeight = 18.sp
@@ -166,7 +166,7 @@ fun ProactiveDailyBriefingCard(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        briefing.highlights.forEach { item ->
+                        dailyBriefing.highlights.forEach { item ->
                             Surface(
                                 color = SurfaceDarkVariant.copy(alpha = 0.6f),
                                 shape = RoundedCornerShape(8.dp),
@@ -188,7 +188,7 @@ fun ProactiveDailyBriefingCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    onNavigateToChat("Let's focus on: ${briefing.recommendedAction}")
+                                    onNavigateToChat("Let's focus on: ${dailyBriefing.recommendedAction}")
                                 }
                         ) {
                             Row(
@@ -203,7 +203,7 @@ fun ProactiveDailyBriefingCard(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = briefing.recommendedAction,
+                                    text = dailyBriefing.recommendedAction,
                                     color = TextPrimary,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium

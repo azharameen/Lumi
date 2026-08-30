@@ -55,7 +55,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,12 +76,12 @@ import com.example.data.remote.AiRoutingMode
 import com.example.domain.ai.AiModelRegistry
 import com.example.domain.ai.AiTaskCategory
 import com.example.domain.ai.ModelSpec
-import com.example.ui.theme.LumiCyan
+
 import com.example.ui.theme.LumiGold
 import com.example.ui.theme.LumiGreen
 import com.example.ui.theme.LumiMint
 import com.example.ui.theme.LumiPink
-import com.example.ui.theme.LumiViolet
+
 import com.example.ui.theme.LumiYellow
 import com.example.ui.theme.ObsidianDark
 import com.example.ui.theme.SurfaceDark
@@ -100,9 +100,9 @@ fun AiAnalyticsScreen(
     viewModel: LumiViewModel,
     modifier: Modifier = Modifier
 ) {
-    val logs by viewModel.aiExecutionLogs.collectAsState()
-    val routingMode by viewModel.aiRoutingMode.collectAsState()
-    val benchmarkStatus by viewModel.benchmarkStatus.collectAsState()
+    val logs by viewModel.aiExecutionLogs.collectAsStateWithLifecycle()
+    val routingMode by viewModel.aiRoutingMode.collectAsStateWithLifecycle()
+    val benchmarkStatus by viewModel.benchmarkStatus.collectAsStateWithLifecycle()
 
     var selectedFilterEngine by remember { mutableStateOf("ALL") }
     var showClearDialog by remember { mutableStateOf(false) }
@@ -151,7 +151,7 @@ fun AiAnalyticsScreen(
                         Icon(
                             imageVector = Icons.Default.Hub,
                             contentDescription = "Analytics",
-                            tint = LumiCyan,
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -212,13 +212,13 @@ fun AiAnalyticsScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.AltRoute,
                                 contentDescription = null,
-                                tint = LumiCyan,
+                                tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = if (showRoutingMatrix) "Hide Matrix" else "Routing Matrix",
-                                color = LumiCyan,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 fontSize = 11.sp
                             )
                         }
@@ -235,7 +235,7 @@ fun AiAnalyticsScreen(
                             subtitle = "Auto Routing",
                             icon = Icons.Default.Bolt,
                             isSelected = routingMode == AiRoutingMode.HYBRID_AUTO,
-                            selectedColor = LumiCyan,
+                            selectedColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f),
                             onClick = { viewModel.setAiRoutingMode(AiRoutingMode.HYBRID_AUTO) }
                         )
@@ -255,7 +255,7 @@ fun AiAnalyticsScreen(
                             subtitle = "Gemini Flash/Pro",
                             icon = Icons.Default.Cloud,
                             isSelected = routingMode == AiRoutingMode.CLOUD_TURBO,
-                            selectedColor = LumiViolet,
+                            selectedColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f),
                             onClick = { viewModel.setAiRoutingMode(AiRoutingMode.CLOUD_TURBO) }
                         )
@@ -277,7 +277,7 @@ fun AiAnalyticsScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.AltRoute,
                                 contentDescription = null,
-                                tint = LumiCyan,
+                                tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
@@ -354,7 +354,7 @@ fun AiAnalyticsScreen(
                         title = "Total Invocations",
                         value = "$totalInvocations runs",
                         subValue = "⚡ $onDeviceCount Local | ☁️ $cloudCount Cloud" + if (fallbackCount > 0) " | 🔄 $fallbackCount Fallbacks" else "",
-                        accentColor = LumiCyan,
+                        accentColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         icon = Icons.Default.Memory,
                         modifier = Modifier.weight(1f)
                     )
@@ -455,7 +455,7 @@ fun AiAnalyticsScreen(
                         Icon(
                             imageVector = Icons.Default.PlayArrow,
                             contentDescription = "Benchmark",
-                            tint = LumiCyan,
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -516,8 +516,8 @@ fun AiAnalyticsScreen(
                             onClick = { selectedFilterEngine = "ALL" },
                             label = { Text("All (${logs.size})") },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = LumiCyan.copy(alpha = 0.2f),
-                                selectedLabelColor = LumiCyan
+                                selectedContainerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                selectedLabelColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
                             )
                         )
                     }
@@ -538,8 +538,8 @@ fun AiAnalyticsScreen(
                             onClick = { selectedFilterEngine = "CLOUD_GEMINI" },
                             label = { Text("☁️ Gemini Cloud ($cloudCount)") },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = LumiViolet.copy(alpha = 0.2f),
-                                selectedLabelColor = LumiViolet
+                                selectedContainerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                                selectedLabelColor = androidx.compose.material3.MaterialTheme.colorScheme.primary
                             )
                         )
                     }
@@ -629,7 +629,7 @@ private fun RoutingMatrixRow(
     reason: String,
     isLocal: Boolean
 ) {
-    val color = if (isLocal) LumiGreen else LumiViolet
+    val color = if (isLocal) LumiGreen else androidx.compose.material3.MaterialTheme.colorScheme.primary
     Surface(
         color = SurfaceDark,
         shape = RoundedCornerShape(10.dp),
@@ -668,7 +668,7 @@ private fun RoutingMatrixRow(
 @Composable
 private fun ModelRegistryItem(model: ModelSpec) {
     val isLocal = model.isOfflineCapable
-    val accent = if (isLocal) LumiGreen else LumiCyan
+    val accent = if (isLocal) LumiGreen else androidx.compose.material3.MaterialTheme.colorScheme.primary
 
     Surface(
         color = SurfaceDarkVariant,
@@ -816,7 +816,7 @@ private fun MetricSummaryCard(
 @Composable
 private fun AiExecutionLogCard(log: AiExecutionLogEntity) {
     val isOnDevice = log.engineType == "ON_DEVICE_GEMMA"
-    val engineColor = if (isOnDevice) LumiGreen else LumiViolet
+    val engineColor = if (isOnDevice) LumiGreen else androidx.compose.material3.MaterialTheme.colorScheme.primary
     val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault()) }
     val startTimeFormatted = remember(log.startTimeMillis) { dateFormat.format(Date(log.startTimeMillis)) }
     val finishTimeFormatted = remember(log.finishTimeMillis) { dateFormat.format(Date(log.finishTimeMillis)) }
@@ -836,12 +836,12 @@ private fun AiExecutionLogCard(log: AiExecutionLogEntity) {
                 // Task Category & Model
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
-                        color = LumiCyan.copy(alpha = 0.15f),
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
                             text = log.taskCategory,
-                            color = LumiCyan,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -916,13 +916,13 @@ private fun AiExecutionLogCard(log: AiExecutionLogEntity) {
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = null,
-                        tint = LumiCyan,
+                        tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(12.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = log.routingReason,
-                        color = LumiCyan,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium
                     )

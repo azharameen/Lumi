@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -70,8 +70,8 @@ fun PetOverlayRoot(
 ) {
     val coroutineScope = rememberCoroutineScope()
 
-    val petStatus by repository.petStatus.collectAsState(
-        initial = PetStatus(
+    val petStatus by repository.petStatus.collectAsStateWithLifecycle(
+        initialValue = PetStatus(
             name = "Lumi",
             level = 1,
             exp = 0,
@@ -80,8 +80,8 @@ fun PetOverlayRoot(
             currentEmotion = PetEmotion.HAPPY
         )
     )
-    val tasks by repository.allTasks.collectAsState(initial = emptyList())
-    val messages by repository.chatMessages.collectAsState(initial = emptyList())
+    val tasks by repository.allTasks.collectAsStateWithLifecycle(initialValue = emptyList())
+    val messages by repository.chatMessages.collectAsStateWithLifecycle(initialValue = emptyList())
 
     // UI Expansion and active tab state
     var isHubExpanded by remember { mutableStateOf(false) }

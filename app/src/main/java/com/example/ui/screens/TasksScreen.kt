@@ -41,7 +41,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,10 +56,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entity.TaskEntity
 import com.example.ui.theme.LumiCoral
-import com.example.ui.theme.LumiCyan
+
 import com.example.ui.theme.LumiGold
 import com.example.ui.theme.LumiMint
-import com.example.ui.theme.LumiViolet
+
 import com.example.ui.theme.LumiYellow
 import com.example.ui.theme.ObsidianDark
 import com.example.ui.theme.SurfaceDark
@@ -74,7 +74,7 @@ fun TasksScreen(
     viewModel: LumiViewModel,
     onNavigateToChat: () -> Unit
 ) {
-    val tasks by viewModel.allTasks.collectAsState()
+    val tasks by viewModel.allTasks.collectAsStateWithLifecycle()
     var selectedCategory by remember { mutableStateOf("All") }
     var showAddTaskDialog by remember { mutableStateOf(false) }
 
@@ -121,7 +121,7 @@ fun TasksScreen(
                     }
 
                     Surface(
-                        color = LumiViolet.copy(alpha = 0.15f),
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.clickable {
                             viewModel.sendMessage("Review my current tasks list and prioritize them by urgency and impact with actionable time blocks")
@@ -135,13 +135,13 @@ fun TasksScreen(
                             Icon(
                                 imageVector = Icons.Default.AutoAwesome,
                                 contentDescription = null,
-                                tint = LumiViolet,
+                                tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "Lumi Prioritize",
-                                color = LumiViolet,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -159,7 +159,7 @@ fun TasksScreen(
                     items(categories) { cat ->
                         val isSelected = selectedCategory == cat
                         Surface(
-                            color = if (isSelected) LumiCyan else SurfaceDark,
+                            color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else SurfaceDark,
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.clickable { selectedCategory = cat }
                         ) {
@@ -266,7 +266,7 @@ fun TaskCard(
                 checked = task.isCompleted,
                 onCheckedChange = onToggle,
                 colors = CheckboxDefaults.colors(
-                    checkedColor = LumiCyan,
+                    checkedColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                     uncheckedColor = TextSecondary
                 ),
                 modifier = Modifier.testTag("task_checkbox_${task.id}")
@@ -415,7 +415,7 @@ fun AddTaskDialog(
                     items(categories) { cat ->
                         val isSelected = category == cat
                         Surface(
-                            color = if (isSelected) LumiCyan else SurfaceHighlight,
+                            color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else SurfaceHighlight,
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.clickable { category = cat }
                         ) {

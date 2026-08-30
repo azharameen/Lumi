@@ -48,7 +48,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,12 +64,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.domain.connectors.ConnectorManager
 import com.example.domain.connectors.IntegrationProviderType
-import com.example.ui.theme.LumiCyan
+
 import com.example.ui.theme.LumiGold
 import com.example.ui.theme.LumiGreen
 import com.example.ui.theme.LumiMint
 import com.example.ui.theme.LumiPink
-import com.example.ui.theme.LumiViolet
+
 import com.example.ui.theme.ObsidianDark
 import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.SurfaceDarkVariant
@@ -86,16 +86,16 @@ fun IntegrationsScreen(
     val context = LocalContext.current
     val connectorManager = remember { ConnectorManager(context) }
 
-    val isGoogleConnected by connectorManager.googleConnected.collectAsState()
-    val googleEmail by connectorManager.googleAccount.collectAsState()
+    val isGoogleConnected by connectorManager.googleConnected.collectAsStateWithLifecycle()
+    val googleEmail by connectorManager.googleAccount.collectAsStateWithLifecycle()
 
-    val isGithubConnected by connectorManager.githubConnected.collectAsState()
-    val githubUser by connectorManager.githubUser.collectAsState()
-    val githubToken by connectorManager.githubToken.collectAsState()
+    val isGithubConnected by connectorManager.githubConnected.collectAsStateWithLifecycle()
+    val githubUser by connectorManager.githubUser.collectAsStateWithLifecycle()
+    val githubToken by connectorManager.githubToken.collectAsStateWithLifecycle()
 
-    val isSlackConnected by connectorManager.slackConnected.collectAsState()
-    val slackChannel by connectorManager.slackChannel.collectAsState()
-    val slackWebhook by connectorManager.slackWebhook.collectAsState()
+    val isSlackConnected by connectorManager.slackConnected.collectAsStateWithLifecycle()
+    val slackChannel by connectorManager.slackChannel.collectAsStateWithLifecycle()
+    val slackWebhook by connectorManager.slackWebhook.collectAsStateWithLifecycle()
 
     var showGithubDialog by remember { mutableStateOf(false) }
     var showSlackDialog by remember { mutableStateOf(false) }
@@ -123,7 +123,7 @@ fun IntegrationsScreen(
                 Icon(
                     imageVector = Icons.Default.Hub,
                     contentDescription = "Integrations",
-                    tint = LumiCyan,
+                    tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -168,13 +168,13 @@ fun IntegrationsScreen(
                         ConnectorMiniBadge(
                             name = "Google",
                             isConnected = isGoogleConnected,
-                            color = LumiCyan,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
                         )
                         ConnectorMiniBadge(
                             name = "GitHub",
                             isConnected = isGithubConnected,
-                            color = LumiViolet,
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f)
                         )
                         ConnectorMiniBadge(
@@ -206,13 +206,13 @@ fun IntegrationsScreen(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(LumiCyan.copy(alpha = 0.15f)),
+                                    .background(androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Email,
                                     contentDescription = "Google",
-                                    tint = LumiCyan,
+                                    tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -238,8 +238,8 @@ fun IntegrationsScreen(
                                 connectorManager.setGoogleConnection(checked, "azharameen52@gmail.com")
                             },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = LumiCyan,
-                                checkedTrackColor = LumiCyan.copy(alpha = 0.3f)
+                                checkedThumbColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
                             ),
                             modifier = Modifier.testTag("toggle_google_oauth")
                         )
@@ -249,7 +249,7 @@ fun IntegrationsScreen(
 
                     if (isGoogleConnected) {
                         Surface(
-                            color = LumiCyan.copy(alpha = 0.1f),
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -260,7 +260,7 @@ fun IntegrationsScreen(
                                 Icon(
                                     imageVector = Icons.Default.CheckCircle,
                                     contentDescription = null,
-                                    tint = LumiCyan,
+                                    tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -284,7 +284,7 @@ fun IntegrationsScreen(
                             onClick = {
                                 connectorManager.setGoogleConnection(true, "azharameen52@gmail.com")
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = LumiCyan),
+                            colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -335,13 +335,13 @@ fun IntegrationsScreen(
                                 modifier = Modifier
                                     .size(36.dp)
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(LumiViolet.copy(alpha = 0.15f)),
+                                    .background(androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Code,
                                     contentDescription = "GitHub",
-                                    tint = LumiViolet,
+                                    tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -371,8 +371,8 @@ fun IntegrationsScreen(
                                 }
                             },
                             colors = SwitchDefaults.colors(
-                                checkedThumbColor = LumiViolet,
-                                checkedTrackColor = LumiViolet.copy(alpha = 0.3f)
+                                checkedThumbColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                checkedTrackColor = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
                             ),
                             modifier = Modifier.testTag("toggle_github_connector")
                         )
@@ -382,7 +382,7 @@ fun IntegrationsScreen(
 
                     if (isGithubConnected) {
                         Surface(
-                            color = LumiViolet.copy(alpha = 0.1f),
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -395,7 +395,7 @@ fun IntegrationsScreen(
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
                                         contentDescription = null,
-                                        tint = LumiViolet,
+                                        tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -411,14 +411,14 @@ fun IntegrationsScreen(
                                     onClick = { showGithubDialog = true },
                                     contentPadding = PaddingValues(horizontal = 6.dp)
                                 ) {
-                                    Text("Configure", color = LumiViolet, fontSize = 11.sp)
+                                    Text("Configure", color = androidx.compose.material3.MaterialTheme.colorScheme.primary, fontSize = 11.sp)
                                 }
                             }
                         }
                     } else {
                         Button(
                             onClick = { showGithubDialog = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = LumiViolet),
+                            colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -603,7 +603,7 @@ fun IntegrationsScreen(
                         placeholder = { Text("e.g. azharameen") },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = LumiViolet,
+                            focusedBorderColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = SurfaceDarkVariant,
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary
@@ -617,7 +617,7 @@ fun IntegrationsScreen(
                         placeholder = { Text("ghp_****************") },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = LumiViolet,
+                            focusedBorderColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = SurfaceDarkVariant,
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary
@@ -633,7 +633,7 @@ fun IntegrationsScreen(
                         connectorManager.setGithubConnection(true, user, inputGithubToken)
                         showGithubDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = LumiViolet)
+                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary)
                 ) {
                     Text("Save & Connect", color = Color.White)
                 }

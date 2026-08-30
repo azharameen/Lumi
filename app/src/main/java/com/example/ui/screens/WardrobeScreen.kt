@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Star
@@ -32,7 +33,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,10 +47,10 @@ import androidx.compose.ui.unit.sp
 import com.example.domain.model.BloubShape
 import com.example.domain.model.BloubSkinColor
 import com.example.ui.pet.LumiPetView
-import com.example.ui.theme.LumiCyan
+
 import com.example.ui.theme.LumiGold
 import com.example.ui.theme.LumiPink
-import com.example.ui.theme.LumiViolet
+
 import com.example.ui.theme.ObsidianDark
 import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.SurfaceDarkVariant
@@ -59,11 +60,11 @@ import com.example.ui.theme.TextSecondary
 import com.example.ui.viewmodel.LumiViewModel
 
 @Composable
-fun WardrobeScreen(
+fun WardrobeScreen(onClose: () -> Unit = {}, 
     viewModel: LumiViewModel
 ) {
-    val petStatus by viewModel.petStatus.collectAsState()
-    val memories by viewModel.allMemories.collectAsState()
+    val petStatus by viewModel.petStatus.collectAsStateWithLifecycle()
+    val memories by viewModel.allMemories.collectAsStateWithLifecycle()
 
     val evolutionStageTitle = when (petStatus.level) {
         1 -> "Sprout Spirit"
@@ -83,19 +84,26 @@ fun WardrobeScreen(
     ) {
         // Header
         item {
-            Text(
-                text = "Morphing Studio & Evolution",
-                color = TextPrimary,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.IconButton(onClick = onClose) {
+                    Icon(imageVector = androidx.compose.material.icons.Icons.Default.Close, contentDescription = "Close", tint = TextPrimary)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Morphing Studio & Evolution",
+                    color = TextPrimary,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             Text(
                 text = "Customize 3D shapes, clay skin palettes & review Lumi's memory bank",
-                color = LumiViolet,
-                fontSize = 13.sp
+                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                fontSize = 13.sp,
+                modifier = Modifier.padding(start = 56.dp)
             )
         }
-
+        
         // Live Pet Showcase
         item {
             Card(
@@ -155,7 +163,7 @@ fun WardrobeScreen(
                             .fillMaxWidth()
                             .height(8.dp)
                             .clip(CircleShape),
-                        color = LumiCyan,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         trackColor = SurfaceHighlight
                     )
                 }
@@ -186,7 +194,7 @@ fun WardrobeScreen(
                     title = "Interactions",
                     value = "${petStatus.totalInteractions}",
                     icon = Icons.Default.AutoAwesome,
-                    color = LumiCyan,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -202,7 +210,7 @@ fun WardrobeScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "3D MORPHING SHAPE",
-                        color = LumiCyan,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
@@ -215,9 +223,9 @@ fun WardrobeScreen(
                         items(BloubShape.entries) { shape ->
                             val isSelected = petStatus.bloubShape == shape
                             Surface(
-                                color = if (isSelected) LumiCyan.copy(alpha = 0.2f) else SurfaceDarkVariant,
+                                color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else SurfaceDarkVariant,
                                 shape = RoundedCornerShape(14.dp),
-                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, LumiCyan) else null,
+                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary) else null,
                                 modifier = Modifier
                                     .clickable { viewModel.setBloubShape(shape) }
                                     .testTag("shape_${shape.name}")
@@ -230,7 +238,7 @@ fun WardrobeScreen(
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = shape.displayName,
-                                        color = if (isSelected) LumiCyan else TextPrimary,
+                                        color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else TextPrimary,
                                         fontSize = 11.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
@@ -325,7 +333,7 @@ fun WardrobeScreen(
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(imageVector = Icons.Default.Psychology, contentDescription = null, tint = LumiViolet)
+                        Icon(imageVector = Icons.Default.Psychology, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = "Lumi remembers your daily habits, preferred meeting times, and productivity rhythms automatically as you chat and interact.",
@@ -349,7 +357,7 @@ fun WardrobeScreen(
                         ) {
                             Text(
                                 text = mem.category.uppercase(),
-                                color = LumiCyan,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )

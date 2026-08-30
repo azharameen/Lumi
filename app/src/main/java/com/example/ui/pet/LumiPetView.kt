@@ -213,42 +213,7 @@ fun LumiPetView(
                     }
                 )
             }
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        targetGazeX = (offset.x - 300f) / 300f
-                        targetGazeY = (offset.y - 300f) / 300f
-                    },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        targetGazeX = ((change.position.x - 300f) / 300f).coerceIn(-1f, 1f)
-                        targetGazeY = ((change.position.y - 300f) / 300f).coerceIn(-1f, 1f)
-
-                        // Subtle dynamic squish leaning into drag direction
-                        val dragIntensityX = (dragAmount.x / 20f).coerceIn(-0.15f, 0.15f)
-                        val dragIntensityY = (dragAmount.y / 20f).coerceIn(-0.15f, 0.15f)
-                        coroutineScope.launch {
-                            squishX.snapTo(1f + dragIntensityX)
-                            squishY.snapTo(1f + dragIntensityY)
-                        }
-
-                        if (Math.abs(dragAmount.x) > 3 || Math.abs(dragAmount.y) > 3) {
-                            if (Random.nextFloat() > 0.72f) {
-                                onPetPetted()
-                                spawnParticles("HEART", 2, Color(0xFFFF70A6))
-                            }
-                        }
-                    },
-                    onDragEnd = {
-                        targetGazeX = 0f
-                        targetGazeY = 0f
-                        coroutineScope.launch {
-                            squishX.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
-                            squishY.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
-                        }
-                    }
-                )
-            }
+            
     } else {
         Modifier
     }

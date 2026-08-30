@@ -1,4 +1,5 @@
 package com.example.ui.theme
+import androidx.compose.ui.graphics.Color
 
 import android.app.Activity
 import android.os.Build
@@ -51,9 +52,21 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun MyApplicationTheme(
     darkTheme: Boolean = true, // Default to sleek futuristic dark companion mode
+    petColorPrimary: Color? = null,
+    petColorSecondary: Color? = null,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val dynamicDark = if (petColorPrimary != null && petColorSecondary != null) {
+        DarkColorScheme.copy(
+            primary = petColorPrimary,
+            onPrimaryContainer = petColorPrimary,
+            secondary = petColorSecondary,
+            onSecondaryContainer = petColorSecondary,
+            tertiary = petColorPrimary
+        )
+    } else DarkColorScheme
+
+    val colorScheme = if (darkTheme) dynamicDark else LightColorScheme
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {

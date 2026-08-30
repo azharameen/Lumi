@@ -26,7 +26,8 @@ enum class ModelDownloadStatus {
     DOWNLOADING,
     VERIFYING,
     DOWNLOADED,
-    ERROR
+    ERROR,
+    PAUSED
 }
 
 enum class HardwareAccelerator(val displayName: String, val description: String) {
@@ -225,6 +226,9 @@ class ModelDownloadManager private constructor(private val context: Context) {
 
         val job = scope.launch {
             try {
+                var downloaded = if (modelFile.exists()) modelFile.length() else 0L
+                val appendMode = downloaded > 0L
+                val fos = java.io.FileOutputStream(modelFile, appendMode)
                 updateProgress(
                     modelId,
                     ModelDownloadProgress(
@@ -240,16 +244,18 @@ class ModelDownloadManager private constructor(private val context: Context) {
                 // In production, makes actual HTTP Range GET stream to HuggingFace
                 val targetBytes = spec.sizeBytes
                 val chunkSize = 256 * 1024L // 256 KB per tick
-                var downloaded = 0L
+                
                 val startTime = System.currentTimeMillis()
 
-                val fos = FileOutputStream(modelFile)
+                
                 val buffer = ByteArray(chunkSize.toInt())
 
-                // Write valid header marker
-                val headerMarker = "LUMI_LLM_INT4_TENSOR_GGUF_${spec.id}\n".toByteArray()
-                fos.write(headerMarker)
-                downloaded += headerMarker.size
+                // Write valid header marker if fresh
+                if (!appendMode) {
+                    val headerMarker = "LUMI_LLM_INT4_TENSOR_GGUF_${spec.id}\n".toByteArray()
+                    fos.write(headerMarker)
+                    downloaded += headerMarker.size
+                }
 
                 while (downloaded < targetBytes) {
                     val remaining = targetBytes - downloaded
@@ -333,6 +339,27 @@ class ModelDownloadManager private constructor(private val context: Context) {
         }
 
         activeDownloadJobs[modelId] = job
+    }
+
+    
+    fun pauseDownload(modelId: String) {
+        activeDownloadJobs[modelId]?.cancel()
+        activeDownloadJobs.remove(modelId)
+        
+        val spec = catalog.find { it.id == modelId } ?: return
+        val modelFile = java.io.File(getModelsDirectory(), "${spec.id}.bin")
+        
+        updateProgress(
+            modelId,
+            ModelDownloadProgress(
+                modelId = modelId,
+                status = ModelDownloadStatus.PAUSED,
+                progress = if (spec.sizeBytes > 0) modelFile.length().toFloat() / spec.sizeBytes.toFloat() else 0f,
+                bytesDownloaded = modelFile.length(),
+                totalBytes = spec.sizeBytes,
+                localFilePath = modelFile.absolutePath
+            )
+        )
     }
 
     fun cancelDownload(modelId: String) {

@@ -52,7 +52,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,12 +72,12 @@ import androidx.compose.ui.unit.sp
 import com.example.data.local.entity.GoalMilestoneEntity
 import com.example.data.local.entity.GoalPlanEntity
 import com.example.ui.theme.LumiCoral
-import com.example.ui.theme.LumiCyan
+
 import com.example.ui.theme.LumiGold
 import com.example.ui.theme.LumiGreen
 import com.example.ui.theme.LumiMint
 import com.example.ui.theme.LumiPink
-import com.example.ui.theme.LumiViolet
+
 import com.example.ui.theme.LumiYellow
 import com.example.ui.theme.ObsidianDark
 import com.example.ui.theme.SurfaceDark
@@ -85,15 +85,17 @@ import com.example.ui.theme.SurfaceDarkVariant
 import com.example.ui.theme.SurfaceHighlight
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
-import com.example.ui.viewmodel.LumiViewModel
+
 
 @Composable
 fun AutonomousGoalsScreen(
-    viewModel: LumiViewModel,
-    onNavigateToChat: (String?) -> Unit
+    goalPlans: List<com.example.data.local.entity.GoalPlanEntity>,
+    getMilestonesForGoal: (Long) -> kotlinx.coroutines.flow.Flow<List<com.example.data.local.entity.GoalMilestoneEntity>>,
+    onAction: (com.example.ui.viewmodel.LumiUiAction) -> Unit,
+                
 ) {
     val context = LocalContext.current
-    val goalPlans by viewModel.allGoalPlans.collectAsState()
+    
     var showCreateGoalDialog by remember { mutableStateOf(false) }
 
     Box(
@@ -121,8 +123,8 @@ fun AutonomousGoalsScreen(
                             .background(
                                 Brush.linearGradient(
                                     listOf(
-                                        LumiViolet.copy(alpha = 0.20f),
-                                        LumiCyan.copy(alpha = 0.08f)
+                                        androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.20f),
+                                        androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
                                     )
                                 )
                             )
@@ -136,7 +138,7 @@ fun AutonomousGoalsScreen(
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Surface(
-                                        color = LumiViolet.copy(alpha = 0.25f),
+                                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
                                         shape = CircleShape,
                                         modifier = Modifier.size(40.dp)
                                     ) {
@@ -144,7 +146,7 @@ fun AutonomousGoalsScreen(
                                             Icon(
                                                 imageVector = Icons.Default.Hub,
                                                 contentDescription = null,
-                                                tint = LumiViolet,
+                                                tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(22.dp)
                                             )
                                         }
@@ -177,7 +179,7 @@ fun AutonomousGoalsScreen(
                             Spacer(modifier = Modifier.height(14.dp))
                             Button(
                                 onClick = { showCreateGoalDialog = true },
-                                colors = ButtonDefaults.buttonColors(containerColor = LumiViolet),
+                                colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.fillMaxWidth().testTag("btn_decompose_goal")
                             ) {
@@ -216,7 +218,7 @@ fun AutonomousGoalsScreen(
                             Icon(
                                 imageVector = Icons.Default.Flag,
                                 contentDescription = null,
-                                tint = LumiViolet.copy(alpha = 0.7f),
+                                tint = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                                 modifier = Modifier.size(44.dp)
                             )
                             Spacer(modifier = Modifier.height(10.dp))
@@ -240,7 +242,8 @@ fun AutonomousGoalsScreen(
                 items(goalPlans, key = { it.id }) { goal ->
                     GoalPlanItemCard(
                         goal = goal,
-                        viewModel = viewModel
+                        getMilestonesForGoal = getMilestonesForGoal,
+                        onAction = onAction
                     )
                 }
             }
@@ -249,7 +252,7 @@ fun AutonomousGoalsScreen(
         // Floating Action Button
         FloatingActionButton(
             onClick = { showCreateGoalDialog = true },
-            containerColor = LumiViolet,
+            containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
             contentColor = Color.White,
             shape = CircleShape,
             modifier = Modifier
@@ -268,7 +271,7 @@ fun AutonomousGoalsScreen(
             CreateGoalDecomposeDialog(
                 onDismiss = { showCreateGoalDialog = false },
                 onConfirm = { title, description, category, targetDate ->
-                    viewModel.decomposeGoal(title, description, category, targetDate)
+                    onAction(com.example.ui.viewmodel.LumiUiAction.DecomposeGoal(title, description, category, targetDate))
                     showCreateGoalDialog = false
                     Toast.makeText(context, "Lumi agent swarm decomposed your goal!", Toast.LENGTH_SHORT).show()
                 }
@@ -280,9 +283,10 @@ fun AutonomousGoalsScreen(
 @Composable
 private fun GoalPlanItemCard(
     goal: GoalPlanEntity,
-    viewModel: LumiViewModel
+    getMilestonesForGoal: (Long) -> kotlinx.coroutines.flow.Flow<List<com.example.data.local.entity.GoalMilestoneEntity>>,
+    onAction: (com.example.ui.viewmodel.LumiUiAction) -> Unit
 ) {
-    val milestones by viewModel.repository.getMilestonesForGoal(goal.id).collectAsState(initial = emptyList())
+    val milestones by getMilestonesForGoal(goal.id).collectAsStateWithLifecycle(initialValue = emptyList())
     var isExpanded by remember { mutableStateOf(true) }
     val progress = if (goal.totalSteps > 0) goal.completedSteps.toFloat() / goal.totalSteps.toFloat() else 0f
     val isAllDone = goal.completedSteps >= goal.totalSteps && goal.totalSteps > 0
@@ -304,20 +308,20 @@ private fun GoalPlanItemCard(
                 ) {
                     Surface(
                         color = when (goal.category) {
-                            "Engineering" -> LumiCyan.copy(alpha = 0.2f)
+                            "Engineering" -> androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                             "Health" -> LumiGreen.copy(alpha = 0.2f)
                             "Learning" -> LumiGold.copy(alpha = 0.2f)
-                            else -> LumiViolet.copy(alpha = 0.2f)
+                            else -> androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                         },
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
                             text = goal.category,
                             color = when (goal.category) {
-                                "Engineering" -> LumiCyan
+                                "Engineering" -> androidx.compose.material3.MaterialTheme.colorScheme.primary
                                 "Health" -> LumiGreen
                                 "Learning" -> LumiGold
-                                else -> LumiViolet
+                                else -> androidx.compose.material3.MaterialTheme.colorScheme.primary
                             },
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -342,7 +346,7 @@ private fun GoalPlanItemCard(
                 }
 
                 IconButton(
-                    onClick = { viewModel.deleteGoal(goal.id) },
+                    onClick = { onAction(com.example.ui.viewmodel.LumiUiAction.DeleteGoal(goal.id)) },
                     modifier = Modifier.size(28.dp)
                 ) {
                     Icon(
@@ -387,7 +391,7 @@ private fun GoalPlanItemCard(
                 )
                 Text(
                     text = "${(progress * 100).toInt()}%",
-                    color = if (isAllDone) LumiGreen else LumiViolet,
+                    color = if (isAllDone) LumiGreen else androidx.compose.material3.MaterialTheme.colorScheme.primary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -399,7 +403,7 @@ private fun GoalPlanItemCard(
                     .fillMaxWidth()
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = if (isAllDone) LumiGreen else LumiViolet,
+                color = if (isAllDone) LumiGreen else androidx.compose.material3.MaterialTheme.colorScheme.primary,
                 trackColor = SurfaceHighlight
             )
 
@@ -415,7 +419,7 @@ private fun GoalPlanItemCard(
             ) {
                 Text(
                     text = if (isExpanded) "Hide Milestones" else "Show All Milestones (${milestones.size})",
-                    color = LumiViolet,
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -432,7 +436,7 @@ private fun GoalPlanItemCard(
                         MilestoneItemRow(
                             milestone = milestone,
                             goalId = goal.id,
-                            viewModel = viewModel
+                            onAction = onAction
                         )
                     }
                 }
@@ -445,7 +449,7 @@ private fun GoalPlanItemCard(
 private fun MilestoneItemRow(
     milestone: GoalMilestoneEntity,
     goalId: Long,
-    viewModel: LumiViewModel
+    onAction: (com.example.ui.viewmodel.LumiUiAction) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -461,7 +465,7 @@ private fun MilestoneItemRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
-                onClick = { viewModel.toggleMilestone(milestone.id, goalId, !milestone.isCompleted) },
+                onClick = { onAction(com.example.ui.viewmodel.LumiUiAction.ToggleMilestone(milestone.id, goalId, !milestone.isCompleted)) },
                 modifier = Modifier.size(28.dp)
             ) {
                 Icon(
@@ -496,7 +500,7 @@ private fun MilestoneItemRow(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "⚡ ${milestone.executionOutput}",
-                        color = LumiCyan,
+                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -507,16 +511,16 @@ private fun MilestoneItemRow(
                 Spacer(modifier = Modifier.width(6.dp))
                 Button(
                     onClick = {
-                        viewModel.executeMilestone(milestone.id, goalId)
+                        onAction(com.example.ui.viewmodel.LumiUiAction.ExecuteMilestone(milestone.id, goalId))
                         Toast.makeText(context, "Executing ${milestone.suggestedTool} tool...", Toast.LENGTH_SHORT).show()
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = when (milestone.suggestedTool) {
-                            "CALENDAR" -> LumiCyan
+                            "CALENDAR" -> androidx.compose.material3.MaterialTheme.colorScheme.primary
                             "DOC" -> LumiGold
                             "GITHUB" -> LumiMint
                             "SLACK" -> LumiPink
-                            else -> LumiViolet
+                            else -> androidx.compose.material3.MaterialTheme.colorScheme.primary
                         }
                     ),
                     shape = RoundedCornerShape(8.dp),
@@ -568,7 +572,7 @@ private fun CreateGoalDecomposeDialog(
                 Icon(
                     imageVector = Icons.Default.AutoAwesome,
                     contentDescription = null,
-                    tint = LumiViolet,
+                    tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(22.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -594,7 +598,7 @@ private fun CreateGoalDecomposeDialog(
                     label = { Text("Goal Title (e.g., Launch My Mobile App)") },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = LumiViolet,
+                        focusedBorderColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = SurfaceHighlight,
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
@@ -608,7 +612,7 @@ private fun CreateGoalDecomposeDialog(
                     label = { Text("Key Outcomes & Notes (Optional)") },
                     maxLines = 3,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = LumiViolet,
+                        focusedBorderColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         unfocusedBorderColor = SurfaceHighlight,
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
@@ -630,7 +634,7 @@ private fun CreateGoalDecomposeDialog(
                     categories.take(3).forEach { cat ->
                         val isSelected = selectedCategory == cat
                         Surface(
-                            color = if (isSelected) LumiViolet else SurfaceDarkVariant,
+                            color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else SurfaceDarkVariant,
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier
                                 .weight(1f)
@@ -657,7 +661,7 @@ private fun CreateGoalDecomposeDialog(
                     }
                 },
                 enabled = title.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(containerColor = LumiViolet),
+                colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.testTag("btn_confirm_decompose")
             ) {

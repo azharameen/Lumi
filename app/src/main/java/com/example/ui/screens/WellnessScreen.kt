@@ -44,7 +44,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -60,12 +60,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.LumiCyan
+
 import com.example.ui.theme.LumiGold
 import com.example.ui.theme.LumiGreen
 import com.example.ui.theme.LumiMint
 import com.example.ui.theme.LumiPink
-import com.example.ui.theme.LumiViolet
+
 import com.example.ui.theme.LumiYellow
 import com.example.ui.theme.ObsidianDark
 import com.example.ui.theme.SurfaceDark
@@ -80,12 +80,13 @@ import java.util.Locale
 
 @Composable
 fun WellnessScreen(
-    viewModel: LumiViewModel,
+    viewModel: com.example.ui.viewmodel.WellnessViewModel,
+    appViewModel: com.example.ui.viewmodel.LumiViewModel,
     onNavigateToChat: () -> Unit
 ) {
-    val logs by viewModel.allWellnessLogs.collectAsState()
-    val memories by viewModel.allMemories.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
+    val logs by viewModel.allWellnessLogs.collectAsStateWithLifecycle()
+    val memories by viewModel.allMemories.collectAsStateWithLifecycle()
+    val uiState by appViewModel.uiState.collectAsStateWithLifecycle()
 
     var moodScore by remember { mutableFloatStateOf(8f) }
     var energyLevel by remember { mutableFloatStateOf(7f) }
@@ -128,7 +129,7 @@ fun WellnessScreen(
                 }
 
                 IconButton(
-                    onClick = { viewModel.setShowBreathing(true) },
+                    onClick = { appViewModel.setShowBreathing(true) },
                     modifier = Modifier
                         .size(42.dp)
                         .background(LumiGreen.copy(alpha = 0.2f), CircleShape)
@@ -220,7 +221,7 @@ fun WellnessScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(imageVector = Icons.Default.WaterDrop, contentDescription = null, tint = LumiCyan, modifier = Modifier.size(20.dp))
+                            Icon(imageVector = Icons.Default.WaterDrop, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Hydration: $hydrationCups cups (Goal: 8)",
@@ -239,7 +240,7 @@ fun WellnessScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             IconButton(
                                 onClick = { hydrationCups++ },
-                                modifier = Modifier.size(32.dp).background(LumiCyan, CircleShape)
+                                modifier = Modifier.size(32.dp).background(androidx.compose.material3.MaterialTheme.colorScheme.primary, CircleShape)
                             ) {
                                 Icon(imageVector = Icons.Default.Add, contentDescription = "Add Cup", tint = ObsidianDark, modifier = Modifier.size(16.dp))
                             }
@@ -332,7 +333,7 @@ fun WellnessScreen(
 
                         if (uiState.isMemoryVaultUnlocked) {
                             Button(
-                                onClick = { viewModel.lockMemoryVault() },
+                                onClick = { appViewModel.lockMemoryVault() },
                                 colors = ButtonDefaults.buttonColors(containerColor = SurfaceHighlight, contentColor = TextSecondary),
                                 shape = RoundedCornerShape(10.dp),
                                 contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
@@ -353,7 +354,7 @@ fun WellnessScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
-                            onClick = { viewModel.unlockMemoryVault() },
+                            onClick = { appViewModel.unlockMemoryVault() },
                             colors = ButtonDefaults.buttonColors(containerColor = LumiGold, contentColor = ObsidianDark),
                             shape = RoundedCornerShape(14.dp),
                             modifier = Modifier
@@ -402,14 +403,14 @@ fun WellnessScreen(
                                         Icon(
                                             imageVector = Icons.Default.Psychology,
                                             contentDescription = null,
-                                            tint = LumiViolet,
+                                            tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(18.dp)
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Column {
                                             Text(
                                                 text = memory.category.uppercase(),
-                                                color = LumiViolet,
+                                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                                 fontSize = 10.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -478,7 +479,7 @@ fun WellnessScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "💧 ${log.hydrationCups} cups water • ${dateFormat.format(Date(log.timestamp))}",
-                                color = LumiCyan,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 fontSize = 11.sp
                             )
                             if (!log.gratitudeNote.isNullOrBlank()) {
@@ -495,9 +496,9 @@ fun WellnessScreen(
                             onClick = { viewModel.incrementHydration(log.id) },
                             modifier = Modifier
                                 .size(34.dp)
-                                .background(LumiCyan.copy(alpha = 0.15f), CircleShape)
+                                .background(androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), CircleShape)
                         ) {
-                            Icon(imageVector = Icons.Default.WaterDrop, contentDescription = "Add Water", tint = LumiCyan, modifier = Modifier.size(16.dp))
+                            Icon(imageVector = Icons.Default.WaterDrop, contentDescription = "Add Water", tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                         }
                     }
                 }

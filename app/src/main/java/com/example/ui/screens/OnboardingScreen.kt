@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,7 +35,7 @@ fun OnboardingScreen(
     viewModel: LumiViewModel,
     onComplete: () -> Unit
 ) {
-    val userProfile by viewModel.userProfile.collectAsState()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle(initialValue = com.example.domain.account.UserProfileData())
     var currentStep by remember { mutableIntStateOf(0) }
 
     // Aesthetic gradient background
@@ -103,7 +104,7 @@ fun WelcomeStep(onNext: () -> Unit) {
                 .clip(CircleShape)
                 .background(
                     Brush.linearGradient(
-                        colors = listOf(LumiCyan, LumiViolet)
+                        colors = listOf(androidx.compose.material3.MaterialTheme.colorScheme.primary, androidx.compose.material3.MaterialTheme.colorScheme.primary)
                     )
                 ),
             contentAlignment = Alignment.Center
@@ -142,7 +143,7 @@ fun WelcomeStep(onNext: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = LumiCyan),
+            colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(16.dp)
         ) {
             Text("Begin Journey", fontSize = 18.sp, color = Color.Black, fontWeight = FontWeight.SemiBold)
@@ -276,7 +277,7 @@ fun NameAndGoalStep(
             textStyle = LocalTextStyle.current.copy(color = Color.White, fontSize = 18.sp),
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = LumiCyan,
+                focusedBorderColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = Color.DarkGray
             ),
             singleLine = true
@@ -291,7 +292,7 @@ fun NameAndGoalStep(
             textStyle = LocalTextStyle.current.copy(color = Color.White, fontSize = 16.sp),
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = LumiCyan,
+                focusedBorderColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                 unfocusedBorderColor = Color.DarkGray
             )
         )
@@ -303,7 +304,7 @@ fun NameAndGoalStep(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = LumiCyan),
+            colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
             shape = RoundedCornerShape(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {

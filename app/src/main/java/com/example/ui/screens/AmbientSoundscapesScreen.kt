@@ -61,27 +61,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.service.SoundscapeType
-import com.example.ui.theme.LumiCyan
+
 import com.example.ui.theme.LumiCoral
 import com.example.ui.theme.LumiGold
 import com.example.ui.theme.LumiGreen
 import com.example.ui.theme.LumiMint
 import com.example.ui.theme.LumiPink
-import com.example.ui.theme.LumiViolet
+
 import com.example.ui.theme.ObsidianDark
 import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.SurfaceDarkVariant
 import com.example.ui.theme.SurfaceHighlight
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
-import com.example.ui.viewmodel.LumiViewModel
+
 
 @Composable
 fun AmbientSoundscapesScreen(
-    viewModel: LumiViewModel
-) {
+    soundState: com.example.service.SoundscapeState,
+    onAction: (com.example.ui.viewmodel.LumiUiAction) -> Unit,
+                ) {
     val context = LocalContext.current
-    val soundState by viewModel.soundscapeState.collectAsState()
+    
 
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseScale by infiniteTransition.animateFloat(
@@ -119,8 +120,8 @@ fun AmbientSoundscapesScreen(
                             .background(
                                 Brush.linearGradient(
                                     listOf(
-                                        LumiCyan.copy(alpha = 0.18f),
-                                        LumiViolet.copy(alpha = 0.12f)
+                                        androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                                        androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                     )
                                 )
                             )
@@ -139,7 +140,7 @@ fun AmbientSoundscapesScreen(
                                     Icon(
                                         imageVector = Icons.Default.Headphones,
                                         contentDescription = null,
-                                        tint = LumiCyan,
+                                        tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
@@ -168,7 +169,7 @@ fun AmbientSoundscapesScreen(
 
                             // Animated Circular Core
                             Surface(
-                                color = LumiCyan.copy(alpha = if (soundState.isPlaying) 0.25f else 0.10f),
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = if (soundState.isPlaying) 0.25f else 0.10f),
                                 shape = CircleShape,
                                 modifier = Modifier
                                     .size(110.dp)
@@ -237,13 +238,13 @@ fun AmbientSoundscapesScreen(
                                 Button(
                                     onClick = {
                                         if (soundState.isPlaying) {
-                                            viewModel.stopSoundscape()
+                                            onAction(com.example.ui.viewmodel.LumiUiAction.StopSoundscape)
                                         } else {
-                                            viewModel.startSoundscape(soundState.activeType)
+                                            onAction(com.example.ui.viewmodel.LumiUiAction.StartSoundscape(soundState.activeType))
                                         }
                                     },
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (soundState.isPlaying) LumiCoral else LumiCyan
+                                        containerColor = if (soundState.isPlaying) LumiCoral else androidx.compose.material3.MaterialTheme.colorScheme.primary
                                     ),
                                     shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier.testTag("btn_soundscape_toggle")
@@ -264,7 +265,7 @@ fun AmbientSoundscapesScreen(
 
                                 if (soundState.isTimerActive) {
                                     Button(
-                                        onClick = { viewModel.stopFocusTimerWithSoundscape() },
+                                        onClick = { onAction(com.example.ui.viewmodel.LumiUiAction.StopFocusTimer) },
                                         colors = ButtonDefaults.buttonColors(containerColor = SurfaceDarkVariant),
                                         shape = RoundedCornerShape(12.dp)
                                     ) {
@@ -323,7 +324,7 @@ fun AmbientSoundscapesScreen(
                                     modifier = Modifier
                                         .weight(1f)
                                         .clickable {
-                                            viewModel.startFocusTimerWithSoundscape(minutes)
+                                            onAction(com.example.ui.viewmodel.LumiUiAction.StartFocusTimer(minutes))
                                             Toast.makeText(context, "Started $minutes min focus timer with ${soundState.activeType.title}", Toast.LENGTH_SHORT).show()
                                         }
                                 ) {
@@ -367,7 +368,7 @@ fun AmbientSoundscapesScreen(
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                                     contentDescription = null,
-                                    tint = LumiCyan,
+                                    tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -380,17 +381,17 @@ fun AmbientSoundscapesScreen(
                             }
                             Text(
                                 text = "${(soundState.volume * 100).toInt()}%",
-                                color = LumiCyan,
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                         Slider(
                             value = soundState.volume,
-                            onValueChange = { viewModel.setSoundscapeVolume(it) },
+                            onValueChange = { onAction(com.example.ui.viewmodel.LumiUiAction.SetSoundscapeVolume(it)) },
                             colors = SliderDefaults.colors(
-                                thumbColor = LumiCyan,
-                                activeTrackColor = LumiCyan,
+                                thumbColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                activeTrackColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 inactiveTrackColor = SurfaceHighlight
                             )
                         )
@@ -417,7 +418,7 @@ fun AmbientSoundscapesScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            viewModel.startSoundscape(type)
+                            onAction(com.example.ui.viewmodel.LumiUiAction.StartSoundscape(type))
                         }
                 ) {
                     Row(
@@ -427,7 +428,7 @@ fun AmbientSoundscapesScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
-                            color = if (isSelected) LumiCyan.copy(alpha = 0.2f) else SurfaceDarkVariant,
+                            color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else SurfaceDarkVariant,
                             shape = CircleShape,
                             modifier = Modifier.size(42.dp)
                         ) {
@@ -441,7 +442,7 @@ fun AmbientSoundscapesScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = type.title,
-                                color = if (isSelected) LumiCyan else TextPrimary,
+                                color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else TextPrimary,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -457,7 +458,7 @@ fun AmbientSoundscapesScreen(
                             Icon(
                                 imageVector = Icons.Default.GraphicEq,
                                 contentDescription = null,
-                                tint = LumiCyan,
+                                tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }

@@ -1,4 +1,6 @@
 package com.example.domain.model
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 
 enum class PetEmotion(val displayName: String, val glowHex: String) {
     HAPPY("Happy & Cheerful", "#00F0FF"),
@@ -35,6 +37,7 @@ enum class BloubSkinColor(
     HOLO_OBSIDIAN("OBSIDIAN", "Dark Holo", 0xFF64DFDF, 0xFF48CAE4, 0xFF3A0CA3, 0x6648CAE4)
 }
 
+@Immutable
 data class PetStatus(
     val name: String = "Lumi",
     val level: Int = 1,
@@ -55,6 +58,7 @@ data class PetStatus(
     val totalInteractions: Int = 0
 )
 
+@Immutable
 data class ToolExecutionReport(
     val toolName: String,
     val title: String,

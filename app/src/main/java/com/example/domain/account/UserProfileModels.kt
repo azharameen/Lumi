@@ -1,4 +1,6 @@
 package com.example.domain.account
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -60,6 +62,7 @@ enum class LumiPersonaTone(
     )
 }
 
+@Immutable
 data class UserProfileData(
     val userName: String = "Azhar Ameen",
     val userEmail: String = "azharameen52@gmail.com",
@@ -84,6 +87,7 @@ data class UserProfileData(
     val hasCompletedOnboarding: Boolean = false
 )
 
+@Immutable
 data class UserFactItem(
     val id: String,
     val category: String, // e.g. "Work", "Preferences", "Health", "Routines", "Personal"

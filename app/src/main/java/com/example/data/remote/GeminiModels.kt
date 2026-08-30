@@ -47,7 +47,8 @@ data class GeminiFunctionResponse(
 data class GeminiGenerationConfig(
     val temperature: Float? = 0.7f,
     val topP: Float? = 0.95f,
-    val topK: Int? = 40
+    val topK: Int? = 40,
+    val maxOutputTokens: Int? = null
 )
 
 @JsonClass(generateAdapter = true)

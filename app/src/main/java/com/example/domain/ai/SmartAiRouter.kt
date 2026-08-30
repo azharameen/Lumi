@@ -8,9 +8,19 @@ data class RoutingDecision(
     val selectedModel: ModelSpec,
     val isLocalOnDevice: Boolean,
     val routingReason: String,
-    val fallbackModel: ModelSpec = AiModelRegistry.GEMMA_2B_INT4
+    val fallbackModel: ModelSpec = AiModelRegistry.GEMMA_2B_INT4,
+    val isFailoverTriggered: Boolean = false,
+    val executionWarning: String? = null
 )
 
+/**
+ * Intelligent Multi-Tier AI Routing Engine.
+ * Dynamically routes user intent based on:
+ * - Model download and artifact readiness
+ * - Device RAM headroom and low-memory pressure
+ * - Network connectivity state
+ * - Privacy sensitivity and task modality
+ */
 object SmartAiRouter {
 
     fun routeRequest(
@@ -18,41 +28,70 @@ object SmartAiRouter {
         imageAttachment: Bitmap?,
         userRoutingMode: AiRoutingMode,
         isNetworkAvailable: Boolean = true,
+        isLocalModelReady: Boolean = true,
+        isLowMemory: Boolean = false,
         isLowBattery: Boolean = false
     ): RoutingDecision {
         val category = classifyTask(userMessage, imageAttachment)
 
-        // Rule 1: User explicitly forced 100% Strict On-Device Mode
-        if (userRoutingMode == AiRoutingMode.STRICT_ON_DEVICE) {
-            return RoutingDecision(
-                taskCategory = category,
-                selectedModel = AiModelRegistry.GEMMA_2B_INT4,
-                isLocalOnDevice = true,
-                routingReason = "User selected Strict On-Device Mode (100% Offline & Private)"
-            )
-        }
-
-        // Rule 2: Device is Offline or Network is unavailable
-        if (!isNetworkAvailable) {
-            return RoutingDecision(
-                taskCategory = category,
-                selectedModel = AiModelRegistry.GEMMA_2B_INT4,
-                isLocalOnDevice = true,
-                routingReason = "Device is offline / Airplane mode: Routed to On-Device Gemma"
-            )
-        }
-
-        // Rule 3: Multimodal Vision & Images -> Always Cloud Gemini Flash (requires heavy vision encoder)
+        // 1. Multimodal Vision & Images -> Always requires Cloud Vision Encoder
         if (imageAttachment != null || category == AiTaskCategory.VISION_MULTIMODAL) {
+            return if (isNetworkAvailable) {
+                RoutingDecision(
+                    taskCategory = AiTaskCategory.VISION_MULTIMODAL,
+                    selectedModel = AiModelRegistry.GEMINI_2_5_FLASH,
+                    isLocalOnDevice = false,
+                    routingReason = "Multimodal camera / visual inspection: Routed to Cloud Gemini 2.5 Flash"
+                )
+            } else {
+                RoutingDecision(
+                    taskCategory = AiTaskCategory.VISION_MULTIMODAL,
+                    selectedModel = AiModelRegistry.GEMINI_2_5_FLASH,
+                    isLocalOnDevice = false,
+                    routingReason = "Vision task requested but network is disconnected.",
+                    executionWarning = "Network is offline. Vision analysis requires cloud connectivity."
+                )
+            }
+        }
+
+        // 2. User explicitly forced 100% Strict On-Device Mode
+        if (userRoutingMode == AiRoutingMode.STRICT_ON_DEVICE) {
+            val warning = when {
+                !isLocalModelReady -> "Local model weights are not downloaded yet."
+                isLowMemory -> "Device is experiencing low-memory pressure; execution may be constrained."
+                else -> null
+            }
             return RoutingDecision(
-                taskCategory = AiTaskCategory.VISION_MULTIMODAL,
-                selectedModel = AiModelRegistry.GEMINI_2_5_FLASH,
-                isLocalOnDevice = false,
-                routingReason = "Multimodal camera / visual inspection: Routed to Cloud Gemini 2.5 Flash"
+                taskCategory = category,
+                selectedModel = AiModelRegistry.GEMMA_2B_INT4,
+                isLocalOnDevice = true,
+                routingReason = "Strict On-Device Mode enforced (100% Offline & Private)",
+                executionWarning = warning
             )
         }
 
-        // Rule 4: User explicitly selected Cloud Turbo Mode
+        // 3. Device is Offline (Network disconnected)
+        if (!isNetworkAvailable) {
+            return if (isLocalModelReady && !isLowMemory) {
+                RoutingDecision(
+                    taskCategory = category,
+                    selectedModel = AiModelRegistry.GEMMA_2B_INT4,
+                    isLocalOnDevice = true,
+                    routingReason = "Device is offline: Automatically routed to On-Device Gemma",
+                    isFailoverTriggered = true
+                )
+            } else {
+                RoutingDecision(
+                    taskCategory = category,
+                    selectedModel = AiModelRegistry.GEMMA_2B_INT4,
+                    isLocalOnDevice = true,
+                    routingReason = "Device is offline and local model is not ready.",
+                    executionWarning = if (!isLocalModelReady) "Offline & local model weights not downloaded" else "Offline & device in low-RAM state"
+                )
+            }
+        }
+
+        // 4. User explicitly selected Cloud Turbo Mode
         if (userRoutingMode == AiRoutingMode.CLOUD_TURBO) {
             val model = if (category == AiTaskCategory.DEEP_REASONING) {
                 AiModelRegistry.GEMINI_3_1_PRO
@@ -67,75 +106,60 @@ object SmartAiRouter {
             )
         }
 
-        // Rule 5: Smart Hybrid Auto-Routing based on Task Characteristics
-        return when (category) {
-            // Highly sensitive personal mood & journaling -> Local Gemma (Zero data leaves device)
-            AiTaskCategory.WELLNESS_MOOD -> {
-                RoutingDecision(
+        // 5. Smart Hybrid Auto-Routing based on Modality, Privacy, and System Health
+        val prefersLocal = category == AiTaskCategory.WELLNESS_MOOD ||
+                category == AiTaskCategory.COMPANION_CHAT ||
+                category == AiTaskCategory.QUICK_DEVICE_ACTION ||
+                category == AiTaskCategory.BENCHMARK_TEST
+
+        if (prefersLocal) {
+            if (isLocalModelReady && !isLowMemory) {
+                val reason = when (category) {
+                    AiTaskCategory.WELLNESS_MOOD -> "Privacy Protection: Personal wellness processed 100% on-device"
+                    AiTaskCategory.COMPANION_CHAT -> "Ultra-Fast Latency: Companion chat executed on local GPU"
+                    AiTaskCategory.QUICK_DEVICE_ACTION -> "Local Tool Execution: Fast deterministic action on-device"
+                    AiTaskCategory.BENCHMARK_TEST -> "Hardware Benchmark: On-device GPU inference test"
+                    else -> "Local execution preferred"
+                }
+                return RoutingDecision(
                     taskCategory = category,
                     selectedModel = AiModelRegistry.GEMMA_2B_INT4,
                     isLocalOnDevice = true,
-                    routingReason = "Privacy Protection: Personal wellness & mood reflection processed 100% on-device"
+                    routingReason = reason
                 )
-            }
-
-            // Quick casual banter and companion dialogue -> Local Gemma (Ultra-low latency, zero cloud cost)
-            AiTaskCategory.COMPANION_CHAT -> {
-                RoutingDecision(
-                    taskCategory = category,
-                    selectedModel = AiModelRegistry.GEMMA_2B_INT4,
-                    isLocalOnDevice = true,
-                    routingReason = "Ultra-Fast Latency: Casual companion chat executed on local GPU in ~120ms"
-                )
-            }
-
-            // Quick single-intent local actions (water logging, alarms, quick task) -> Local Gemma
-            AiTaskCategory.QUICK_DEVICE_ACTION -> {
-                RoutingDecision(
-                    taskCategory = category,
-                    selectedModel = AiModelRegistry.GEMMA_2B_INT4,
-                    isLocalOnDevice = true,
-                    routingReason = "Local Tool Execution: Fast deterministic action parsed by on-device model"
-                )
-            }
-
-            // Complex STEM, coding, advanced tutoring -> Cloud Gemini Pro / Flash
-            AiTaskCategory.DEEP_REASONING -> {
-                RoutingDecision(
-                    taskCategory = category,
-                    selectedModel = AiModelRegistry.GEMINI_3_1_PRO,
-                    isLocalOnDevice = false,
-                    routingReason = "Advanced Reasoning: Complex multi-step problem solving routed to Gemini 3.1 Pro"
-                )
-            }
-
-            // Complex multi-constraint scheduling -> Cloud Gemini Flash
-            AiTaskCategory.TIMELINE_PLANNING -> {
-                RoutingDecision(
+            } else {
+                // Failover to Cloud Gemini due to missing local weights or Low RAM
+                val failoverReason = if (!isLocalModelReady) {
+                    "Local weights not downloaded yet; auto-failing over to Cloud Gemini 2.5 Flash"
+                } else {
+                    "Device is low on memory; failover to Cloud Gemini 2.5 Flash to prevent OOM"
+                }
+                return RoutingDecision(
                     taskCategory = category,
                     selectedModel = AiModelRegistry.GEMINI_2_5_FLASH,
                     isLocalOnDevice = false,
-                    routingReason = "Timeline Optimization: Multi-constraint schedule planning routed to Gemini 2.5 Flash"
+                    routingReason = failoverReason,
+                    isFailoverTriggered = true
                 )
             }
-
-            AiTaskCategory.BENCHMARK_TEST -> {
-                RoutingDecision(
-                    taskCategory = category,
-                    selectedModel = AiModelRegistry.GEMMA_2B_INT4,
-                    isLocalOnDevice = true,
-                    routingReason = "Hardware Benchmark: On-device GPU inference test"
-                )
+        } else {
+            // Complex reasoning / deep timeline tasks prefer Cloud Gemini
+            val cloudModel = if (category == AiTaskCategory.DEEP_REASONING) {
+                AiModelRegistry.GEMINI_3_1_PRO
+            } else {
+                AiModelRegistry.GEMINI_2_5_FLASH
             }
-
-            else -> {
-                RoutingDecision(
-                    taskCategory = category,
-                    selectedModel = AiModelRegistry.GEMINI_2_5_FLASH,
-                    isLocalOnDevice = false,
-                    routingReason = "General Assistant Query: Handled by Cloud Gemini 2.5 Flash"
-                )
+            val reason = if (category == AiTaskCategory.DEEP_REASONING) {
+                "Advanced Reasoning: Multi-step problem solving routed to Gemini 3.1 Pro"
+            } else {
+                "Timeline Optimization: Multi-constraint schedule planning routed to Gemini 2.5 Flash"
             }
+            return RoutingDecision(
+                taskCategory = category,
+                selectedModel = cloudModel,
+                isLocalOnDevice = false,
+                routingReason = reason
+            )
         }
     }
 
@@ -186,3 +210,4 @@ object SmartAiRouter {
         }
     }
 }
+

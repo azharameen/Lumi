@@ -12,6 +12,7 @@ import android.content.res.Resources
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import android.view.Gravity
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
@@ -38,12 +39,10 @@ import kotlin.math.roundToInt
 import kotlin.random.Random
 
 /**
- * Foreground Android Service that displays the floating Lumi Companion Overlay over other apps.
- * Features:
- * - Free floating anywhere on screen without sticky snapping on release.
- * - Always 100% visible on screen without clipping off-screen borders.
- * - Automatic smooth glide to edge margin during idle periods so content isn't obstructed.
- * - Remains fully clickable and interactive on screen at all times.
+ * Hardened Foreground Android Service that manages the floating Lumi Companion Overlay.
+ * - Enforces Settings.canDrawOverlays(context) validation before window attachment/manipulation.
+ * - Handles BadTokenException and SecurityException gracefully without crashing.
+ * - Binds Compose lifecycle to OverlayLifecycleOwner and ensures leak-free teardown.
  */
 class PetOverlayService : Service() {
 
@@ -58,6 +57,7 @@ class PetOverlayService : Service() {
 
     private lateinit var repository: LumiRepository
 
+    private var isViewAttached = false
     private var isDockedPeeking = false
     private var isHubOpen = false
 
@@ -65,6 +65,13 @@ class PetOverlayService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Validate overlay permission before continuing
+        if (!canDrawOverlays()) {
+            stopSelf()
+            return
+        }
+
         lifecycleOwner.onCreate()
         lifecycleOwner.onResume()
 
@@ -85,6 +92,14 @@ class PetOverlayService : Service() {
     private var initialTouchY = 0f
     private var isDraggingOverlay = false
 
+    private fun canDrawOverlays(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Settings.canDrawOverlays(this)
+        } else {
+            true
+        }
+    }
+
     private fun getScreenWidth(): Int {
         return Resources.getSystem().displayMetrics.widthPixels
     }
@@ -94,6 +109,10 @@ class PetOverlayService : Service() {
     }
 
     private fun setupOverlayWindow() {
+        if (!canDrawOverlays() || isViewAttached || overlayComposeView != null) {
+            return
+        }
+
         val windowType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         } else {
@@ -114,7 +133,7 @@ class PetOverlayService : Service() {
             y = 360
         }
 
-        overlayComposeView = ComposeView(this).apply {
+        val view = ComposeView(this).apply {
             setViewTreeLifecycleOwner(lifecycleOwner)
             setViewTreeSavedStateRegistryOwner(lifecycleOwner)
             setViewTreeViewModelStoreOwner(lifecycleOwner)
@@ -181,16 +200,39 @@ class PetOverlayService : Service() {
             }
         }
 
-        windowManager.addView(overlayComposeView, windowLayoutParams)
-        scheduleAutoHideTimer()
+        overlayComposeView = view
+
+        try {
+            windowManager.addView(view, windowLayoutParams)
+            isViewAttached = true
+            scheduleAutoHideTimer()
+        } catch (e: WindowManager.BadTokenException) {
+            cleanupOverlayView()
+            stopSelf()
+        } catch (e: SecurityException) {
+            cleanupOverlayView()
+            stopSelf()
+        } catch (e: Exception) {
+            cleanupOverlayView()
+            stopSelf()
+        }
     }
 
     private fun updateWindowLayout() {
-        overlayComposeView?.let {
-            try {
-                windowManager.updateViewLayout(it, windowLayoutParams)
-            } catch (_: Exception) {}
-        }
+        val view = overlayComposeView ?: return
+        if (!isViewAttached || !canDrawOverlays()) return
+
+        try {
+            windowManager.updateViewLayout(view, windowLayoutParams)
+        } catch (e: WindowManager.BadTokenException) {
+            cleanupOverlayView()
+            stopSelf()
+        } catch (e: SecurityException) {
+            cleanupOverlayView()
+            stopSelf()
+        } catch (_: IllegalArgumentException) {
+            isViewAttached = false
+        } catch (_: Exception) {}
     }
 
     private fun clampPositionToScreenBounds() {
@@ -345,23 +387,41 @@ class PetOverlayService : Service() {
             .build()
     }
 
+    private fun cleanupOverlayView() {
+        val view = overlayComposeView
+        overlayComposeView = null
+        if (view != null && isViewAttached) {
+            try {
+                windowManager.removeView(view)
+            } catch (_: WindowManager.BadTokenException) {
+            } catch (_: SecurityException) {
+            } catch (_: IllegalArgumentException) {
+            } catch (_: Exception) {
+            } finally {
+                isViewAttached = false
+            }
+        }
+        try {
+            view?.disposeComposition()
+        } catch (_: Exception) {}
+    }
+
     override fun onDestroy() {
         cancelAutoHideTimer()
         glideAnimator?.cancel()
+        glideAnimator = null
         roamJob?.cancel()
-        super.onDestroy()
+        roamJob = null
+
+        lifecycleOwner.onDestroy()
+        serviceScope.cancel()
+
+        cleanupOverlayView()
+
         if (::repository.isInitialized) {
             repository.setOverlayActive(false)
         }
-        serviceScope.cancel()
-        lifecycleOwner.onPause()
-        lifecycleOwner.onDestroy()
-        overlayComposeView?.let {
-            try {
-                windowManager.removeView(it)
-            } catch (_: Exception) {}
-            overlayComposeView = null
-        }
+        super.onDestroy()
     }
 
     companion object {
@@ -370,3 +430,4 @@ class PetOverlayService : Service() {
         private const val AUTO_HIDE_IDLE_DELAY_MS = 5000L
     }
 }
+

@@ -15,6 +15,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -64,11 +65,11 @@ import kotlin.random.Random
 
 /**
  * Gamified Agentic AI Command Center.
- * - Top: Floating Seamless RPG Player HUD Banner (No card box):
- *     - Left: Solid warm brown avatar with outer cyan XP arc & live connectivity beacon.
- *     - Flowing HP Energy Strip extending from the avatar with chevron point and fluid gradient.
- *     - Top line: User Name + Hexagonal Level Badge + XP readout.
- *     - Bottom line: Location telemetry on left & WiFi/Cellular status on right.
+ * - Top: Seamless RPG Player HUD Banner:
+ *     - Avatar on left with solid brown core & status beacon.
+ *     - Attached dual gauge extending directly from avatar: HP Bar on top, XP Bar attached below.
+ *     - Top line: User Name + Hexagonal Level Badge.
+ *     - Bottom line: Location & Network status.
  * - Center: Living 3D Mascot with Care FAB (left) & Studio/Quest buttons (right).
  * - Below Pet: Balanced row with Mic/Cancel on left, Prominent Chat in the exact CENTER, and Camera on right.
  * - App Controls: Life Hub & Wellness with generous spacing.
@@ -182,7 +183,7 @@ fun HomeScreen(
         ) {
 
             // ==========================================
-            // 1. TOP RPG HUD: SEAMLESS FLOATING PLAYER BANNER (NO CARD BOX)
+            // 1. TOP RPG HUD: ATTACHED HP & XP BARS STARTING FROM USER PIC
             // ==========================================
             SeamlessRpgPlayerHud(
                 petStatus = petStatus,
@@ -503,11 +504,11 @@ fun HomeScreen(
 // =========================================================================
 
 /**
- * Seamless Floating RPG Player HUD Banner (No card box enclosure):
- * - Left: Solid warm brown Avatar with cyan XP orbit ring & live connectivity beacon.
- * - Flowing HP Energy Strip extending from the avatar with chevron point and fluid gradient.
- * - Top line: User Name + Hexagonal Level Badge + XP readout.
- * - Bottom line: Location telemetry on left & WiFi/Cellular status on right.
+ * Seamless Floating RPG Player HUD Banner:
+ * - Left: Solid warm brown Avatar touching the dual progress bars directly.
+ * - Center: Dual attached progress bars (HP Bar on top, XP Bar directly attached below).
+ * - Top line: User Name + Hexagonal Level Badge.
+ * - Bottom line: Location telemetry & Network link status.
  */
 @Composable
 fun SeamlessRpgPlayerHud(
@@ -531,19 +532,19 @@ fun SeamlessRpgPlayerHud(
         }
     }
 
-    // Dynamic fluid energy color palette
+    // Dynamic fluid energy color palette for HP
     val hpFillRatio = (batteryStatus.levelPercent / 100f).coerceIn(0f, 1f)
     val (energyGradient, energyGlowColor) = when {
         batteryStatus.levelPercent >= 60 -> Pair(
-            listOf(Color(0xFF00E676), Color(0xFF00F5D4), Color(0xFF00B4D8)),
+            listOf(Color(0xFF00E676), Color(0xFF00F5D4)),
             Color(0xFF00F5D4)
         )
         batteryStatus.levelPercent >= 20 -> Pair(
-            listOf(Color(0xFFFFB703), Color(0xFFFFD166), Color(0xFFFFF07C)),
+            listOf(Color(0xFFFFB703), Color(0xFFFFD166)),
             Color(0xFFFFD166)
         )
         else -> Pair(
-            listOf(Color(0xFFE63946), Color(0xFFFF4D6D), Color(0xFFFF8FA3)),
+            listOf(Color(0xFFE63946), Color(0xFFFF4D6D)),
             Color(0xFFFF4D6D)
         )
     }
@@ -579,7 +580,7 @@ fun SeamlessRpgPlayerHud(
 
     val placeName = locationContext.approximatePlace.ifBlank { "Unknown" }
 
-    // Floating Root Row (NO enclosing card surface)
+    // Floating Root Row (Directly touching Avatar and Bars)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -588,191 +589,193 @@ fun SeamlessRpgPlayerHud(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // ==========================================
-        // 1. AVATAR WITH XP ORBIT ARC & STATUS BEACON
+        // 1. SOLID WARM BROWN AVATAR CIRCLE
         // ==========================================
         Box(
-            modifier = Modifier.size(62.dp),
+            modifier = Modifier.size(54.dp),
             contentAlignment = Alignment.Center
         ) {
-            // Circular XP Orbit Progress Arc
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val stroke = 3.5.dp.toPx()
-                // Orbit track
-                drawArc(
-                    color = Color(0x3300E5FF),
-                    startAngle = -90f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    style = Stroke(width = stroke, cap = StrokeCap.Round)
-                )
-                // Active XP Arc with neon glow
-                drawArc(
-                    brush = Brush.sweepGradient(
-                        listOf(
-                            Color(0xFF0077B6),
-                            Color(0xFF00E5FF),
-                            Color(0xFF00F5D4),
-                            Color(0xFF00E5FF)
-                        )
-                    ),
-                    startAngle = -90f,
-                    sweepAngle = xpRatio * 360f,
-                    useCenter = false,
-                    style = Stroke(width = stroke, cap = StrokeCap.Round)
-                )
-            }
-
-            // Solid Warm Brown Avatar Circle
             Box(
                 modifier = Modifier
-                    .size(48.dp)
+                    .size(52.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFB5704D)),
+                    .background(Color(0xFFB5704D))
+                    .border(2.dp, Color(0xFFD4A373), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = initials,
                     color = Color.White,
-                    fontSize = 18.sp,
+                    fontSize = 19.sp,
                     fontWeight = FontWeight.Black,
                     letterSpacing = 0.5.sp
                 )
             }
 
-            // Small Live Connectivity Beacon (Green / Yellow / Red)
+            // Small Live Connectivity Beacon (Bottom-Start)
             Box(
                 modifier = Modifier
-                    .size(14.dp)
-                    .align(Alignment.BottomEnd)
-                    .offset(x = (-1).dp, y = (-1).dp)
+                    .size(13.dp)
+                    .align(Alignment.BottomStart)
+                    .offset(x = 2.dp, y = (-1).dp)
                     .clip(CircleShape)
                     .background(Color(0xFF0F111E))
-                    .padding(2.dp)
+                    .padding(1.5.dp)
                     .clip(CircleShape)
                     .background(beaconColor)
             )
         }
 
-        Spacer(modifier = Modifier.width(10.dp))
-
         // ==========================================
-        // 2. RIGHT COMPOSITE: NAME ROW + HP ENERGY STRIP + LOCATION ROW
+        // 2. RIGHT COMPOSITE: ATTACHED DIRECTLY FROM USER PIC
         // ==========================================
         Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            modifier = Modifier
+                .weight(1f)
+                .offset(x = (-3).dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            // --- TOP LINE: User Name + Hexagonal Level Badge + XP Points ---
+            // --- TOP LINE: User Name + Hexagonal Level Badge ---
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = displayName,
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    // Hexagonal Level Insignia
-                    SeamlessHexagonLevelBadge(level = petStatus.level)
-                }
-
-                // XP Points Display
-                Text(
-                    text = "${petStatus.exp}/${petStatus.expToNextLevel} XP",
-                    color = Color(0xFF00E5FF),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            // --- CENTER: Flowing HP Energy Strip with Chevron Point & Liquid Fill ---
-            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(24.dp)
+                    .padding(start = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = displayName,
+                    color = Color.White,
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                SeamlessHexagonLevelBadge(level = petStatus.level)
+            }
+
+            // --- CENTER: ATTACHED DUAL BARS (HP ON TOP, XP ATTACHED BELOW) ---
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
                     .clip(ChevronStripShape())
                     .background(Color(0xFF1E2235))
             ) {
-                // Liquid Fill Bar
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(hpFillRatio)
-                        .fillMaxHeight()
-                        .background(
-                            if (batteryStatus.isCharging) {
-                                Brush.horizontalGradient(
-                                    colors = listOf(
-                                        energyGradient[0],
-                                        Color.White,
-                                        energyGradient[1],
-                                        energyGradient[2]
-                                    ),
-                                    startX = chargingShimmer - 80f,
-                                    endX = chargingShimmer + 80f
-                                )
-                            } else {
-                                Brush.horizontalGradient(energyGradient)
-                            }
-                        )
-                )
-
-                // Top Gloss Highlight Line for 3D depth
+                // 1. TOP ATTACHED BAR: HP (VITALITY)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(2.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(
-                                    Color.White.copy(alpha = 0.35f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
-                )
-
-                // HP Overlay Readout
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .height(18.dp)
+                        .background(Color(0xFF161A29))
                 ) {
-                    Text(
-                        text = "HP",
-                        color = Color.White,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 0.5.sp
+                    // HP Fill Bar
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(hpFillRatio)
+                            .fillMaxHeight()
+                            .background(
+                                if (batteryStatus.isCharging) {
+                                    Brush.horizontalGradient(
+                                        colors = listOf(
+                                            energyGradient[0],
+                                            Color.White,
+                                            energyGradient[1]
+                                        ),
+                                        startX = chargingShimmer - 80f,
+                                        endX = chargingShimmer + 80f
+                                    )
+                                } else {
+                                    Brush.horizontalGradient(energyGradient)
+                                }
+                            )
                     )
 
+                    // HP Readout Overlay
                     Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        if (batteryStatus.isCharging) {
-                            Icon(
-                                imageVector = Icons.Default.Bolt,
-                                contentDescription = "Charging",
-                                tint = Color.White,
-                                modifier = Modifier.size(13.dp)
+                        Text(
+                            text = "HP",
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 0.5.sp
+                        )
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            if (batteryStatus.isCharging) {
+                                Icon(
+                                    imageVector = Icons.Default.Bolt,
+                                    contentDescription = "Charging",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(11.dp)
+                                )
+                            }
+                            Text(
+                                text = "${batteryStatus.levelPercent}%",
+                                color = Color.White,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Black
                             )
                         }
+                    }
+                }
+
+                // Divider hairline between HP and XP
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color(0xFF0F111E))
+                )
+
+                // 2. BOTTOM ATTACHED BAR: XP PROGRESS
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(10.dp)
+                        .background(Color(0xFF121522))
+                ) {
+                    // XP Fill Bar (Cyan gradient)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(xpRatio)
+                            .fillMaxHeight()
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(Color(0xFF0077B6), Color(0xFF00B4D8), Color(0xFF00E5FF))
+                                )
+                            )
+                    )
+
+                    // XP Readout Overlay
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
                         Text(
-                            text = "${batteryStatus.levelPercent}%",
-                            color = Color.White,
-                            fontSize = 10.sp,
+                            text = "XP",
+                            color = Color(0xFF00E5FF),
+                            fontSize = 7.5.sp,
                             fontWeight = FontWeight.Black
+                        )
+
+                        Text(
+                            text = "${petStatus.exp}/${petStatus.expToNextLevel}",
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 7.5.sp,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
@@ -780,7 +783,9 @@ fun SeamlessRpgPlayerHud(
 
             // --- BOTTOM LINE: Location & Network Status ---
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 6.dp, top = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -793,12 +798,12 @@ fun SeamlessRpgPlayerHud(
                         imageVector = Icons.Default.LocationOn,
                         contentDescription = null,
                         tint = LumiGold,
-                        modifier = Modifier.size(11.dp)
+                        modifier = Modifier.size(10.dp)
                     )
                     Text(
                         text = placeName,
                         color = TextSecondary,
-                        fontSize = 9.5.sp,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -812,14 +817,14 @@ fun SeamlessRpgPlayerHud(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(6.dp)
+                            .size(5.dp)
                             .clip(CircleShape)
                             .background(beaconColor)
                     )
                     Text(
                         text = netLabel,
                         color = beaconColor,
-                        fontSize = 9.5.sp,
+                        fontSize = 9.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -862,7 +867,7 @@ fun SeamlessHexagonLevelBadge(level: Int) {
 }
 
 /**
- * Custom Chevron / Pointed Strip Shape for the HP bar banner
+ * Custom Chevron / Pointed Strip Shape for the attached HP & XP bars
  */
 class ChevronStripShape : androidx.compose.ui.graphics.Shape {
     override fun createOutline(

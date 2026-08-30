@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -63,11 +64,11 @@ import kotlin.random.Random
 
 /**
  * Gamified Agentic AI Command Center.
- * - Top: Single unified RPG Player HUD banner matching custom design:
- *     - Left: Solid brown User Avatar with outer XP arc & connectivity status dot.
- *     - Above strip: User Name + Hexagonal Level Badge + XP count.
- *     - Center strip: Dynamic HP (Battery) bar with animated charging wave.
- *     - Below strip: User's live location.
+ * - Top: Enterprise Cyber-RPG Player HUD Deck:
+ *     - Left: Polished Bronze & Obsidian Avatar Pod with glowing outer XP Orbit Ring & Telemetry Beacon.
+ *     - Top Deck: User Name + Faceted Hexagonal Level Insignia + Live XP Progress readout.
+ *     - Center: Holographic HP / Vitality Energy Bar with dynamic gradient fluid & charging sweep.
+ *     - Sub Deck: Micro-telemetry row with Live Location and Network Type status.
  * - Center: Living 3D Mascot with Care FAB (left) & Studio/Quest buttons (right).
  * - Below Pet: Balanced row with Mic/Cancel on left, Prominent Chat in the exact CENTER, and Camera on right.
  * - App Controls: Life Hub & Wellness with generous spacing.
@@ -160,10 +161,10 @@ fun HomeScreen(
                 Brush.radialGradient(
                     colors = listOf(
                         petPrimary.copy(alpha = neonGlowAlpha),
-                        Color(0xFF141126),
+                        Color(0xFF100E1D),
                         ObsidianDark
                     ),
-                    center = Offset(540f, 600f),
+                    center = Offset(540f, 500f),
                     radius = 1300f
                 )
             )
@@ -181,7 +182,7 @@ fun HomeScreen(
         ) {
 
             // ==========================================
-            // 1. TOP RPG HUD: UNIFIED AVATAR, XP ARC & HP STRIP BANNER
+            // 1. TOP RPG HUD: ENTERPRISE CYBER-RPG DECK
             // ==========================================
             GamifiedRpgPlayerHud(
                 petStatus = petStatus,
@@ -502,11 +503,12 @@ fun HomeScreen(
 // =========================================================================
 
 /**
- * Custom Unified RPG Player HUD:
- * - Left: Solid brown Avatar with outer XP arc & connectivity status dot.
- * - Top line: User Name + Hexagonal Level Badge + XP count.
- * - Center strip: Dynamic HP (Battery) bar with animated charging wave.
- * - Bottom line: User Location (or Unknown).
+ * Enterprise Cyber-RPG Player HUD Deck:
+ * - High-end glassmorphic frame with hairline holo-rim lighting.
+ * - Avatar Command Pod: Deep obsidian & bronze metallic monogram avatar with glowing neon XP orbit gauge & beacon.
+ * - Top Deck: Hero identity title + 3D faceted crystal Level insignia + XP readout.
+ * - Center: Streamlined Energy Gauge with chamfered cyber-accent, glowing fluid gradient, and charging pulse wave.
+ * - Sub Deck: Micro-telemetry bar with Geolocation & Network Link telemetry.
  */
 @Composable
 fun GamifiedRpgPlayerHud(
@@ -517,259 +519,355 @@ fun GamifiedRpgPlayerHud(
     userProfile: UserProfileData,
     onNavigateToAccount: () -> Unit
 ) {
-    val displayName = userProfile.userName.ifBlank { "User Name" }
+    val displayName = userProfile.userName.ifBlank { "Azhar Ameen" }
 
-    // Calculate 2-letter initials (e.g., "Azhar Ameen" -> "AA", default "UN")
+    // Initials calculation
     val initials = remember(displayName) {
         val parts = displayName.trim().split("\\s+".toRegex()).filter { it.isNotBlank() }
         when {
             parts.size >= 2 -> "${parts[0].first().uppercaseChar()}${parts[1].first().uppercaseChar()}"
             displayName.length >= 2 -> displayName.take(2).uppercase()
             displayName.isNotEmpty() -> "${displayName.first().uppercaseChar()}N"
-            else -> "UN"
+            else -> "AA"
         }
     }
 
-    // Dynamic Battery Color Coding
+    // Dynamic fluid energy color palette
     val hpFillRatio = (batteryStatus.levelPercent / 100f).coerceIn(0f, 1f)
-    val hpColor = when {
-        batteryStatus.levelPercent >= 60 -> Color(0xFF10B981) // Emerald Green
-        batteryStatus.levelPercent >= 20 -> Color(0xFFF59E0B) // Solar Amber
-        else -> Color(0xFFEF4444) // Critical Red
+    val (energyGradient, energyGlowColor) = when {
+        batteryStatus.levelPercent >= 60 -> Pair(
+            listOf(Color(0xFF059669), Color(0xFF10B981), Color(0xFF00F5D4)),
+            Color(0xFF00F5D4)
+        )
+        batteryStatus.levelPercent >= 20 -> Pair(
+            listOf(Color(0xFFD97706), Color(0xFFF59E0B), Color(0xFFFDE047)),
+            Color(0xFFF59E0B)
+        )
+        else -> Pair(
+            listOf(Color(0xFFDC2626), Color(0xFFEF4444), Color(0xFFFF8FA3)),
+            Color(0xFFEF4444)
+        )
     }
 
-    // XP Progress Calculation
-    val xpProgress = (petStatus.exp.toFloat() / petStatus.expToNextLevel.coerceAtLeast(1)).coerceIn(0f, 1f)
+    // XP Progress
+    val xpRatio = (petStatus.exp.toFloat() / petStatus.expToNextLevel.coerceAtLeast(1)).coerceIn(0f, 1f)
 
-    // Animated charging shimmer
-    val infiniteTransition = rememberInfiniteTransition(label = "HpChargingShimmer")
-    val chargingShimmerOffset by infiniteTransition.animateFloat(
-        initialValue = -100f,
-        targetValue = 400f,
+    // Infinite animations
+    val infiniteTransition = rememberInfiniteTransition(label = "RpgHudAnimations")
+    val chargingShimmer by infiniteTransition.animateFloat(
+        initialValue = -80f,
+        targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1400, easing = LinearEasing),
+            animation = tween(1300, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "ChargingOffset"
+        label = "ChargingShimmer"
     )
 
-    // Network Connectivity Dot Color
-    val connectivityDotColor = when {
-        !networkStatus.isConnected || networkStatus.type == NetworkType.OFFLINE -> Color(0xFFEF4444) // Red: Offline
-        networkStatus.type == NetworkType.CELLULAR -> Color(0xFFF59E0B) // Yellow: Moderate / Cellular
-        else -> Color(0xFF10B981) // Green: Strong / WiFi
+    val beaconPulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.5f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "BeaconPulse"
+    )
+
+    // Telemetry Beacon Color
+    val beaconColor = when {
+        !networkStatus.isConnected || networkStatus.type == NetworkType.OFFLINE -> Color(0xFFEF4444)
+        networkStatus.type == NetworkType.CELLULAR -> Color(0xFFF59E0B)
+        else -> Color(0xFF10B981)
     }
 
-    Row(
+    // Main Glassmorphic Deck
+    Surface(
+        color = Color(0xCC151928),
+        shape = RoundedCornerShape(22.dp),
+        border = BorderStroke(
+            1.2.dp,
+            Brush.linearGradient(
+                listOf(
+                    Color(0xFF00E5FF).copy(alpha = 0.45f),
+                    Color(0xFF7928CA).copy(alpha = 0.25f),
+                    Color(0xFF00E5FF).copy(alpha = 0.15f)
+                )
+            )
+        ),
+        shadowElevation = 8.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
             .clickable { onNavigateToAccount() }
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        // ==========================================
-        // 1. USER AVATAR WITH OUTER XP ARC & STATUS DOT
-        // ==========================================
-        Box(
-            modifier = Modifier.size(62.dp),
-            contentAlignment = Alignment.Center
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Outer XP Progress Arc
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val strokeWidth = 3.5.dp.toPx()
-                // Arc track
-                drawArc(
-                    color = Color(0xFF222638),
-                    startAngle = -90f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                )
-                // Active XP Arc
-                drawArc(
-                    brush = Brush.sweepGradient(
-                        listOf(Color(0xFF0096C7), Color(0xFF00E5FF), Color(0xFF48CAE4), Color(0xFF0096C7))
-                    ),
-                    startAngle = -90f,
-                    sweepAngle = xpProgress * 360f,
-                    useCenter = false,
-                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                )
-            }
-
-            // Solid Brown Avatar Circle with Initials
-            Surface(
-                color = Color(0xFFB5704D), // Solid warm gamer brown as depicted
-                shape = CircleShape,
-                shadowElevation = 4.dp,
-                modifier = Modifier.size(48.dp)
+            // ==========================================
+            // 1. AVATAR COMMAND POD WITH XP ORBIT GAUGE & BEACON
+            // ==========================================
+            Box(
+                modifier = Modifier.size(58.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = initials,
-                        color = Color.White,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 0.5.sp
+                // Circular Orbit XP Gauge
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val stroke = 3.dp.toPx()
+                    // Track
+                    drawArc(
+                        color = Color(0xFF1F2438),
+                        startAngle = -90f,
+                        sweepAngle = 360f,
+                        useCenter = false,
+                        style = Stroke(width = stroke, cap = StrokeCap.Round)
+                    )
+                    // Active Orbit
+                    drawArc(
+                        brush = Brush.sweepGradient(
+                            listOf(
+                                Color(0xFF0077B6),
+                                Color(0xFF00E5FF),
+                                Color(0xFF00F5D4),
+                                Color(0xFF0077B6)
+                            )
+                        ),
+                        startAngle = -90f,
+                        sweepAngle = xpRatio * 360f,
+                        useCenter = false,
+                        style = Stroke(width = stroke, cap = StrokeCap.Round)
                     )
                 }
-            }
 
-            // Small Connectivity Badge Circle (Green / Yellow / Red)
-            Box(
-                modifier = Modifier
-                    .size(14.dp)
-                    .align(Alignment.BottomEnd)
-                    .offset(x = (-2).dp, y = (-2).dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFF0F111E))
-                    .padding(2.dp)
-                    .clip(CircleShape)
-                    .background(connectivityDotColor)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        // ==========================================
-        // 2. RIGHT COMPOSITE: USER NAME + HP STRIP + LOCATION
-        // ==========================================
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            // --- TOP LINE: User Name + Hexagonal Level Badge + XP Points ---
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text(
-                        text = displayName,
-                        color = Color(0xFFBD6BFF), // Stylized purple-magenta as in diagram
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Black,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    // Hexagonal Level Badge
-                    HexagonLevelBadge(level = petStatus.level)
-                }
-
-                // XP Points Display
-                Text(
-                    text = "${petStatus.exp}/${petStatus.expToNextLevel} XP",
-                    color = Color(0xFF00E5FF),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            // --- CENTER: Dynamic HP (Battery) Strip with Chevron End & Charging Shimmer ---
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(24.dp)
-                    .clip(ChevronStripShape())
-                    .background(SurfaceDarkVariant)
-            ) {
-                // HP Fill Bar
+                // Premium Bronze & Obsidian Avatar Core
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(hpFillRatio)
-                        .fillMaxHeight()
+                        .size(46.dp)
+                        .clip(CircleShape)
                         .background(
-                            if (batteryStatus.isCharging) {
-                                Brush.horizontalGradient(
-                                    colors = listOf(
-                                        hpColor.copy(alpha = 0.8f),
-                                        Color(0xFF00F5D4),
-                                        hpColor
-                                    ),
-                                    startX = chargingShimmerOffset - 100f,
-                                    endX = chargingShimmerOffset + 100f
-                                )
-                            } else {
-                                Brush.horizontalGradient(listOf(hpColor.copy(alpha = 0.85f), hpColor))
-                            }
+                            Brush.linearGradient(
+                                listOf(Color(0xFFB5704D), Color(0xFF5C3317), Color(0xFF2B170B))
+                            )
                         )
-                )
+                        .padding(1.5.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(Color(0xFF6E3E20), Color(0xFF26150C))
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = initials,
+                        color = Color(0xFFFFF7ED),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.8.sp
+                    )
+                }
 
-                // HP & Battery Text / Charging Bolt
-                Row(
+                // Telemetry Signal Beacon (Pulsing Orbit Indicator)
+                Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 10.dp),
+                        .size(13.dp)
+                        .align(Alignment.BottomEnd)
+                        .offset(x = (-1).dp, y = (-1).dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF0C0E17))
+                        .padding(1.5.dp)
+                        .clip(CircleShape)
+                        .background(beaconColor.copy(alpha = beaconPulseAlpha))
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // ==========================================
+            // 2. MAIN TELEMETRY & ENERGY DECK
+            // ==========================================
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // --- TOP DECK: Name + Crystal Hexagon Insignia + XP Readout ---
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "HP",
-                        color = Color.White,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Black
-                    )
-
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        if (batteryStatus.isCharging) {
-                            Icon(
-                                imageVector = Icons.Default.Bolt,
-                                contentDescription = "Charging",
-                                tint = Color(0xFF00F5D4),
-                                modifier = Modifier.size(13.dp)
-                            )
-                        }
                         Text(
-                            text = "${batteryStatus.levelPercent}%",
-                            color = Color.White,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            text = displayName,
+                            color = Color(0xFFE2E8F0),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 0.3.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        // 3D Faceted Hexagonal Level Badge
+                        FacetedHexagonBadge(level = petStatus.level)
+                    }
+
+                    // XP Status Badge
+                    Surface(
+                        color = Color(0xFF00E5FF).copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(6.dp),
+                        border = BorderStroke(0.8.dp, Color(0xFF00E5FF).copy(alpha = 0.35f))
+                    ) {
+                        Text(
+                            text = "${petStatus.exp}/${petStatus.expToNextLevel} XP",
+                            color = Color(0xFF00E5FF),
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
                 }
-            }
 
-            // --- BOTTOM LINE: Location (or Unknown) ---
-            val placeName = locationContext.approximatePlace.ifBlank { "Unknown" }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = null,
-                    tint = LumiGold,
-                    modifier = Modifier.size(11.dp)
-                )
-                Text(
-                    text = placeName,
-                    color = TextSecondary,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                // --- CENTER: Holographic HP / Vitality Energy Gauge ---
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(20.dp)
+                        .clip(CyberGaugeShape())
+                        .background(Color(0xFF0E121E))
+                        .border(1.dp, Color(0xFF283049), CyberGaugeShape())
+                ) {
+                    // Fluid Energy Level Bar
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(hpFillRatio)
+                            .fillMaxHeight()
+                            .background(
+                                if (batteryStatus.isCharging) {
+                                    Brush.horizontalGradient(
+                                        colors = listOf(
+                                            energyGradient[0],
+                                            Color(0xFFFFFFFF),
+                                            energyGradient[1],
+                                            energyGradient[2]
+                                        ),
+                                        startX = chargingShimmer - 60f,
+                                        endX = chargingShimmer + 60f
+                                    )
+                                } else {
+                                    Brush.horizontalGradient(energyGradient)
+                                }
+                            )
+                    )
+
+                    // Overlay Energy Readout
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "VITALITY",
+                            color = Color(0xCCFFFFFF),
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 0.8.sp
+                        )
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            if (batteryStatus.isCharging) {
+                                Icon(
+                                    imageVector = Icons.Default.Bolt,
+                                    contentDescription = "Charging",
+                                    tint = Color(0xFF00F5D4),
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+                            Text(
+                                text = "${batteryStatus.levelPercent}%",
+                                color = Color.White,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Black
+                            )
+                        }
+                    }
+                }
+
+                // --- SUB DECK: Location & Network Telemetry Status ---
+                val placeName = locationContext.approximatePlace.ifBlank { "Unknown" }
+                val netLabel = when (networkStatus.type) {
+                    NetworkType.WIFI -> "WiFi"
+                    NetworkType.CELLULAR -> "Cellular"
+                    NetworkType.ETHERNET -> "Ethernet"
+                    NetworkType.OFFLINE -> "Offline"
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Location Telemetry
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = LumiGold,
+                            modifier = Modifier.size(10.dp)
+                        )
+                        Text(
+                            text = placeName.uppercase(),
+                            color = TextSecondary,
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.4.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    // Network Link Badge
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .clip(CircleShape)
+                                .background(beaconColor)
+                        )
+                        Text(
+                            text = netLabel.uppercase(),
+                            color = beaconColor,
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = 0.4.sp
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 /**
- * Hexagonal RPG Level Badge Component
+ * 3D Faceted Crystal Hexagon Badge for Player / Companion Level
  */
 @Composable
-fun HexagonLevelBadge(level: Int) {
+fun FacetedHexagonBadge(level: Int) {
     Box(
-        modifier = Modifier.size(20.dp),
+        modifier = Modifier.size(19.dp),
         contentAlignment = Alignment.Center
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -784,8 +882,21 @@ fun HexagonLevelBadge(level: Int) {
                 lineTo(0f, h * 0.25f)
                 close()
             }
-            drawPath(path, color = Color(0xFF0077B6))
-            drawPath(path, color = Color(0xFF00E5FF), style = Stroke(width = 1.2.dp.toPx()))
+            // Facet body
+            drawPath(
+                path = path,
+                brush = Brush.linearGradient(
+                    listOf(Color(0xFF0284C7), Color(0xFF0369A1), Color(0xFF0C4A6E))
+                )
+            )
+            // Cyber border
+            drawPath(
+                path = path,
+                brush = Brush.linearGradient(
+                    listOf(Color(0xFF38BDF8), Color(0xFF0284C7))
+                ),
+                style = Stroke(width = 1.2.dp.toPx())
+            )
         }
         Text(
             text = "$level",
@@ -797,9 +908,9 @@ fun HexagonLevelBadge(level: Int) {
 }
 
 /**
- * Custom Chevron / Pointed Strip Shape for the HP bar banner
+ * Sculpted Chamfered Cyber-Gauge Shape for the HP bar
  */
-class ChevronStripShape : androidx.compose.ui.graphics.Shape {
+class CyberGaugeShape : androidx.compose.ui.graphics.Shape {
     override fun createOutline(
         size: androidx.compose.ui.geometry.Size,
         layoutDirection: androidx.compose.ui.unit.LayoutDirection,
@@ -807,14 +918,16 @@ class ChevronStripShape : androidx.compose.ui.graphics.Shape {
     ): androidx.compose.ui.graphics.Outline {
         val w = size.width
         val h = size.height
-        val pointWidth = (h * 0.45f).coerceAtMost(16f)
+        val chamfer = 5f
 
         val path = Path().apply {
-            moveTo(0f, 0f)
-            lineTo(w - pointWidth, 0f)
+            moveTo(chamfer, 0f)
+            lineTo(w - chamfer * 1.8f, 0f)
             lineTo(w, h * 0.5f)
-            lineTo(w - pointWidth, h)
-            lineTo(0f, h)
+            lineTo(w - chamfer * 1.8f, h)
+            lineTo(chamfer, h)
+            lineTo(0f, h - chamfer)
+            lineTo(0f, chamfer)
             close()
         }
         return androidx.compose.ui.graphics.Outline.Generic(path)

@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 class ChatViewModel(application: Application) : AndroidViewModel(application) {
     val repository: LumiRepository = LumiRepositoryImpl.getInstance(application)
     val voiceEngine = VoiceEngine(application)
-    private val userProfileManager = com.example.domain.account.UserProfileManager(application)
+    private val userProfileManager = com.example.domain.account.UserProfileManager.getInstance(application)
     val userProfile = userProfileManager.userProfile
 
     val pagedChatMessages = repository.pagedChatMessages.cachedIn(viewModelScope)

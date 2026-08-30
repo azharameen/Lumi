@@ -72,12 +72,16 @@ fun OnboardingScreen(
                     onNext = { currentStep++ }
                 )
                 2 -> NameAndGoalStep(
-                    name = userProfile.userName,
-                    goal = userProfile.primaryFocusGoal,
-                    onNameChange = { n -> viewModel.userProfileManager.updateField { it.copy(userName = n) } },
-                    onGoalChange = { g -> viewModel.userProfileManager.updateField { it.copy(primaryFocusGoal = g) } },
-                    onNext = {
-                        viewModel.userProfileManager.updateField { it.copy(hasCompletedOnboarding = true) }
+                    initialName = userProfile.userName,
+                    initialGoal = userProfile.primaryFocusGoal,
+                    onComplete = { finalName, finalGoal ->
+                        viewModel.userProfileManager.updateField {
+                            it.copy(
+                                userName = finalName.ifBlank { "Azhar Ameen" },
+                                primaryFocusGoal = finalGoal.ifBlank { "Deep Flow, Clean Code & Mindful Living" },
+                                hasCompletedOnboarding = true
+                            )
+                        }
                         onComplete()
                     }
                 )
@@ -244,12 +248,13 @@ fun PersonaStep(
 
 @Composable
 fun NameAndGoalStep(
-    name: String,
-    goal: String,
-    onNameChange: (String) -> Unit,
-    onGoalChange: (String) -> Unit,
-    onNext: () -> Unit
+    initialName: String,
+    initialGoal: String,
+    onComplete: (String, String) -> Unit
 ) {
+    var name by remember(initialName) { mutableStateOf(initialName) }
+    var goal by remember(initialGoal) { mutableStateOf(initialGoal) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -272,7 +277,7 @@ fun NameAndGoalStep(
         
         OutlinedTextField(
             value = name,
-            onValueChange = onNameChange,
+            onValueChange = { name = it },
             label = { Text("Your Name", color = Color.LightGray) },
             textStyle = LocalTextStyle.current.copy(color = Color.White, fontSize = 18.sp),
             modifier = Modifier.fillMaxWidth(),
@@ -287,7 +292,7 @@ fun NameAndGoalStep(
         
         OutlinedTextField(
             value = goal,
-            onValueChange = onGoalChange,
+            onValueChange = { goal = it },
             label = { Text("Primary Focus / Goal", color = Color.LightGray) },
             textStyle = LocalTextStyle.current.copy(color = Color.White, fontSize = 16.sp),
             modifier = Modifier.fillMaxWidth(),
@@ -300,7 +305,7 @@ fun NameAndGoalStep(
         Spacer(modifier = Modifier.weight(1f))
         
         Button(
-            onClick = onNext,
+            onClick = { onComplete(name, goal) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),

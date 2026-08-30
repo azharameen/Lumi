@@ -34,7 +34,7 @@ data class LumiUiState(
 
 class LumiViewModel(application: Application) : AndroidViewModel(application) {
     val repository: LumiRepository = LumiRepositoryImpl.getInstance(application)
-    val userProfileManager = com.example.domain.account.UserProfileManager(application)
+    val userProfileManager = com.example.domain.account.UserProfileManager.getInstance(application)
     
     val userProfile = userProfileManager.userProfile
     val userFacts = userProfileManager.userFacts

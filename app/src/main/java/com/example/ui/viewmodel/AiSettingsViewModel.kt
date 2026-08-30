@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 
 class AiSettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val modelDownloadManager = ModelDownloadManager.getInstance(application)
-    private val userProfileManager = UserProfileManager(application)
+    private val userProfileManager = UserProfileManager.getInstance(application)
 
     val userProfile = userProfileManager.userProfile
     

@@ -10,7 +10,19 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 
-class UserProfileManager(context: Context) {
+class UserProfileManager private constructor(context: Context) {
+
+    companion object {
+        @Volatile
+        private var INSTANCE: UserProfileManager? = null
+
+        fun getInstance(context: Context): UserProfileManager {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: UserProfileManager(context.applicationContext).also { INSTANCE = it }
+            }
+        }
+    }
+
     private val prefs: SharedPreferences = context.getSharedPreferences("lumi_user_profile_prefs", Context.MODE_PRIVATE)
 
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()

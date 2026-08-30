@@ -180,7 +180,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, chatViewModel: ChatViewModel, wellnessViewModel: WellnessViewModel, lifeHubViewModel: LifeHubViewModel, petViewModel: PetViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val userProfile by aiSettingsViewModel.userProfile.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     if (!userProfile.hasCompletedOnboarding) {

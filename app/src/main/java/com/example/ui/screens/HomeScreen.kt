@@ -34,6 +34,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
@@ -61,7 +63,11 @@ import kotlin.random.Random
 
 /**
  * Gamified Agentic AI Command Center.
- * - Top: 50/50 equal-width cards. Left (Lumi) & Right (User with right-aligned avatar & location icon).
+ * - Top: Single unified RPG Player HUD banner matching custom design:
+ *     - Left: Solid brown User Avatar with outer XP arc & connectivity status dot.
+ *     - Above strip: User Name + Hexagonal Level Badge + XP count.
+ *     - Center strip: Dynamic HP (Battery) bar with animated charging wave.
+ *     - Below strip: User's live location.
  * - Center: Living 3D Mascot with Care FAB (left) & Studio/Quest buttons (right).
  * - Below Pet: Balanced row with Mic/Cancel on left, Prominent Chat in the exact CENTER, and Camera on right.
  * - App Controls: Life Hub & Wellness with generous spacing.
@@ -175,19 +181,18 @@ fun HomeScreen(
         ) {
 
             // ==========================================
-            // 1. TOP RPG HUD: 50/50 SPLIT FOR LUMI & USER (RIGHT-ALIGNED USER CARD)
+            // 1. TOP RPG HUD: UNIFIED AVATAR, XP ARC & HP STRIP BANNER
             // ==========================================
-            GamifiedFiftyFiftyTopHud(
+            GamifiedRpgPlayerHud(
                 petStatus = petStatus,
                 batteryStatus = batteryStatus,
                 networkStatus = networkStatus,
                 locationContext = locationContext,
                 userProfile = userProfile,
-                petPrimary = petPrimary,
                 onNavigateToAccount = onNavigateToAccount
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // ==========================================
             // 2. MINIMAL PET SPEECH CARD (RESPONSE TEXT + MOOD)
@@ -497,249 +502,322 @@ fun HomeScreen(
 // =========================================================================
 
 /**
- * Top HUD with 50/50 width distribution:
- * Left (50%) = Lumi Companion (Name, Level, HP, XP, Network)
- * Right (50%) = User Player (Right-aligned: Name + Avatar to right, Location text + pin to right)
+ * Custom Unified RPG Player HUD:
+ * - Left: Solid brown Avatar with outer XP arc & connectivity status dot.
+ * - Top line: User Name + Hexagonal Level Badge + XP count.
+ * - Center strip: Dynamic HP (Battery) bar with animated charging wave.
+ * - Bottom line: User Location (or Unknown).
  */
 @Composable
-fun GamifiedFiftyFiftyTopHud(
+fun GamifiedRpgPlayerHud(
     petStatus: PetStatus,
     batteryStatus: BatteryStatus,
     networkStatus: NetworkStatus,
     locationContext: LocationContext,
     userProfile: UserProfileData,
-    petPrimary: Color,
     onNavigateToAccount: () -> Unit
 ) {
+    val displayName = userProfile.userName.ifBlank { "User Name" }
+
+    // Calculate 2-letter initials (e.g., "Azhar Ameen" -> "AA", default "UN")
+    val initials = remember(displayName) {
+        val parts = displayName.trim().split("\\s+".toRegex()).filter { it.isNotBlank() }
+        when {
+            parts.size >= 2 -> "${parts[0].first().uppercaseChar()}${parts[1].first().uppercaseChar()}"
+            displayName.length >= 2 -> displayName.take(2).uppercase()
+            displayName.isNotEmpty() -> "${displayName.first().uppercaseChar()}N"
+            else -> "UN"
+        }
+    }
+
+    // Dynamic Battery Color Coding
+    val hpFillRatio = (batteryStatus.levelPercent / 100f).coerceIn(0f, 1f)
+    val hpColor = when {
+        batteryStatus.levelPercent >= 60 -> Color(0xFF10B981) // Emerald Green
+        batteryStatus.levelPercent >= 20 -> Color(0xFFF59E0B) // Solar Amber
+        else -> Color(0xFFEF4444) // Critical Red
+    }
+
+    // XP Progress Calculation
+    val xpProgress = (petStatus.exp.toFloat() / petStatus.expToNextLevel.coerceAtLeast(1)).coerceIn(0f, 1f)
+
+    // Animated charging shimmer
+    val infiniteTransition = rememberInfiniteTransition(label = "HpChargingShimmer")
+    val chargingShimmerOffset by infiniteTransition.animateFloat(
+        initialValue = -100f,
+        targetValue = 400f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1400, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "ChargingOffset"
+    )
+
+    // Network Connectivity Dot Color
+    val connectivityDotColor = when {
+        !networkStatus.isConnected || networkStatus.type == NetworkType.OFFLINE -> Color(0xFFEF4444) // Red: Offline
+        networkStatus.type == NetworkType.CELLULAR -> Color(0xFFF59E0B) // Yellow: Moderate / Cellular
+        else -> Color(0xFF10B981) // Green: Strong / WiFi
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .clip(RoundedCornerShape(20.dp))
+            .clickable { onNavigateToAccount() }
+            .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // LEFT CARD (50% WIDTH): Lumi Companion Hub
-        Surface(
-            color = SurfaceDark.copy(alpha = 0.85f),
-            shape = RoundedCornerShape(18.dp),
-            border = BorderStroke(1.dp, SurfaceHighlight.copy(alpha = 0.5f)),
-            shadowElevation = 4.dp,
-            modifier = Modifier.weight(1f)
+        // ==========================================
+        // 1. USER AVATAR WITH OUTER XP ARC & STATUS DOT
+        // ==========================================
+        Box(
+            modifier = Modifier.size(62.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
+            // Outer XP Progress Arc
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val strokeWidth = 3.5.dp.toPx()
+                // Arc track
+                drawArc(
+                    color = Color(0xFF222638),
+                    startAngle = -90f,
+                    sweepAngle = 360f,
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
+                // Active XP Arc
+                drawArc(
+                    brush = Brush.sweepGradient(
+                        listOf(Color(0xFF0096C7), Color(0xFF00E5FF), Color(0xFF48CAE4), Color(0xFF0096C7))
+                    ),
+                    startAngle = -90f,
+                    sweepAngle = xpProgress * 360f,
+                    useCenter = false,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
+            }
+
+            // Solid Brown Avatar Circle with Initials
+            Surface(
+                color = Color(0xFFB5704D), // Solid warm gamer brown as depicted
+                shape = CircleShape,
+                shadowElevation = 4.dp,
+                modifier = Modifier.size(48.dp)
             ) {
-                // Row 1: Name + Level
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
+                Box(contentAlignment = Alignment.Center) {
                     Text(
-                        text = petStatus.name,
-                        color = TextPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Surface(
-                        color = petPrimary.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(6.dp),
-                        border = BorderStroke(1.dp, petPrimary.copy(alpha = 0.5f))
-                    ) {
-                        Text(
-                            text = "Lv.${petStatus.level}",
-                            color = petPrimary,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Black,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                        )
-                    }
-                }
-
-                // Row 2: HP Bar (Above XP) with Charging Indicator
-                val batteryRatio = (batteryStatus.levelPercent / 100f).coerceIn(0f, 1f)
-                val hpColor = if (batteryStatus.isCharging) LumiMint else if (batteryStatus.isLow) LumiCoral else LumiGreen
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text("HP", color = hpColor, fontSize = 8.sp, fontWeight = FontWeight.Black)
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(5.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(SurfaceDarkVariant)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(batteryRatio)
-                                .fillMaxHeight()
-                                .background(hpColor)
-                        )
-                    }
-                    Text(
-                        "${batteryStatus.levelPercent}%",
-                        color = TextSecondary,
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (batteryStatus.isCharging) {
-                        Icon(
-                            imageVector = Icons.Default.Bolt,
-                            contentDescription = "Charging",
-                            tint = LumiMint,
-                            modifier = Modifier.size(10.dp)
-                        )
-                    }
-                }
-
-                // Row 3: XP Bar (Below HP)
-                val xpRatio = (petStatus.exp.toFloat() / petStatus.expToNextLevel.coerceAtLeast(1)).coerceIn(0f, 1f)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text("XP", color = LumiCyan, fontSize = 8.sp, fontWeight = FontWeight.Black)
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(5.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(SurfaceDarkVariant)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(xpRatio)
-                                .fillMaxHeight()
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(LumiCyan, petPrimary)
-                                    )
-                                )
-                        )
-                    }
-                    Text(
-                        "${petStatus.exp}/${petStatus.expToNextLevel}",
-                        color = TextSecondary,
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                // Row 4: Connectivity
-                val netIcon = when (networkStatus.type) {
-                    NetworkType.WIFI -> Icons.Default.Wifi
-                    NetworkType.CELLULAR -> Icons.Default.SignalCellularAlt
-                    NetworkType.ETHERNET -> Icons.Default.Wifi
-                    NetworkType.OFFLINE -> Icons.Default.WifiOff
-                }
-                val netColor = if (networkStatus.isConnected) LumiMint else LumiCoral
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = netIcon,
-                        contentDescription = null,
-                        tint = netColor,
-                        modifier = Modifier.size(10.dp)
-                    )
-                    Spacer(modifier = Modifier.width(3.dp))
-                    Text(
-                        text = if (networkStatus.isConnected) "Online" else "Offline",
-                        color = netColor,
-                        fontSize = 8.sp,
-                        fontWeight = FontWeight.Bold
+                        text = initials,
+                        color = Color.White,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Black,
+                        letterSpacing = 0.5.sp
                     )
                 }
             }
+
+            // Small Connectivity Badge Circle (Green / Yellow / Red)
+            Box(
+                modifier = Modifier
+                    .size(14.dp)
+                    .align(Alignment.BottomEnd)
+                    .offset(x = (-2).dp, y = (-2).dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF0F111E))
+                    .padding(2.dp)
+                    .clip(CircleShape)
+                    .background(connectivityDotColor)
+            )
         }
 
-        // RIGHT CARD (50% WIDTH): User Profile & Location Card (RIGHT ALIGNED)
-        val displayName = userProfile.userName.ifBlank { "Player 1" }
+        Spacer(modifier = Modifier.width(8.dp))
 
-        Surface(
-            color = SurfaceDark.copy(alpha = 0.85f),
-            shape = RoundedCornerShape(18.dp),
-            border = BorderStroke(1.dp, petPrimary.copy(alpha = 0.45f)),
-            shadowElevation = 4.dp,
-            modifier = Modifier
-                .weight(1f)
-                .clickable { onNavigateToAccount() }
+        // ==========================================
+        // 2. RIGHT COMPOSITE: USER NAME + HP STRIP + LOCATION
+        // ==========================================
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center
+            // --- TOP LINE: User Name + Hexagonal Level Badge + XP Points ---
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // Section 1: User Name + Pic to the far right
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth()
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
                         text = displayName,
-                        color = TextPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFBD6BFF), // Stylized purple-magenta as in diagram
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Black,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    // Hexagonal Level Badge
+                    HexagonLevelBadge(level = petStatus.level)
+                }
 
-                    // Profile Pic / Avatar (on the right)
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(petPrimary)
-                            .padding(1.5.dp)
-                            .clip(CircleShape)
-                            .background(SurfaceDarkVariant),
-                        contentAlignment = Alignment.Center
+                // XP Points Display
+                Text(
+                    text = "${petStatus.exp}/${petStatus.expToNextLevel} XP",
+                    color = Color(0xFF00E5FF),
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // --- CENTER: Dynamic HP (Battery) Strip with Chevron End & Charging Shimmer ---
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(24.dp)
+                    .clip(ChevronStripShape())
+                    .background(SurfaceDarkVariant)
+            ) {
+                // HP Fill Bar
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(hpFillRatio)
+                        .fillMaxHeight()
+                        .background(
+                            if (batteryStatus.isCharging) {
+                                Brush.horizontalGradient(
+                                    colors = listOf(
+                                        hpColor.copy(alpha = 0.8f),
+                                        Color(0xFF00F5D4),
+                                        hpColor
+                                    ),
+                                    startX = chargingShimmerOffset - 100f,
+                                    endX = chargingShimmerOffset + 100f
+                                )
+                            } else {
+                                Brush.horizontalGradient(listOf(hpColor.copy(alpha = 0.85f), hpColor))
+                            }
+                        )
+                )
+
+                // HP & Battery Text / Charging Bolt
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "HP",
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Black
+                    )
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "User Avatar",
-                            tint = TextPrimary,
-                            modifier = Modifier.size(17.dp)
+                        if (batteryStatus.isCharging) {
+                            Icon(
+                                imageVector = Icons.Default.Bolt,
+                                contentDescription = "Charging",
+                                tint = Color(0xFF00F5D4),
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
+                        Text(
+                            text = "${batteryStatus.levelPercent}%",
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold
                         )
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Section 2: Location text + Pin icon to the right
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = locationContext.approximatePlace,
-                        color = TextSecondary,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Spacer(modifier = Modifier.width(3.dp))
-
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = LumiGold,
-                        modifier = Modifier.size(11.dp)
-                    )
-                }
+            // --- BOTTOM LINE: Location (or Unknown) ---
+            val placeName = locationContext.approximatePlace.ifBlank { "Unknown" }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = null,
+                    tint = LumiGold,
+                    modifier = Modifier.size(11.dp)
+                )
+                Text(
+                    text = placeName,
+                    color = TextSecondary,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
+    }
+}
+
+/**
+ * Hexagonal RPG Level Badge Component
+ */
+@Composable
+fun HexagonLevelBadge(level: Int) {
+    Box(
+        modifier = Modifier.size(20.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            val path = Path().apply {
+                moveTo(w * 0.5f, 0f)
+                lineTo(w, h * 0.25f)
+                lineTo(w, h * 0.75f)
+                lineTo(w * 0.5f, h)
+                lineTo(0f, h * 0.75f)
+                lineTo(0f, h * 0.25f)
+                close()
+            }
+            drawPath(path, color = Color(0xFF0077B6))
+            drawPath(path, color = Color(0xFF00E5FF), style = Stroke(width = 1.2.dp.toPx()))
+        }
+        Text(
+            text = "$level",
+            color = Color.White,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Black
+        )
+    }
+}
+
+/**
+ * Custom Chevron / Pointed Strip Shape for the HP bar banner
+ */
+class ChevronStripShape : androidx.compose.ui.graphics.Shape {
+    override fun createOutline(
+        size: androidx.compose.ui.geometry.Size,
+        layoutDirection: androidx.compose.ui.unit.LayoutDirection,
+        density: androidx.compose.ui.unit.Density
+    ): androidx.compose.ui.graphics.Outline {
+        val w = size.width
+        val h = size.height
+        val pointWidth = (h * 0.45f).coerceAtMost(16f)
+
+        val path = Path().apply {
+            moveTo(0f, 0f)
+            lineTo(w - pointWidth, 0f)
+            lineTo(w, h * 0.5f)
+            lineTo(w - pointWidth, h)
+            lineTo(0f, h)
+            close()
+        }
+        return androidx.compose.ui.graphics.Outline.Generic(path)
     }
 }
 

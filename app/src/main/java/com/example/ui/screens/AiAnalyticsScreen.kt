@@ -24,7 +24,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AltRoute
+import androidx.compose.material.icons.automirrored.filled.AltRoute
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
@@ -210,7 +210,7 @@ fun AiAnalyticsScreen(
                             contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.AltRoute,
+                                imageVector = Icons.AutoMirrored.Filled.AltRoute,
                                 contentDescription = null,
                                 tint = LumiCyan,
                                 modifier = Modifier.size(14.dp)
@@ -275,7 +275,7 @@ fun AiAnalyticsScreen(
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = Icons.Default.AltRoute,
+                                imageVector = Icons.AutoMirrored.Filled.AltRoute,
                                 contentDescription = null,
                                 tint = LumiCyan,
                                 modifier = Modifier.size(18.dp)

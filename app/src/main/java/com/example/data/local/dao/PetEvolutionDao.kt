@@ -24,4 +24,10 @@ interface PetEvolutionDao {
 
     @Query("UPDATE pet_evolution SET activeAccessory = :accessory WHERE id = 1")
     suspend fun setActiveAccessory(accessory: String)
+
+    @Query("UPDATE pet_evolution SET bloubShape = :shape WHERE id = 1")
+    suspend fun setBloubShape(shape: String)
+
+    @Query("UPDATE pet_evolution SET bloubSkinColor = :skinColor WHERE id = 1")
+    suspend fun setBloubSkinColor(skinColor: String)
 }

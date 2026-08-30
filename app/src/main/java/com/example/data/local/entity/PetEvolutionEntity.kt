@@ -15,7 +15,9 @@ data class PetEvolutionEntity(
     val happiness: Int = 85, // 0 to 100
     val energy: Int = 90, // 0 to 100
     val personalityTrait: String = "Empathetic Explorer", // Empathetic, Playful, Stoic Guide, Joyful Motivator
-    val activeAccessory: String = "NONE", // NONE, SPROUT, GLASSES, HALO, CROWN, HEADPHONES
+    val activeAccessory: String = "NONE",
+    val bloubShape: String = "SPHERE", // SPHERE, CUBE, CAPSULE
+    val bloubSkinColor: String = "CYAN", // CYAN, PINK, GOLD, LAVENDER, MINT, MATCHA, PEACH, OBSIDIAN
     val unlockedAccessoriesCsv: String = "NONE,SPROUT",
     val daysTogether: Int = 1,
     val totalInteractions: Int = 0,

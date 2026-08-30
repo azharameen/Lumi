@@ -17,7 +17,6 @@ import com.example.data.repository.LumiRepositoryImpl
 import com.example.domain.briefing.AutonomousBriefingEngine
 import com.example.domain.briefing.BriefingType
 import com.example.domain.briefing.DailyBriefing
-import com.example.domain.model.PetAccessory
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
 import com.example.domain.repository.LumiRepository
@@ -46,8 +45,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 data class LumiUiState(
-    val selectedTab: Int = 0, // 0: Companion, 1: Assistant, 2: Life Hub
-    val lifeHubSubTab: Int = 0, // 0: Schedule, 1: Tasks, 2: Wellness
+    val selectedTab: Int = 0, // 0: Companion, 1: Assistant, 2: Life Hub, 3: Wellness, 4: Account
+    val lifeHubSubTab: Int = 0, // 0: Schedule, 1: Tasks, 2: Goal Swarms, 3: Focus Audio
     val isOverlayEnabled: Boolean = false,
     val showCameraDialog: Boolean = false,
     val showBreathingDialog: Boolean = false,
@@ -64,6 +63,10 @@ data class LumiUiState(
 class LumiViewModel(application: Application) : AndroidViewModel(application) {
 
     val repository: LumiRepository = LumiRepositoryImpl.getInstance(application)
+    val userProfileManager = com.example.domain.account.UserProfileManager(application)
+
+    val userProfile: StateFlow<com.example.domain.account.UserProfileData> = userProfileManager.userProfile
+    val userFacts: StateFlow<List<com.example.domain.account.UserFactItem>> = userProfileManager.userFacts
 
     val voiceEngine = VoiceEngine(application)
     val sensorsManager = SensorsManager(application)
@@ -193,6 +196,36 @@ class LumiViewModel(application: Application) : AndroidViewModel(application) {
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    val modelDownloadManager = com.example.data.remote.ModelDownloadManager.getInstance(application)
+    val localModelCatalog = modelDownloadManager.catalog
+    val modelDownloadStates = modelDownloadManager.downloadStates
+    val activeLocalModelId = modelDownloadManager.activeModelId
+    val selectedAccelerator = modelDownloadManager.selectedAccelerator
+
+    fun downloadLocalModel(modelId: String) {
+        sensorsManager.vibrateTap()
+        modelDownloadManager.downloadModel(modelId)
+    }
+
+    fun cancelModelDownload(modelId: String) {
+        modelDownloadManager.cancelDownload(modelId)
+    }
+
+    fun deleteLocalModel(modelId: String) {
+        sensorsManager.vibrateTap()
+        modelDownloadManager.deleteModel(modelId)
+    }
+
+    fun setActiveLocalModel(modelId: String) {
+        sensorsManager.vibrateTap()
+        modelDownloadManager.setActiveModel(modelId)
+    }
+
+    fun setHardwareAccelerator(accelerator: com.example.data.remote.HardwareAccelerator) {
+        sensorsManager.vibrateTap()
+        modelDownloadManager.setAccelerator(accelerator)
+    }
 
     val aiRoutingMode: StateFlow<com.example.data.remote.AiRoutingMode> = repository.aiRoutingMode.stateIn(
         scope = viewModelScope,
@@ -554,10 +587,63 @@ class LumiViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun setAccessory(accessory: PetAccessory) {
+    fun setBloubShape(shape: com.example.domain.model.BloubShape) {
         sensorsManager.vibrateTap()
         viewModelScope.launch {
-            repository.setActiveAccessory(accessory)
+            repository.setBloubShape(shape)
+            LumiAppWidgetProvider.triggerWidgetUpdate(getApplication())
+        }
+    }
+
+    fun setBloubSkinColor(skinColor: com.example.domain.model.BloubSkinColor) {
+        sensorsManager.vibrateTap()
+        viewModelScope.launch {
+            repository.setBloubSkinColor(skinColor)
+            LumiAppWidgetProvider.triggerWidgetUpdate(getApplication())
+        }
+    }
+
+    fun feedPet() {
+        sensorsManager.vibrateCelebration()
+        viewModelScope.launch {
+            repository.setPetEmotion(com.example.domain.model.PetEmotion.HAPPY)
+            repository.setSpeechBubbleText("Yum! That was delicious! Full of fresh energy! 🍓✨")
+            repository.petTheCharacter()
+            LumiAppWidgetProvider.triggerWidgetUpdate(getApplication())
+        }
+    }
+
+    fun dancePet() {
+        sensorsManager.vibrateCelebration()
+        viewModelScope.launch {
+            repository.setPetEmotion(com.example.domain.model.PetEmotion.ENERGETIC)
+            repository.setSpeechBubbleText("Dancing time! Feel that rhythm! 🎶🕺✨")
+            LumiAppWidgetProvider.triggerWidgetUpdate(getApplication())
+        }
+    }
+
+    fun pokePet() {
+        sensorsManager.vibrateTap()
+        viewModelScope.launch {
+            repository.setPetEmotion(com.example.domain.model.PetEmotion.PLAYFUL)
+            repository.setSpeechBubbleText("*Boing!* Hehe that tickles! 🫧")
+            repository.petTheCharacter()
+            LumiAppWidgetProvider.triggerWidgetUpdate(getApplication())
+        }
+    }
+
+    fun togglePetSleep() {
+        sensorsManager.vibrateTap()
+        viewModelScope.launch {
+            val current = petStatus.value.currentEmotion
+            if (current == com.example.domain.model.PetEmotion.SLEEPY) {
+                repository.setPetEmotion(com.example.domain.model.PetEmotion.HAPPY)
+                repository.setSpeechBubbleText("Good morning sunshine! Ready to shine! ☀️")
+            } else {
+                repository.setPetEmotion(com.example.domain.model.PetEmotion.SLEEPY)
+                repository.setSpeechBubbleText("Time for cozy power nap... Zzz 😴")
+            }
+            LumiAppWidgetProvider.triggerWidgetUpdate(getApplication())
         }
     }
 
@@ -573,6 +659,31 @@ class LumiViewModel(application: Application) : AndroidViewModel(application) {
         if (locationEngine.checkPermission()) {
             locationEngine.startLocationUpdates()
         }
+    }
+
+    fun updateUserProfile(profile: com.example.domain.account.UserProfileData) {
+        userProfileManager.updateProfile(profile)
+        sensorsManager.vibrateTap()
+    }
+
+    fun addUserFact(category: String, factText: String, isPinned: Boolean = false) {
+        userProfileManager.addUserFact(category, factText, isPinned)
+        sensorsManager.vibrateTap()
+    }
+
+    fun removeUserFact(id: String) {
+        userProfileManager.removeUserFact(id)
+        sensorsManager.vibrateTap()
+    }
+
+    fun togglePinFact(id: String) {
+        userProfileManager.togglePinFact(id)
+        sensorsManager.vibrateTap()
+    }
+
+    fun resetUserProfile() {
+        userProfileManager.resetToDefaults()
+        sensorsManager.vibrateTap()
     }
 
     override fun onCleared() {

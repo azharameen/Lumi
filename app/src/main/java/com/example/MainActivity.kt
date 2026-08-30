@@ -36,6 +36,8 @@ import com.example.ui.navigation.NavDestination
 import com.example.ui.screens.ChatScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LifeHubScreen
+import com.example.ui.screens.UserAccountScreen
+import com.example.ui.screens.WellnessScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.ObsidianDark
 import com.example.ui.viewmodel.LumiViewModel
@@ -152,24 +154,31 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun LumiApp(viewModel: LumiViewModel) {
     val uiState by viewModel.uiState.collectAsState()
+    val userProfile by viewModel.userProfile.collectAsState()
     val context = LocalContext.current
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            LumiBottomNavigation(
-                selectedTabIndex = uiState.selectedTab,
-                onTabSelected = { tabIndex -> viewModel.setSelectedTab(tabIndex) }
-            )
-        }
-    ) { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(ObsidianDark)
-        ) {
-            Crossfade(
+    if (!userProfile.hasCompletedOnboarding) {
+        com.example.ui.screens.OnboardingScreen(
+            viewModel = viewModel,
+            onComplete = { /* State handles recomposition automatically */ }
+        )
+    } else {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            bottomBar = {
+                LumiBottomNavigation(
+                    selectedTabIndex = uiState.selectedTab,
+                    onTabSelected = { tabIndex -> viewModel.setSelectedTab(tabIndex) }
+                )
+            }
+        ) { innerPadding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .background(ObsidianDark)
+            ) {
+                Crossfade(
                 targetState = uiState.selectedTab,
                 label = "ScreenTransition"
             ) { tab ->
@@ -183,6 +192,17 @@ fun LumiApp(viewModel: LumiViewModel) {
                         viewModel = viewModel
                     )
                     NavDestination.LifeHub.tabIndex -> LifeHubScreen(
+                        viewModel = viewModel,
+                        onNavigateToChat = { prompt ->
+                            viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
+                            prompt?.let { viewModel.sendMessage(it) }
+                        }
+                    )
+                    NavDestination.Wellness.tabIndex -> WellnessScreen(
+                        viewModel = viewModel,
+                        onNavigateToChat = { viewModel.setSelectedTab(NavDestination.Assistant.tabIndex) }
+                    )
+                    NavDestination.Account.tabIndex -> UserAccountScreen(
                         viewModel = viewModel,
                         onNavigateToChat = { prompt ->
                             viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
@@ -248,4 +268,5 @@ fun LumiApp(viewModel: LumiViewModel) {
             }
         }
     }
+}
 }

@@ -42,6 +42,7 @@ class BiometricVaultManager(private val context: Context) {
                                 android.hardware.biometrics.BiometricManager.Authenticators.DEVICE_CREDENTIAL
                     )
                 } else {
+                    @Suppress("DEPRECATION")
                     promptBuilder.setDeviceCredentialAllowed(true)
                 }
             } else {

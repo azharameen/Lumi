@@ -23,14 +23,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.VolumeOff
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -144,7 +144,7 @@ fun ChatScreen(
                     modifier = Modifier.testTag("toggle_voice_output")
                 ) {
                     Icon(
-                        imageVector = if (uiState.isTtsVoiceOutputEnabled) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                        imageVector = if (uiState.isTtsVoiceOutputEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
                         contentDescription = "Voice Toggle",
                         tint = if (uiState.isTtsVoiceOutputEnabled) LumiCyan else TextSecondary
                     )
@@ -282,7 +282,7 @@ fun ChatScreen(
                         .testTag("chat_send_button")
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Send,
+                        imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Send",
                         tint = ObsidianDark,
                         modifier = Modifier.size(18.dp)

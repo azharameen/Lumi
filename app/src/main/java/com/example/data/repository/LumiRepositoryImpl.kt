@@ -12,7 +12,6 @@ import com.example.data.local.entity.TaskEntity
 import com.example.data.local.entity.WellnessLogEntity
 import com.example.data.remote.AiRoutingMode
 import com.example.data.remote.HybridAiEngine
-import com.example.domain.model.PetAccessory
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
 import com.example.domain.repository.LumiRepository
@@ -37,7 +36,7 @@ class LumiRepositoryImpl private constructor(
     private val connectorManager = com.example.domain.connectors.ConnectorManager(context)
     private val integrationService = com.example.domain.connectors.IntegrationService(connectorManager)
     private val toolDispatcher = AgentToolDispatcher(database, integrationService)
-    private val hybridAiEngine = HybridAiEngine(toolDispatcher, database.aiExecutionLogDao())
+    private val hybridAiEngine = HybridAiEngine(toolDispatcher, database.aiExecutionLogDao(), context)
     private val autonomousGoalPlanner = com.example.domain.planner.AutonomousGoalPlanner(context, database, toolDispatcher, integrationService)
     private val autonomousBriefingEngine = com.example.domain.briefing.AutonomousBriefingEngine(context)
     private val soundscapeEngine = com.example.service.ProceduralSoundscapeEngine.getInstance()
@@ -111,10 +110,15 @@ class LumiRepositoryImpl private constructor(
         }
     ) { (evo, emotion, speaking), (listening, thinking, bubbleText) ->
         val entity = evo ?: PetEvolutionEntity()
-        val accessory = try {
-            PetAccessory.valueOf(entity.activeAccessory)
+        val shape = try {
+            com.example.domain.model.BloubShape.valueOf(entity.bloubShape)
         } catch (e: Exception) {
-            PetAccessory.SPROUT
+            com.example.domain.model.BloubShape.SPHERE
+        }
+        val skinColor = try {
+            com.example.domain.model.BloubSkinColor.valueOf(entity.bloubSkinColor)
+        } catch (e: Exception) {
+            com.example.domain.model.BloubSkinColor.ELECTRIC_CYAN
         }
 
         PetStatus(
@@ -127,7 +131,8 @@ class LumiRepositoryImpl private constructor(
             energy = entity.energy,
             personalityTrait = entity.personalityTrait,
             currentEmotion = emotion,
-            activeAccessory = accessory,
+            bloubShape = shape,
+            bloubSkinColor = skinColor,
             isSpeaking = speaking,
             isListening = listening,
             isThinking = thinking,
@@ -240,10 +245,16 @@ class LumiRepositoryImpl private constructor(
         ).random()
     }
 
-    override suspend fun setActiveAccessory(accessory: PetAccessory) {
-        database.petEvolutionDao().setActiveAccessory(accessory.name)
-        _currentEmotion.value = PetEmotion.PLAYFUL
-        _speechBubbleText.value = "How do I look with ${accessory.displayName}? 🌟"
+    override suspend fun setBloubShape(shape: com.example.domain.model.BloubShape) {
+        database.petEvolutionDao().setBloubShape(shape.name)
+        _currentEmotion.value = PetEmotion.HAPPY
+        _speechBubbleText.value = "Transformed into ${shape.displayName}! ${shape.iconEmoji} How do I look?"
+    }
+
+    override suspend fun setBloubSkinColor(skinColor: com.example.domain.model.BloubSkinColor) {
+        database.petEvolutionDao().setBloubSkinColor(skinColor.name)
+        _currentEmotion.value = PetEmotion.ENERGETIC
+        _speechBubbleText.value = "Ooh, new ${skinColor.displayName} clay skin! ✨ Glowing!"
     }
 
     override suspend fun addTask(

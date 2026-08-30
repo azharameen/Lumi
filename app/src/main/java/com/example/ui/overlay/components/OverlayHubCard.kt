@@ -87,9 +87,9 @@ fun OverlayHubCard(
     onOpenApp: () -> Unit,
     onMinimize: () -> Unit,
     onCloseService: () -> Unit,
-    onDragStart: () -> Unit,
+    onDragStart: (Float, Float) -> Unit,
+    onDragMove: (Float, Float) -> Unit,
     onDragEnd: () -> Unit,
-    onMoveOverlay: (Float, Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -111,8 +111,8 @@ fun OverlayHubCard(
                 // Top Draggable Handle Pill for Repositioning Expanded Card
                 OverlayCardDragBar(
                     onDragStart = onDragStart,
-                    onDragEnd = onDragEnd,
-                    onMoveOverlay = onMoveOverlay
+                    onDragMove = onDragMove,
+                    onDragEnd = onDragEnd
                 )
 
                 // Header with Lumi status & action buttons

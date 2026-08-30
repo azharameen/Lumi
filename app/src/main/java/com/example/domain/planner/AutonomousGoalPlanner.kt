@@ -4,6 +4,11 @@ import android.content.Context
 import com.example.data.local.LumiDatabase
 import com.example.data.local.entity.GoalMilestoneEntity
 import com.example.data.local.entity.GoalPlanEntity
+import com.example.data.remote.GeminiClient
+import com.example.data.remote.GeminiContent
+import com.example.data.remote.GeminiGenerationConfig
+import com.example.data.remote.GeminiPart
+import com.example.data.remote.GeminiRequest
 import com.example.domain.connectors.IntegrationService
 import com.example.domain.tools.AgentToolDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +37,7 @@ class AutonomousGoalPlanner(
     private val goalDao = database.goalPlanDao()
 
     /**
-     * Decomposes a natural language goal into structured multi-phase milestones with tool assignments.
+     * Decomposes a natural language goal into structured multi-phase milestones with tool assignments using dynamic LLM generation.
      */
     suspend fun decomposeAndSaveGoal(
         goalTitle: String,
@@ -40,7 +45,7 @@ class AutonomousGoalPlanner(
         category: String = "Productivity",
         targetDate: String = ""
     ): DecomposedGoalResult = withContext(Dispatchers.IO) {
-        val (detectedCategory, milestones) = generatePlanStructure(goalTitle, goalDescription, category)
+        val (detectedCategory, milestones) = generateDynamicLlmPlan(goalTitle, goalDescription, category)
 
         val planEntity = GoalPlanEntity(
             title = goalTitle,
@@ -122,7 +127,7 @@ class AutonomousGoalPlanner(
                     "google_create_doc",
                     mapOf(
                         "title" to "${goal?.title ?: "Goal"} - ${milestone.stepTitle}",
-                        "initial_content" to "# ${milestone.stepTitle}\n\n**Goal**: ${goal?.title}\n\n## Overview\n${milestone.stepDescription}\n\n## Action Items\n- [ ] Initial Research\n- [ ] Draft Implementation\n- [ ] Review & Publish"
+                        "content" to "# ${milestone.stepTitle}\n\n**Goal**: ${goal?.title}\n\n## Overview\n${milestone.stepDescription}\n\n## Action Items\n- [ ] Initial Research\n- [ ] Draft Implementation\n- [ ] Review & Publish"
                     )
                 )
                 resultText = report.description
@@ -131,10 +136,9 @@ class AutonomousGoalPlanner(
                 val (_, report) = toolDispatcher.executeTool(
                     "github_create_issue",
                     mapOf(
-                        "repo_name" to "workspace-projects",
+                        "repo" to "workspace/projects",
                         "title" to "[Milestone] ${milestone.stepTitle}",
-                        "body" to "${milestone.stepDescription}\n\n*Linked Goal: ${goal?.title ?: ""}*",
-                        "labels" to listOf("goal-milestone", "lumi-agent")
+                        "body" to "${milestone.stepDescription}\n\n*Linked Goal: ${goal?.title ?: ""}*"
                     )
                 )
                 resultText = report.description
@@ -159,16 +163,17 @@ class AutonomousGoalPlanner(
             executionOutput = resultText
         )
         goalDao.updateMilestone(updated)
-
-        // Update overall goal completed count
         updateGoalProgress(goalId)
-
         resultText
     }
 
-    suspend fun toggleMilestone(milestoneId: Long, goalId: Long, isCompleted: Boolean) = withContext(Dispatchers.IO) {
+    suspend fun setMilestoneCompleted(milestoneId: Long, goalId: Long, isCompleted: Boolean) = withContext(Dispatchers.IO) {
         goalDao.setMilestoneCompleted(milestoneId, isCompleted)
         updateGoalProgress(goalId)
+    }
+
+    suspend fun toggleMilestone(milestoneId: Long, goalId: Long, isCompleted: Boolean) = withContext(Dispatchers.IO) {
+        setMilestoneCompleted(milestoneId, goalId, isCompleted)
     }
 
     private suspend fun updateGoalProgress(goalId: Long) {
@@ -211,161 +216,93 @@ class AutonomousGoalPlanner(
         )
     }
 
-    private fun generatePlanStructure(
+    private suspend fun generateDynamicLlmPlan(
         title: String,
         description: String,
         category: String
     ): Pair<String, List<GoalMilestoneEntity>> {
-        val lower = (title + " " + description + " " + category).lowercase()
+        val apiKey = GeminiClient.getApiKey()
 
-        val detectedCategory = when {
-            lower.contains("health") || lower.contains("run") || lower.contains("marathon") || lower.contains("diet") || lower.contains("workout") -> "Health"
-            lower.contains("learn") || lower.contains("read") || lower.contains("study") || lower.contains("course") -> "Learning"
-            lower.contains("launch") || lower.contains("app") || lower.contains("code") || lower.contains("dev") || lower.contains("github") -> "Engineering"
-            lower.contains("write") || lower.contains("book") || lower.contains("music") || lower.contains("design") -> "Creative"
-            else -> "Productivity"
+        if (apiKey.isNotBlank() && apiKey != "MY_GEMINI_API_KEY") {
+            try {
+                val prompt = """
+                    You are an autonomous executive AI goal decomposition agent.
+                    Decompose the following user goal into a high-leverage 3-phase execution plan.
+                    
+                    Goal Title: "$title"
+                    Description: "$description"
+                    Category Hint: "$category"
+                    
+                    Return ONLY a JSON object formatted strictly as:
+                    {
+                      "detectedCategory": "Engineering" | "Health" | "Learning" | "Creative" | "Productivity",
+                      "milestones": [
+                        {
+                          "phaseNumber": 1,
+                          "phaseTitle": "Phase 1: Foundation & Architecture",
+                          "stepTitle": "Clear, specific action title",
+                          "stepDescription": "Detailed action description",
+                          "suggestedTool": "CALENDAR" | "TASK" | "DOC" | "GITHUB" | "SLACK"
+                        }
+                      ]
+                    }
+                """.trimIndent()
+
+                val request = GeminiRequest(
+                    contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
+                    generationConfig = GeminiGenerationConfig(
+                        temperature = 0.3f
+                    )
+                )
+
+                val response = GeminiClient.apiService.generateContent(apiKey, request)
+                val jsonText = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+
+                if (!jsonText.isNullOrBlank()) {
+                    val cleanJson = jsonText.trim().removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
+                    val jsonObj = JSONObject(cleanJson)
+                    val detectedCategory = jsonObj.optString("detectedCategory", category.ifBlank { "Productivity" })
+                    val milestonesArray = jsonObj.getJSONArray("milestones")
+                    val parsedMilestones = mutableListOf<GoalMilestoneEntity>()
+
+                    for (i in 0 until milestonesArray.length()) {
+                        val mObj = milestonesArray.getJSONObject(i)
+                        parsedMilestones.add(
+                            GoalMilestoneEntity(
+                                goalId = 0,
+                                phaseNumber = mObj.optInt("phaseNumber", 1),
+                                phaseTitle = mObj.optString("phaseTitle", "Phase 1"),
+                                stepTitle = mObj.optString("stepTitle", "Action Step"),
+                                stepDescription = mObj.optString("stepDescription", "Execute action item"),
+                                suggestedTool = mObj.optString("suggestedTool", "TASK")
+                            )
+                        )
+                    }
+
+                    if (parsedMilestones.isNotEmpty()) {
+                        return Pair(detectedCategory, parsedMilestones)
+                    }
+                }
+            } catch (e: Exception) {
+                // Fallback handled below
+            }
         }
 
-        val milestones = when (detectedCategory) {
-            "Engineering" -> listOf(
+        // Strictly no heuristic catalogs. If the LLM call fails or API key is missing,
+        // we return a single, minimal un-styled failure milestone rather than a simulated "plan".
+        return Pair(
+            category.ifBlank { "Uncategorized" },
+            listOf(
                 GoalMilestoneEntity(
                     goalId = 0,
                     phaseNumber = 1,
-                    phaseTitle = "Phase 1: Architecture & Specs",
-                    stepTitle = "Draft Product Architecture Spec",
-                    stepDescription = "Outline database schemas, integration contracts, and core features.",
-                    suggestedTool = "DOC"
-                ),
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 1,
-                    phaseTitle = "Phase 1: Architecture & Specs",
-                    stepTitle = "Open Tracking Issues on GitHub",
-                    stepDescription = "Create issues for MVP deliverables and backlog milestones.",
-                    suggestedTool = "GITHUB"
-                ),
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 2,
-                    phaseTitle = "Phase 2: Deep Implementation",
-                    stepTitle = "Schedule 2-Hour Deep Focus Code Blocks",
-                    stepDescription = "Protect uninterrupted calendar slots for building core logic.",
-                    suggestedTool = "CALENDAR"
-                ),
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 2,
-                    phaseTitle = "Phase 2: Deep Implementation",
-                    stepTitle = "Verify Automated Test Suite & Code Review",
-                    stepDescription = "Run unit tests and lint checks across the codebase.",
-                    suggestedTool = "TASK"
-                ),
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 3,
-                    phaseTitle = "Phase 3: Launch & Rollout",
-                    stepTitle = "Broadcast Launch Changelog to Slack",
-                    stepDescription = "Share feature demo, release notes, and documentation with the team.",
-                    suggestedTool = "SLACK"
+                    phaseTitle = "Action Required",
+                    stepTitle = "Configure AI Engine",
+                    stepDescription = "LLM generation failed. Please configure your AI API key in Settings to unlock autonomous planning.",
+                    suggestedTool = "SETTINGS"
                 )
             )
-            "Health" -> listOf(
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 1,
-                    phaseTitle = "Phase 1: Baseline & Preparation",
-                    stepTitle = "Log Baseline Hydration & Sleep Routine",
-                    stepDescription = "Establish 2L/day water intake and consistent 8-hour sleep schedule.",
-                    suggestedTool = "TASK"
-                ),
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 1,
-                    phaseTitle = "Phase 1: Baseline & Preparation",
-                    stepTitle = "Schedule Recurring Morning Workout Blocks",
-                    stepDescription = "Block 45-minute calendar slots on Mon/Wed/Fri mornings.",
-                    suggestedTool = "CALENDAR"
-                ),
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 2,
-                    phaseTitle = "Phase 2: Progressive Overload",
-                    stepTitle = "Increase Cardio Distance & Pace by 10%",
-                    stepDescription = "Track heart rate zones and recovery intervals.",
-                    suggestedTool = "TASK"
-                ),
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 3,
-                    phaseTitle = "Phase 3: Recovery & Maintenance",
-                    stepTitle = "Complete Weekly Mindful Relaxation Reflection",
-                    stepDescription = "Perform 10-minute guided breathing and sleep reflection.",
-                    suggestedTool = "TASK"
-                )
-            )
-            "Learning" -> listOf(
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 1,
-                    phaseTitle = "Phase 1: Curriculum & Syllabus",
-                    stepTitle = "Synthesize Core Learning Topics in Google Doc",
-                    stepDescription = "Create summary index of key textbooks, research papers, and lectures.",
-                    suggestedTool = "DOC"
-                ),
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 2,
-                    phaseTitle = "Phase 2: Daily Study Blocks",
-                    stepTitle = "Schedule 1-Hour Daily Study Sessions",
-                    stepDescription = "Set dedicated calendar focus time with DND notifications.",
-                    suggestedTool = "CALENDAR"
-                ),
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 3,
-                    phaseTitle = "Phase 3: Practical Project Application",
-                    stepTitle = "Build & Deploy Hands-On Capstone Project",
-                    stepDescription = "Apply theoretical concepts to a real-world working project.",
-                    suggestedTool = "TASK"
-                )
-            )
-            else -> listOf(
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 1,
-                    phaseTitle = "Phase 1: Discovery & Strategy",
-                    stepTitle = "Draft Project Plan & Key Milestones",
-                    stepDescription = "Create structured outline with deliverables and timelines.",
-                    suggestedTool = "DOC"
-                ),
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 1,
-                    phaseTitle = "Phase 1: Discovery & Strategy",
-                    stepTitle = "Schedule Kickoff & Review Calendar Blocks",
-                    stepDescription = "Reserve time for initial setup and strategic milestones.",
-                    suggestedTool = "CALENDAR"
-                ),
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 2,
-                    phaseTitle = "Phase 2: Active Execution",
-                    stepTitle = "Execute Primary Priority Tasks",
-                    stepDescription = "Complete core deliverables tracked in prioritized task list.",
-                    suggestedTool = "TASK"
-                ),
-                GoalMilestoneEntity(
-                    goalId = 0,
-                    phaseNumber = 3,
-                    phaseTitle = "Phase 3: Review & Broadcast",
-                    stepTitle = "Publish Summary Update to Team Channel",
-                    stepDescription = "Share completed outcomes, lessons learned, and next milestones.",
-                    suggestedTool = "SLACK"
-                )
-            )
-        }
-
-        return Pair(detectedCategory, milestones)
+        )
     }
 
     private fun getDefaultTargetDate(): String {

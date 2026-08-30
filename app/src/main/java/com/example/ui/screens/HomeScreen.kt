@@ -107,7 +107,6 @@ import java.util.Date
 import java.util.Locale
 
 import androidx.compose.material.icons.filled.Star
-import com.example.domain.model.PetAccessory
 
 @Composable
 fun HomeScreen(
@@ -265,7 +264,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable { onNavigateToLifeHub(3) }
+                        .clickable { viewModel.setSelectedTab(com.example.ui.navigation.NavDestination.Account.tabIndex) }
                         .padding(vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -600,12 +599,42 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Tap to pet • Drag to gaze • Double-finger stroke to purr",
+                    text = "Tap to squish • Drag to gaze • Double-finger stroke to purr",
                     color = TextSecondary.copy(alpha = 0.7f),
                     fontSize = 11.sp
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Nap / Wake Toggle Button
+                val isSleeping = petStatus.currentEmotion == com.example.domain.model.PetEmotion.SLEEPY
+                Surface(
+                    color = if (isSleeping) LumiGold.copy(alpha = 0.18f) else SurfaceHighlight,
+                    shape = RoundedCornerShape(16.dp),
+                    border = if (isSleeping) androidx.compose.foundation.BorderStroke(1.dp, LumiGold.copy(alpha = 0.5f)) else null,
+                    modifier = Modifier
+                        .clickable { viewModel.togglePetSleep() }
+                        .testTag("nap_wake_button")
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = if (isSleeping) "☀️" else "😴",
+                            fontSize = 15.sp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isSleeping) "Wake Lumi" else "Take a Nap",
+                            color = if (isSleeping) LumiGold else TextPrimary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // Realtime Voice Waveform & Action Bar
                 Row(
@@ -692,7 +721,7 @@ fun HomeScreen(
             }
         }
 
-        // 6. Interactive Wardrobe & Accessories Studio
+        // 6. Interactive Bloub Studio (Shape, Clay Skin & Accessories)
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
@@ -707,74 +736,115 @@ fun HomeScreen(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
-                                imageVector = Icons.Default.Star,
+                                imageVector = Icons.Default.AutoAwesome,
                                 contentDescription = null,
-                                tint = LumiGold,
+                                tint = LumiCyan,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Lumi's Wardrobe",
+                                text = "Bloub Studio & Wardrobe",
                                 color = TextPrimary,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                         Text(
-                            text = "Bond ${petStatus.bondScore}%",
+                            text = "Lv.${petStatus.level} • Bond ${petStatus.bondScore}%",
                             color = LumiPink,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
+                    // 1. Procedural Body Morphing Shape Selector
+                    Text(
+                        text = "MORPHING SHAPE",
+                        color = TextSecondary,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(PetAccessory.entries) { acc ->
-                            val isUnlocked = petStatus.level >= acc.requiredLevel
-                            val isEquipped = petStatus.activeAccessory == acc
-
-                            val emoji = when (acc) {
-                                PetAccessory.NONE -> "✨"
-                                PetAccessory.SPROUT -> "🌱"
-                                PetAccessory.GLASSES -> "👓"
-                                PetAccessory.HEADPHONES -> "🎧"
-                                PetAccessory.HALO -> "😇"
-                                PetAccessory.CROWN -> "👑"
-                            }
-
+                        items(com.example.domain.model.BloubShape.entries) { shape ->
+                            val isSelected = petStatus.bloubShape == shape
                             Surface(
-                                color = if (isEquipped) LumiCyan.copy(alpha = 0.2f) else SurfaceDarkVariant,
-                                shape = RoundedCornerShape(14.dp),
-                                border = if (isEquipped) androidx.compose.foundation.BorderStroke(1.5.dp, LumiCyan) else null,
+                                color = if (isSelected) LumiCyan.copy(alpha = 0.22f) else SurfaceDarkVariant,
+                                shape = RoundedCornerShape(12.dp),
+                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, LumiCyan) else null,
                                 modifier = Modifier
-                                    .width(105.dp)
-                                    .clickable(enabled = isUnlocked) {
-                                        viewModel.setAccessory(acc)
-                                    }
+                                    .clickable { viewModel.setBloubShape(shape) }
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(8.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                 ) {
-                                    Text(text = emoji, fontSize = 22.sp)
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(text = shape.iconEmoji, fontSize = 14.sp)
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = acc.displayName,
-                                        color = if (isUnlocked) TextPrimary else TextSecondary,
+                                        text = shape.displayName,
+                                        color = if (isSelected) LumiCyan else TextPrimary,
                                         fontSize = 11.sp,
-                                        fontWeight = if (isEquipped) FontWeight.Bold else FontWeight.Normal,
-                                        maxLines = 1
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // 2. 3D Clay Skin Color Selector
+                    Text(
+                        text = "CLAY PALETTE",
+                        color = TextSecondary,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(com.example.domain.model.BloubSkinColor.entries) { skin ->
+                            val isSelected = petStatus.bloubSkinColor == skin
+                            Surface(
+                                color = if (isSelected) androidx.compose.ui.graphics.Color(skin.primaryHex).copy(alpha = 0.25f) else SurfaceDarkVariant,
+                                shape = RoundedCornerShape(12.dp),
+                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, androidx.compose.ui.graphics.Color(skin.primaryHex)) else null,
+                                modifier = Modifier
+                                    .clickable { viewModel.setBloubSkinColor(skin) }
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(14.dp)
+                                            .background(
+                                                Brush.linearGradient(
+                                                    listOf(
+                                                        androidx.compose.ui.graphics.Color(skin.primaryHex),
+                                                        androidx.compose.ui.graphics.Color(skin.endHex)
+                                                    )
+                                                ),
+                                                CircleShape
+                                            )
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = if (isEquipped) "Equipped" else if (isUnlocked) "Wear" else "Lv.${acc.requiredLevel}",
-                                        color = if (isEquipped) LumiCyan else if (isUnlocked) LumiMint else TextSecondary,
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Bold
+                                        text = skin.displayName,
+                                        color = if (isSelected) androidx.compose.ui.graphics.Color(skin.primaryHex) else TextPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
                                 }
                             }
@@ -835,7 +905,7 @@ fun HomeScreen(
                         icon = Icons.Default.SelfImprovement,
                         label = "Wellness",
                         color = LumiPink,
-                        onClick = { onNavigateToLifeHub(4) }
+                        onClick = { viewModel.setSelectedTab(com.example.ui.navigation.NavDestination.Wellness.tabIndex) }
                     )
                 }
                 item {

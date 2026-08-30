@@ -127,7 +127,7 @@ fun LifeHubScreen(
     val wellnessLogs by viewModel.allWellnessLogs.collectAsState()
     val memories by viewModel.allMemories.collectAsState()
 
-    val subTabs = listOf("Schedule", "Tasks", "Goal Swarms", "Focus Audio", "Wellness", "Connectors", "AI Engine")
+    val subTabs = listOf("Schedule", "Tasks", "Goal Swarms", "Focus Audio")
 
     Box(
         modifier = Modifier
@@ -150,7 +150,7 @@ fun LifeHubScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Life Hub",
+                            text = "Productivity Hub",
                             color = TextPrimary,
                             fontSize = 22.sp,
                             fontWeight = FontWeight.Bold
@@ -186,31 +186,28 @@ fun LifeHubScreen(
                         contentColor = LumiGold,
                         edgePadding = 12.dp,
                         indicator = { tabPositions ->
+                            val currentTabIndex = uiState.lifeHubSubTab.coerceIn(0, subTabs.size - 1)
                             TabRowDefaults.SecondaryIndicator(
-                                Modifier.tabIndicatorOffset(tabPositions[uiState.lifeHubSubTab.coerceIn(0, subTabs.size - 1)]),
-                                color = when (uiState.lifeHubSubTab) {
+                                Modifier.tabIndicatorOffset(tabPositions[currentTabIndex]),
+                                color = when (currentTabIndex) {
                                     0 -> LumiCyan
                                     1 -> LumiYellow
                                     2 -> LumiViolet
                                     3 -> LumiMint
-                                    4 -> LumiPink
-                                    5 -> LumiGold
-                                    else -> LumiGreen
+                                    else -> LumiCyan
                                 },
                                 height = 3.dp
                             )
                         }
                     ) {
                         subTabs.forEachIndexed { index, title ->
-                            val isSelected = uiState.lifeHubSubTab == index
+                            val isSelected = uiState.lifeHubSubTab.coerceIn(0, subTabs.size - 1) == index
                             val tabColor = when (index) {
                                 0 -> LumiCyan
                                 1 -> LumiYellow
                                 2 -> LumiViolet
                                 3 -> LumiMint
-                                4 -> LumiPink
-                                5 -> LumiGold
-                                else -> LumiGreen
+                                else -> LumiCyan
                             }
                             Tab(
                                 selected = isSelected,
@@ -220,7 +217,7 @@ fun LifeHubScreen(
                                         text = title,
                                         color = if (isSelected) tabColor else TextSecondary,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        fontSize = 11.sp,
+                                        fontSize = 12.sp,
                                         maxLines = 1
                                     )
                                 },
@@ -231,9 +228,7 @@ fun LifeHubScreen(
                                             1 -> Icons.Default.CheckCircleOutline
                                             2 -> Icons.Default.AutoAwesome
                                             3 -> Icons.Default.Timer
-                                            4 -> Icons.Default.SelfImprovement
-                                            5 -> Icons.Default.Lightbulb
-                                            else -> Icons.Default.QueryStats
+                                            else -> Icons.Default.CalendarMonth
                                         },
                                         contentDescription = title,
                                         tint = if (isSelected) tabColor else TextSecondary,
@@ -253,7 +248,7 @@ fun LifeHubScreen(
                     .weight(1f)
                     .fillMaxWidth()
             ) {
-                when (uiState.lifeHubSubTab) {
+                when (uiState.lifeHubSubTab.coerceIn(0, subTabs.size - 1)) {
                     0 -> ScheduleSection(
                         events = events,
                         viewModel = viewModel,
@@ -271,18 +266,10 @@ fun LifeHubScreen(
                     3 -> AmbientSoundscapesScreen(
                         viewModel = viewModel
                     )
-                    4 -> WellnessVaultSection(
-                        wellnessLogs = wellnessLogs,
-                        memories = memories,
-                        uiState = uiState,
+                    else -> ScheduleSection(
+                        events = events,
                         viewModel = viewModel,
                         onNavigateToChat = onNavigateToChat
-                    )
-                    5 -> IntegrationsScreen(
-                        viewModel = viewModel
-                    )
-                    6 -> AiAnalyticsScreen(
-                        viewModel = viewModel
                     )
                 }
             }

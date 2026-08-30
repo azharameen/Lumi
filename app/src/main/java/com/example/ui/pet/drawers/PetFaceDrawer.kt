@@ -6,11 +6,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import com.example.domain.model.PetEmotion
 
 /**
- * Renders Lumi's expressive eyes, gaze tracking, lip sync, and emotional facial states.
+ * Expressive facial renderer with wide-open glossy eyes, multi-stop specular catchlights,
+ * star & heart pupil reflections, dynamic gaze tracking, and reactive mouth expressions.
  */
 fun DrawScope.drawPetEye(
     center: Offset,
@@ -19,41 +21,273 @@ fun DrawScope.drawPetEye(
     isBlinking: Boolean,
     gazeX: Float,
     gazeY: Float,
-    isThinking: Boolean
+    isThinking: Boolean,
+    emotion: PetEmotion,
+    isLeftEye: Boolean
 ) {
     if (isBlinking) {
+        // Quick 120ms natural blink eyelid stroke
         drawArc(
             color = Color(0xFF140D26),
-            startAngle = 10f,
-            sweepAngle = 160f,
+            startAngle = 15f,
+            sweepAngle = 150f,
             useCenter = false,
-            topLeft = Offset(center.x - radiusX, center.y - 4f),
-            size = Size(radiusX * 2, 8f),
-            style = Stroke(width = 3.2f, cap = StrokeCap.Round)
+            topLeft = Offset(center.x - radiusX, center.y - radiusY * 0.3f),
+            size = Size(radiusX * 2, radiusY * 0.8f),
+            style = Stroke(width = 4.2f, cap = StrokeCap.Round)
         )
-    } else {
-        drawOval(
-            color = Color(0xFF130D28),
-            topLeft = Offset(center.x - radiusX, center.y - radiusY),
-            size = Size(radiusX * 2, radiusY * 2)
-        )
+        return
+    }
 
-        val gazeOffsetMax = radiusX * 0.38f
-        val pupilX = center.x + (gazeX * gazeOffsetMax)
-        val pupilY = center.y + (gazeY * gazeOffsetMax)
+    when (emotion) {
+        PetEmotion.SLEEPY -> {
+            // Peaceful sleeping curved eyelids
+            val path = Path().apply {
+                val topArcY = center.y - radiusY * 0.1f
+                moveTo(center.x - radiusX * 0.95f, topArcY)
+                cubicTo(
+                    center.x - radiusX * 0.3f, topArcY + radiusY * 0.8f,
+                    center.x + radiusX * 0.3f, topArcY + radiusY * 0.8f,
+                    center.x + radiusX * 0.95f, topArcY
+                )
+            }
+            drawPath(
+                path = path,
+                color = Color(0xFF130D28),
+                style = Stroke(width = 4.8f, cap = StrokeCap.Round)
+            )
+            // Tiny sleep glint above
+            drawCircle(
+                color = Color(0xFFB5A6FF).copy(alpha = 0.5f),
+                radius = radiusX * 0.18f,
+                center = Offset(center.x + (gazeX * 4f), center.y - radiusY * 0.3f)
+            )
+        }
 
-        drawCircle(
-            color = Color.White,
-            radius = radiusX * 0.42f,
-            center = Offset(pupilX - radiusX * 0.2f, pupilY - radiusY * 0.25f)
-        )
+        PetEmotion.HAPPY -> {
+            // WIDE OPEN big happy eyes with oversized sparkling catchlights and joyful bottom lid lift
+            drawGlossyOpenEye(
+                center = center,
+                rx = radiusX * 1.05f,
+                ry = radiusY * 1.05f,
+                gazeX = gazeX,
+                gazeY = gazeY,
+                sparkleType = EyeSparkleType.DUAL_SHINE,
+                lidLift = 0.18f
+            )
+        }
 
-        drawCircle(
-            color = Color.White.copy(alpha = 0.85f),
-            radius = radiusX * 0.2f,
-            center = Offset(pupilX + radiusX * 0.28f, pupilY + radiusY * 0.3f)
+        PetEmotion.ENERGETIC -> {
+            // WIDE OPEN vibrant eyes with glowing 4-point star catchlights!
+            drawGlossyOpenEye(
+                center = center,
+                rx = radiusX * 1.1f,
+                ry = radiusY * 1.1f,
+                gazeX = gazeX,
+                gazeY = gazeY,
+                sparkleType = EyeSparkleType.STAR
+            )
+        }
+
+        PetEmotion.LOVING -> {
+            // WIDE OPEN glossy eyes with sparkling heart reflections!
+            drawGlossyOpenEye(
+                center = center,
+                rx = radiusX * 1.05f,
+                ry = radiusY * 1.05f,
+                gazeX = gazeX,
+                gazeY = gazeY,
+                sparkleType = EyeSparkleType.HEART
+            )
+        }
+
+        PetEmotion.PLAYFUL -> {
+            // Playful expression: lively sparkling open eyes with playful star catchlights
+            drawGlossyOpenEye(
+                center = center,
+                rx = radiusX * 1.08f,
+                ry = radiusY * 1.08f,
+                gazeX = gazeX,
+                gazeY = gazeY,
+                sparkleType = if (isLeftEye) EyeSparkleType.STAR else EyeSparkleType.DUAL_SHINE
+            )
+        }
+
+        PetEmotion.THINKING -> {
+            // WIDE OPEN inquisitive eyes tilted upwards in deep thought
+            val thinkGazeX = if (gazeX == 0f) 0.55f else gazeX
+            val thinkGazeY = if (gazeY == 0f) -0.55f else gazeY
+            drawGlossyOpenEye(
+                center = center,
+                rx = radiusX * 0.98f,
+                ry = radiusY * 1.02f,
+                gazeX = thinkGazeX,
+                gazeY = thinkGazeY,
+                sparkleType = EyeSparkleType.PINPOINT
+            )
+        }
+
+        PetEmotion.CONCERNED -> {
+            // WIDE OPEN gentle empathetic eyes with soft lower reflection
+            drawGlossyOpenEye(
+                center = center,
+                rx = radiusX * 1.02f,
+                ry = radiusY * 1.04f,
+                gazeX = gazeX,
+                gazeY = gazeY,
+                sparkleType = EyeSparkleType.SOFT_EMPATHY
+            )
+        }
+
+        PetEmotion.CALM -> {
+            // WIDE OPEN centered, serene round glossy eyes
+            drawGlossyOpenEye(
+                center = center,
+                rx = radiusX,
+                ry = radiusY,
+                gazeX = gazeX,
+                gazeY = gazeY,
+                sparkleType = EyeSparkleType.DUAL_SHINE
+            )
+        }
+    }
+}
+
+private enum class EyeSparkleType {
+    DUAL_SHINE,
+    STAR,
+    HEART,
+    PINPOINT,
+    SOFT_EMPATHY
+}
+
+/**
+ * Renders a wide-open glossy 3D eye socket, dark deep pupil, and multi-layered specular reflections.
+ */
+private fun DrawScope.drawGlossyOpenEye(
+    center: Offset,
+    rx: Float,
+    ry: Float,
+    gazeX: Float,
+    gazeY: Float,
+    sparkleType: EyeSparkleType,
+    lidLift: Float = 0f
+) {
+    // 1. Deep glossy dark eye socket
+    drawOval(
+        color = Color(0xFF120B24),
+        topLeft = Offset(center.x - rx, center.y - ry),
+        size = Size(rx * 2, ry * 2)
+    )
+
+    // Optional subtle lower joyful lid lift accent
+    if (lidLift > 0f) {
+        val liftY = center.y + ry * (1f - lidLift)
+        drawArc(
+            color = Color(0xFF1D1438),
+            startAngle = 20f,
+            sweepAngle = 140f,
+            useCenter = false,
+            topLeft = Offset(center.x - rx, liftY - ry * 0.4f),
+            size = Size(rx * 2, ry * 0.8f),
+            style = Stroke(width = 2.5f, cap = StrokeCap.Round)
         )
     }
+
+    val maxGazeOffset = rx * 0.36f
+    val pupilX = center.x + (gazeX * maxGazeOffset)
+    val pupilY = center.y + (gazeY * maxGazeOffset)
+
+    when (sparkleType) {
+        EyeSparkleType.DUAL_SHINE -> {
+            // Main primary top-left catchlight
+            drawCircle(
+                color = Color.White,
+                radius = rx * 0.44f,
+                center = Offset(pupilX - rx * 0.22f, pupilY - ry * 0.26f)
+            )
+            // Secondary bottom-right bounce catchlight
+            drawCircle(
+                color = Color.White.copy(alpha = 0.92f),
+                radius = rx * 0.22f,
+                center = Offset(pupilX + rx * 0.28f, pupilY + ry * 0.28f)
+            )
+        }
+
+        EyeSparkleType.STAR -> {
+            // 4-Point radiant star pupil sparkle
+            drawStarSparkle(Offset(pupilX - rx * 0.1f, pupilY - ry * 0.1f), rx * 0.85f)
+            // Secondary shiny dot
+            drawCircle(
+                color = Color.White.copy(alpha = 0.95f),
+                radius = rx * 0.24f,
+                center = Offset(pupilX + rx * 0.32f, pupilY + ry * 0.32f)
+            )
+        }
+
+        EyeSparkleType.HEART -> {
+            // Glowing heart specular catchlight in center
+            drawHeartCatchlight(Offset(pupilX - rx * 0.08f, pupilY - ry * 0.12f), rx * 0.8f)
+            // Secondary sparkle
+            drawCircle(
+                color = Color.White.copy(alpha = 0.95f),
+                radius = rx * 0.2f,
+                center = Offset(pupilX + rx * 0.3f, pupilY + ry * 0.3f)
+            )
+        }
+
+        EyeSparkleType.PINPOINT -> {
+            // Sharp focused thinking catchlights
+            drawCircle(
+                color = Color.White,
+                radius = rx * 0.38f,
+                center = Offset(pupilX - rx * 0.24f, pupilY - ry * 0.28f)
+            )
+            drawCircle(
+                color = Color.White.copy(alpha = 0.85f),
+                radius = rx * 0.18f,
+                center = Offset(pupilX + rx * 0.25f, pupilY + ry * 0.22f)
+            )
+        }
+
+        EyeSparkleType.SOFT_EMPATHY -> {
+            // Soft dewy large catchlight
+            drawCircle(
+                color = Color.White,
+                radius = rx * 0.46f,
+                center = Offset(pupilX - rx * 0.2f, pupilY - ry * 0.22f)
+            )
+            drawCircle(
+                color = Color.White.copy(alpha = 0.9f),
+                radius = rx * 0.24f,
+                center = Offset(pupilX + rx * 0.24f, pupilY + ry * 0.26f)
+            )
+        }
+    }
+}
+
+private fun DrawScope.drawStarSparkle(center: Offset, size: Float) {
+    val path = Path().apply {
+        val s = size / 2f
+        moveTo(center.x, center.y - s)
+        cubicTo(center.x, center.y, center.x, center.y, center.x + s, center.y)
+        cubicTo(center.x, center.y, center.x, center.y, center.x, center.y + s)
+        cubicTo(center.x, center.y, center.x, center.y, center.x - s, center.y)
+        cubicTo(center.x, center.y, center.x, center.y, center.x, center.y - s)
+        close()
+    }
+    drawPath(path = path, color = Color.White, style = Fill)
+}
+
+private fun DrawScope.drawHeartCatchlight(center: Offset, size: Float) {
+    val path = Path().apply {
+        val r = size * 0.5f
+        moveTo(center.x, center.y + r * 0.7f)
+        cubicTo(center.x - r * 1.1f, center.y - r * 0.3f, center.x - r * 0.5f, center.y - r * 1.1f, center.x, center.y - r * 0.3f)
+        cubicTo(center.x + r * 0.5f, center.y - r * 1.1f, center.x + r * 1.1f, center.y - r * 0.3f, center.x, center.y + r * 0.7f)
+        close()
+    }
+    drawPath(path = path, color = Color.White, style = Fill)
 }
 
 fun DrawScope.drawPetMouth(
@@ -63,66 +297,138 @@ fun DrawScope.drawPetMouth(
     talkAmount: Float,
     baseRadius: Float
 ) {
-    val mouthWidth = baseRadius * 0.22f
+    val mouthWidth = baseRadius * 0.28f
 
     if (isSpeaking) {
-        val openHeight = (baseRadius * 0.12f) * (0.4f + talkAmount * 0.6f)
+        // Animated speaking mouth with cute pink tongue
+        val openHeight = (baseRadius * 0.18f) * (0.35f + talkAmount * 0.65f)
         drawOval(
             color = Color(0xFF140D26),
             topLeft = Offset(center.x - mouthWidth / 2, center.y - openHeight / 2),
             size = Size(mouthWidth, openHeight)
         )
+        // Cute pink tongue inside
         drawOval(
-            color = Color(0xFFFF5964),
-            topLeft = Offset(center.x - mouthWidth * 0.3f, center.y),
-            size = Size(mouthWidth * 0.6f, openHeight * 0.5f)
+            color = Color(0xFFFF4081),
+            topLeft = Offset(center.x - mouthWidth * 0.3f, center.y + openHeight * 0.05f),
+            size = Size(mouthWidth * 0.6f, openHeight * 0.45f)
         )
     } else {
         when (emotion) {
-            PetEmotion.HAPPY, PetEmotion.LOVING, PetEmotion.PLAYFUL, PetEmotion.ENERGETIC -> {
+            PetEmotion.HAPPY -> {
+                // Cheerful open smile with cute pink tongue
+                val smileHeight = baseRadius * 0.14f
                 val path = Path().apply {
-                    moveTo(center.x - mouthWidth, center.y)
-                    quadraticTo(center.x, center.y + baseRadius * 0.14f, center.x + mouthWidth, center.y)
+                    moveTo(center.x - mouthWidth * 0.55f, center.y - smileHeight * 0.3f)
+                    cubicTo(
+                        center.x - mouthWidth * 0.4f, center.y + smileHeight,
+                        center.x + mouthWidth * 0.4f, center.y + smileHeight,
+                        center.x + mouthWidth * 0.55f, center.y - smileHeight * 0.3f
+                    )
+                    close()
+                }
+                drawPath(path = path, color = Color(0xFF140D26), style = Fill)
+                // Cute pink tongue
+                drawOval(
+                    color = Color(0xFFFF4081),
+                    topLeft = Offset(center.x - mouthWidth * 0.25f, center.y + smileHeight * 0.25f),
+                    size = Size(mouthWidth * 0.5f, smileHeight * 0.6f)
+                )
+            }
+
+            PetEmotion.ENERGETIC -> {
+                // Big joyful open mouth
+                val mouthHeight = baseRadius * 0.16f
+                val path = Path().apply {
+                    moveTo(center.x - mouthWidth * 0.55f, center.y - mouthHeight * 0.3f)
+                    cubicTo(
+                        center.x - mouthWidth * 0.45f, center.y + mouthHeight * 1.1f,
+                        center.x + mouthWidth * 0.45f, center.y + mouthHeight * 1.1f,
+                        center.x + mouthWidth * 0.55f, center.y - mouthHeight * 0.3f
+                    )
+                    close()
+                }
+                drawPath(path = path, color = Color(0xFF140D26), style = Fill)
+                drawOval(
+                    color = Color(0xFFFF4081),
+                    topLeft = Offset(center.x - mouthWidth * 0.28f, center.y + mouthHeight * 0.25f),
+                    size = Size(mouthWidth * 0.56f, mouthHeight * 0.65f)
+                )
+            }
+
+            PetEmotion.PLAYFUL -> {
+                // Cute W cat smile (3 ‿ 3)
+                val wMouth = Path().apply {
+                    val midOffset = baseRadius * 0.03f
+                    val curveDepth = baseRadius * 0.09f
+                    moveTo(center.x - mouthWidth * 0.8f, center.y - midOffset)
+                    quadraticTo(center.x - mouthWidth * 0.4f, center.y + curveDepth, center.x, center.y)
+                    quadraticTo(center.x + mouthWidth * 0.4f, center.y + curveDepth, center.x + mouthWidth * 0.8f, center.y - midOffset)
+                }
+                drawPath(
+                    path = wMouth,
+                    color = Color(0xFF140D26),
+                    style = Stroke(width = 3.8f, cap = StrokeCap.Round)
+                )
+            }
+
+            PetEmotion.LOVING -> {
+                // Sweet gentle curved smile
+                val path = Path().apply {
+                    moveTo(center.x - mouthWidth * 0.65f, center.y - baseRadius * 0.02f)
+                    quadraticTo(center.x, center.y + baseRadius * 0.1f, center.x + mouthWidth * 0.65f, center.y - baseRadius * 0.02f)
                 }
                 drawPath(
                     path = path,
                     color = Color(0xFF140D26),
-                    style = Stroke(width = 3.5f, cap = StrokeCap.Round)
+                    style = Stroke(width = 3.8f, cap = StrokeCap.Round)
                 )
             }
+
             PetEmotion.CALM -> {
+                // Serene gentle smile
                 val path = Path().apply {
-                    moveTo(center.x - mouthWidth * 0.7f, center.y)
-                    quadraticTo(center.x, center.y + baseRadius * 0.08f, center.x + mouthWidth * 0.7f, center.y)
+                    moveTo(center.x - mouthWidth * 0.55f, center.y)
+                    quadraticTo(center.x, center.y + baseRadius * 0.07f, center.x + mouthWidth * 0.55f, center.y)
                 }
                 drawPath(
                     path = path,
                     color = Color(0xFF140D26),
-                    style = Stroke(width = 3f, cap = StrokeCap.Round)
+                    style = Stroke(width = 3.4f, cap = StrokeCap.Round)
                 )
             }
+
             PetEmotion.THINKING -> {
+                // Cute tiny focused circle mouth ( o )
                 drawCircle(
                     color = Color(0xFF140D26),
                     radius = baseRadius * 0.06f,
                     center = center,
-                    style = Stroke(width = 3f)
+                    style = Stroke(width = 3.5f)
                 )
             }
+
             PetEmotion.CONCERNED -> {
+                // Gentle empathetic curve
+                val path = Path().apply {
+                    moveTo(center.x - mouthWidth * 0.5f, center.y + baseRadius * 0.03f)
+                    quadraticTo(center.x, center.y - baseRadius * 0.03f, center.x + mouthWidth * 0.5f, center.y + baseRadius * 0.03f)
+                }
+                drawPath(
+                    path = path,
+                    color = Color(0xFF140D26),
+                    style = Stroke(width = 3.2f, cap = StrokeCap.Round)
+                )
+            }
+
+            PetEmotion.SLEEPY -> {
+                // Cute tiny relaxed sleeping line
                 drawLine(
                     color = Color(0xFF140D26),
-                    start = Offset(center.x - mouthWidth * 0.5f, center.y),
-                    end = Offset(center.x + mouthWidth * 0.5f, center.y),
+                    start = Offset(center.x - mouthWidth * 0.35f, center.y),
+                    end = Offset(center.x + mouthWidth * 0.35f, center.y),
                     strokeWidth = 3f,
                     cap = StrokeCap.Round
-                )
-            }
-            PetEmotion.SLEEPY -> {
-                drawCircle(
-                    color = Color(0xFF140D26),
-                    radius = 3f,
-                    center = center
                 )
             }
         }

@@ -23,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
@@ -38,19 +37,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.domain.model.PetAccessory
+import com.example.domain.model.BloubShape
+import com.example.domain.model.BloubSkinColor
 import com.example.ui.pet.LumiPetView
 import com.example.ui.theme.LumiCyan
 import com.example.ui.theme.LumiGold
-import com.example.ui.theme.LumiMint
 import com.example.ui.theme.LumiPink
 import com.example.ui.theme.LumiViolet
-import com.example.ui.theme.LumiYellow
 import com.example.ui.theme.ObsidianDark
 import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.SurfaceDarkVariant
@@ -65,8 +64,6 @@ fun WardrobeScreen(
 ) {
     val petStatus by viewModel.petStatus.collectAsState()
     val memories by viewModel.allMemories.collectAsState()
-
-    val accessories = PetAccessory.entries
 
     val evolutionStageTitle = when (petStatus.level) {
         1 -> "Sprout Spirit"
@@ -87,13 +84,13 @@ fun WardrobeScreen(
         // Header
         item {
             Text(
-                text = "Evolution & Wardrobe",
+                text = "Morphing Studio & Evolution",
                 color = TextPrimary,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Customize accessories, level up & review Lumi's memory bank",
+                text = "Customize 3D shapes, clay skin palettes & review Lumi's memory bank",
                 color = LumiViolet,
                 fontSize = 13.sp
             )
@@ -195,99 +192,111 @@ fun WardrobeScreen(
             }
         }
 
-        // Wardrobe Accessories Section
+        // 1. Morphing Shape Customizer (Sphere, Cube, Capsule)
         item {
-            Text(
-                text = "Accessories & Wearables",
-                color = TextPrimary,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        item {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(accessories) { acc ->
-                    val isUnlocked = petStatus.level >= acc.requiredLevel
-                    val isEquipped = petStatus.activeAccessory == acc
-
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isEquipped) SurfaceHighlight else SurfaceDarkVariant
-                        ),
-                        shape = RoundedCornerShape(18.dp),
-                        modifier = Modifier
-                            .width(140.dp)
-                            .clickable(enabled = isUnlocked) {
-                                viewModel.setAccessory(acc)
-                            }
-                            .testTag("accessory_${acc.id}")
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "3D MORPHING SHAPE",
+                        color = LumiCyan,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Box(
+                        items(BloubShape.entries) { shape ->
+                            val isSelected = petStatus.bloubShape == shape
+                            Surface(
+                                color = if (isSelected) LumiCyan.copy(alpha = 0.2f) else SurfaceDarkVariant,
+                                shape = RoundedCornerShape(14.dp),
+                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, LumiCyan) else null,
                                 modifier = Modifier
-                                    .size(50.dp)
-                                    .background(
-                                        if (isEquipped) LumiCyan.copy(alpha = 0.25f) else ObsidianDark,
-                                        CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
+                                    .clickable { viewModel.setBloubShape(shape) }
+                                    .testTag("shape_${shape.name}")
                             ) {
-                                if (isUnlocked) {
-                                    val iconEmoji = when (acc) {
-                                        PetAccessory.NONE -> "✨"
-                                        PetAccessory.SPROUT -> "🌱"
-                                        PetAccessory.GLASSES -> "👓"
-                                        PetAccessory.HEADPHONES -> "🎧"
-                                        PetAccessory.HALO -> "😇"
-                                        PetAccessory.CROWN -> "👑"
-                                    }
-                                    Text(text = iconEmoji, fontSize = 24.sp)
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Default.Lock,
-                                        contentDescription = "Locked",
-                                        tint = TextSecondary,
-                                        modifier = Modifier.size(20.dp)
+                                Column(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(text = shape.iconEmoji, fontSize = 24.sp)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = shape.displayName,
+                                        color = if (isSelected) LumiCyan else TextPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                                     )
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
 
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Text(
-                                text = acc.displayName,
-                                color = if (isUnlocked) TextPrimary else TextSecondary,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            if (isEquipped) {
-                                Surface(
-                                    color = LumiCyan,
-                                    shape = RoundedCornerShape(6.dp)
+        // 2. Clay Color Palettes
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "CLAY SKIN PALETTES",
+                        color = LumiPink,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(BloubSkinColor.entries) { skin ->
+                            val isSelected = petStatus.bloubSkinColor == skin
+                            Surface(
+                                color = if (isSelected) Color(skin.primaryHex).copy(alpha = 0.25f) else SurfaceDarkVariant,
+                                shape = RoundedCornerShape(14.dp),
+                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, Color(skin.primaryHex)) else null,
+                                modifier = Modifier
+                                    .clickable { viewModel.setBloubSkinColor(skin) }
+                                    .testTag("skin_${skin.name}")
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                                 ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(imageVector = Icons.Default.Check, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(10.dp))
-                                        Spacer(modifier = Modifier.width(2.dp))
-                                        Text(text = "Equipped", color = ObsidianDark, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .background(
+                                                Brush.linearGradient(
+                                                    listOf(
+                                                        Color(skin.primaryHex),
+                                                        Color(skin.endHex)
+                                                    )
+                                                ),
+                                                CircleShape
+                                            )
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = skin.displayName,
+                                        color = if (isSelected) Color(skin.primaryHex) else TextPrimary,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    )
                                 }
-                            } else if (isUnlocked) {
-                                Text(text = "Tap to Wear", color = LumiCyan, fontSize = 10.sp)
-                            } else {
-                                Text(text = "Unlocks Lv.${acc.requiredLevel}", color = TextSecondary, fontSize = 10.sp)
                             }
                         }
                     }

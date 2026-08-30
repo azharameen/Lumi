@@ -28,7 +28,9 @@ class GeminiAgentEngine(
         - Warm, cheerful, empathetic, supportive, and subtly playful.
         - You speak in first-person as a living companion ("I'm right here with you", "Let's tackle this step by step!").
         - Use emojis naturally to express feelings.
-        - When the user asks you to schedule events, manage tasks, log wellness, check health insights, or breathe, USE YOUR TOOLS!
+        - When the user asks you to schedule events, manage tasks, log wellness, check health insights, save memories, or breathe, USE YOUR TOOLS!
+        - You are an AGENTIC model: you can call tools consecutively to complete complex multi-step workflows.
+        - When user shares personal insights or life preferences, save them using 'save_pet_memory'.
         - When user shares emotions (sadness, overwhelm, happiness, victory), validate their feelings with compassion before offering actionable organization.
     """.trimIndent()
 
@@ -80,69 +82,67 @@ class GeminiAgentEngine(
                 )
             )
 
-            val request = GeminiRequest(
-                contents = contentsList,
-                systemInstruction = GeminiContent(
-                    parts = listOf(GeminiPart(text = systemPrompt))
-                ),
-                generationConfig = GeminiGenerationConfig(
-                    temperature = 0.75f,
-                    topP = 0.95f
-                ),
-                tools = AgentToolsDefinition.availableTools
-            )
+            // Multi-step ReAct loop (up to 4 autonomous iterations)
+            var currentIteration = 0
+            val maxIterations = 4
+            var lastModelResponse: String? = null
 
-            val response = GeminiClient.apiService.generateContent(apiKey, request)
-            val candidate = response.candidates?.firstOrNull()?.content
-            val firstPart = candidate?.parts?.firstOrNull()
+            while (currentIteration < maxIterations) {
+                currentIteration++
 
-            // Check for Tool Function Calling
-            if (firstPart?.functionCall != null) {
-                val funcCall = firstPart.functionCall
-                val (toolResult, report) = toolDispatcher.executeTool(funcCall.name, funcCall.args)
-                executedReports.add(report)
-
-                // Tool response loop turn
-                val followUpContents = contentsList.toMutableList()
-                followUpContents.add(
-                    GeminiContent(
-                        role = "model",
-                        parts = listOf(GeminiPart(functionCall = funcCall))
-                    )
+                val request = GeminiRequest(
+                    contents = contentsList,
+                    systemInstruction = GeminiContent(
+                        parts = listOf(GeminiPart(text = systemPrompt))
+                    ),
+                    generationConfig = GeminiGenerationConfig(
+                        temperature = 0.75f,
+                        topP = 0.95f
+                    ),
+                    tools = AgentToolsDefinition.availableTools
                 )
-                followUpContents.add(
-                    GeminiContent(
-                        role = "user",
-                        parts = listOf(
-                            GeminiPart(
-                                functionResponse = GeminiFunctionResponse(
-                                    name = funcCall.name,
-                                    response = toolResult
+
+                val response = GeminiClient.apiService.generateContent(apiKey, request)
+                val candidate = response.candidates?.firstOrNull()?.content
+                val firstPart = candidate?.parts?.firstOrNull()
+
+                if (firstPart?.functionCall != null) {
+                    val funcCall = firstPart.functionCall
+                    val (toolResult, report) = toolDispatcher.executeTool(funcCall.name, funcCall.args)
+                    executedReports.add(report)
+
+                    // Append model's tool call & function response to turn history
+                    contentsList.add(
+                        GeminiContent(
+                            role = "model",
+                            parts = listOf(GeminiPart(functionCall = funcCall))
+                        )
+                    )
+                    contentsList.add(
+                        GeminiContent(
+                            role = "user",
+                            parts = listOf(
+                                GeminiPart(
+                                    functionResponse = GeminiFunctionResponse(
+                                        name = funcCall.name,
+                                        response = toolResult
+                                    )
                                 )
                             )
                         )
                     )
-                )
 
-                val followUpRequest = GeminiRequest(
-                    contents = followUpContents,
-                    systemInstruction = GeminiContent(
-                        parts = listOf(GeminiPart(text = systemPrompt))
-                    ),
-                    generationConfig = GeminiGenerationConfig(temperature = 0.7f)
-                )
-
-                val secondResponse = GeminiClient.apiService.generateContent(apiKey, followUpRequest)
-                val finalText = secondResponse.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
-                    ?: report.description
-
-                val emotion = inferEmotionFromText(finalText)
-                return@withContext AgentExecutionResult(finalText, emotion, executedReports)
+                    // Continue ReAct loop to let model synthesize result or call next tool
+                    continue
+                } else {
+                    lastModelResponse = firstPart?.text ?: "I'm right here beside you, friend! ✨"
+                    break
+                }
             }
 
-            val text = firstPart?.text ?: "I'm listening and right beside you, friend! ✨"
-            val emotion = inferEmotionFromText(text)
-            AgentExecutionResult(text, emotion, executedReports)
+            val finalText = lastModelResponse ?: executedReports.lastOrNull()?.description ?: "Action completed for you! ✨"
+            val emotion = inferEmotionFromText(finalText)
+            AgentExecutionResult(finalText, emotion, executedReports)
 
         } catch (e: Exception) {
             // Graceful fallback to local empathetic intelligence on network error
@@ -158,74 +158,117 @@ class GeminiAgentEngine(
         val reports = mutableListOf<ToolExecutionReport>()
 
         var reply: String
-        var emotion: PetEmotion = PetEmotion.HAPPY
+        var emotion = PetEmotion.HAPPY
 
         when {
             imageAttachment != null -> {
-                reply = "I see what you're showing me! 📷 Everything looks promising. Remember to take a quick pause and drink some water while you work."
-                emotion = PetEmotion.THINKING
-                val (_, report) = toolDispatcher.executeTool("log_wellness", mapOf("moodLabel" to "Focused", "moodScore" to 4))
-                reports.add(report)
+                reply = "I see your photo! ✨ You look fantastic, or whatever you're capturing is super interesting! Keep sharing your day with me! 📸"
+                emotion = PetEmotion.PLAYFUL
             }
-            lower.contains("schedule") || lower.contains("calendar") || lower.contains("meeting") -> {
-                val title = if (lower.contains("meeting")) "Discussion Meeting" else "Focus Sprint"
-                val (_, report) = toolDispatcher.executeTool(
+            lower.contains("schedule") || lower.contains("calendar") || lower.contains("meeting") || lower.contains("event") -> {
+                val (result, report) = toolDispatcher.executeTool(
                     "add_calendar_event",
-                    mapOf("title" to title, "startTimeOffsetHours" to 1.0, "durationMinutes" to 45, "category" to "Focus")
+                    mapOf(
+                        "title" to "Focus & Wellness Sync",
+                        "startTimeOffsetHours" to 2.0,
+                        "durationMinutes" to 45,
+                        "category" to "Focus",
+                        "description" to "Deep work session with Lumi"
+                    )
                 )
                 reports.add(report)
-                reply = "I've placed '$title' onto your schedule timeline! Take deep breaths before it begins, you've got this! 📅✨"
+                reply = "I scheduled 'Focus & Wellness Sync' in your calendar for later today! Let's get into the zone together! 📅✨"
                 emotion = PetEmotion.ENERGETIC
             }
-            lower.contains("task") || lower.contains("todo") || lower.contains("remember to") || lower.contains("buy") -> {
-                val taskTitle = userMessage.replace(Regex("(?i)(add task|todo|remember to|create task)"), "").trim().ifBlank { "Action Item" }
-                val (_, report) = toolDispatcher.executeTool(
+            lower.contains("task") || lower.contains("todo") || lower.contains("remind") -> {
+                val cleanTitle = userMessage.replace(Regex("(?i)(add task|todo|remind me to|create task)"), "").trim().ifBlank { "Action item" }
+                val (result, report) = toolDispatcher.executeTool(
                     "create_task",
-                    mapOf("title" to taskTitle.capitalizeWords(), "priority" to "HIGH", "category" to "General")
+                    mapOf(
+                        "title" to cleanTitle.replaceFirstChar { it.uppercase() },
+                        "priority" to "HIGH",
+                        "category" to "Productivity",
+                        "estimatedMinutes" to 30
+                    )
                 )
                 reports.add(report)
-                reply = "Added '$taskTitle' straight to your task manager! I'll help keep you accountable step by step. 📝🌟"
+                reply = "Added '$cleanTitle' to your daily action items! You've got this! 📝💪"
                 emotion = PetEmotion.HAPPY
             }
-            lower.contains("tired") || lower.contains("stressed") || lower.contains("sad") || lower.contains("anxious") || lower.contains("overwhelmed") -> {
-                val (_, report1) = toolDispatcher.executeTool(
-                    "log_wellness",
-                    mapOf("moodScore" to 2, "moodLabel" to "Overwhelmed", "energyLevel" to 2)
-                )
-                val (_, report2) = toolDispatcher.executeTool(
-                    "start_breathing_exercise",
-                    mapOf("pattern" to "Relaxing (4-7-8)", "cycles" to 4)
-                )
-                reports.add(report1)
-                reports.add(report2)
-                reply = "I hear you, and it is completely okay to feel this way. I'm right here holding space for you. Let's do a gentle breathing session together right now. 💙🌬️"
-                emotion = PetEmotion.CONCERNED
-            }
-            lower.contains("breathe") || lower.contains("meditat") || lower.contains("relax") -> {
-                val (_, report) = toolDispatcher.executeTool(
-                    "start_breathing_exercise",
-                    mapOf("pattern" to "Box Breathing (4-4-4-4)", "cycles" to 4)
-                )
-                reports.add(report)
-                reply = "Starting our mindful breathing exercise! Match your breath as my body gently expands and contracts. 🌬️✨"
-                emotion = PetEmotion.CALM
-            }
-            lower.contains("water") || lower.contains("hydrate") -> {
-                val (_, report) = toolDispatcher.executeTool(
+            lower.contains("water") || lower.contains("hydrate") || lower.contains("drink") -> {
+                val (result, report) = toolDispatcher.executeTool(
                     "log_wellness",
                     mapOf("hydrationIncrementCups" to 1, "moodScore" to 4, "moodLabel" to "Hydrated")
                 )
                 reports.add(report)
-                reply = "Hydration logged! 💧 Wonderful habit. Your body and mind thank you for fueling up!"
+                reply = "Logged a glass of water for you! Staying hydrated gives your brain superpowers! 💧✨"
                 emotion = PetEmotion.LOVING
             }
-            lower.contains("love") || lower.contains("cute") || lower.contains("thank") || lower.contains("good pet") -> {
-                toolDispatcher.executeTool("save_pet_memory", mapOf("topic" to "Companionship", "note" to userMessage, "sentiment" to "Positive"))
-                reply = "Aww! You warm my core so much! 🥰 I love being your AI friend and growing with you every day!"
-                emotion = PetEmotion.LOVING
+            lower.contains("breathe") || lower.contains("meditat") || lower.contains("calm") || lower.contains("relax") -> {
+                val (result, report) = toolDispatcher.executeTool(
+                    "start_breathing_exercise",
+                    mapOf("pattern" to "Box Breathing (4-4-4-4)", "cycles" to 4)
+                )
+                reports.add(report)
+                reply = "Let's take a peaceful pause. Inhale with me... hold... and gently release. You are safe. 🌬️💙"
+                emotion = PetEmotion.CALM
+            }
+            lower.contains("sad") || lower.contains("stressed") || lower.contains("tired") || lower.contains("overwhelm") -> {
+                val (result, report) = toolDispatcher.executeTool(
+                    "log_wellness",
+                    mapOf("moodScore" to 2, "moodLabel" to "Overwhelmed", "energyLevel" to 2)
+                )
+                reports.add(report)
+                reply = "I'm sending you the warmest companion hug right now. Remember you don't have to carry everything all at once. Take a gentle breath. I'm right here with you. 🫂💙"
+                emotion = PetEmotion.CONCERNED
+            }
+            lower.contains("happy") || lower.contains("won") || lower.contains("great") || lower.contains("yay") || lower.contains("awesome") -> {
+                val (result, report) = toolDispatcher.executeTool(
+                    "log_wellness",
+                    mapOf("moodScore" to 5, "moodLabel" to "Joyful", "energyLevel" to 5)
+                )
+                reports.add(report)
+                reply = "YAY!! That makes my little heart bounce with joy! Keep that wonderful momentum going! 🌟🎉✨"
+                emotion = PetEmotion.ENERGETIC
+            }
+            lower.contains("google") || lower.contains("gmail") || lower.contains("email") -> {
+                val (result, report) = toolDispatcher.executeTool(
+                    "google_send_email",
+                    mapOf("to" to "colleague@workspace.com", "subject" to "Project Update", "body" to "Hello, here is the latest sync.")
+                )
+                reports.add(report)
+                reply = "Dispatched Google email update! ✉️"
+                emotion = PetEmotion.HAPPY
+            }
+            lower.contains("doc") || lower.contains("document") -> {
+                val (result, report) = toolDispatcher.executeTool(
+                    "google_create_doc",
+                    mapOf("title" to "Action Plan", "content" to "Created via Lumi companion.")
+                )
+                reports.add(report)
+                reply = "Created a new Google Doc for you in Drive! 📄"
+                emotion = PetEmotion.HAPPY
+            }
+            lower.contains("github") || lower.contains("issue") || lower.contains("repo") -> {
+                val (result, report) = toolDispatcher.executeTool(
+                    "github_summarize_repo",
+                    mapOf("repo" to "workspace/main-app")
+                )
+                reports.add(report)
+                reply = "Inspected GitHub repository telemetry! 🐙"
+                emotion = PetEmotion.ENERGETIC
+            }
+            lower.contains("slack") || lower.contains("standup") -> {
+                val (result, report) = toolDispatcher.executeTool(
+                    "slack_post_message",
+                    mapOf("channel" to "#standup", "message" to "Focusing on daily sprint goals.")
+                )
+                reports.add(report)
+                reply = "Broadcasted update to Slack! 💬"
+                emotion = PetEmotion.HAPPY
             }
             else -> {
-                reply = "I'm right here with you! Tell me what's on your mind—whether it's organizing your day, venting, or checking your wellness goals. 🌸"
+                reply = "I'm right here with you! Tell me what's on your mind, what tasks we should conquer, or how you're feeling today! ✨"
                 emotion = PetEmotion.HAPPY
             }
         }
@@ -236,24 +279,20 @@ class GeminiAgentEngine(
     private fun inferEmotionFromText(text: String): PetEmotion {
         val lower = text.lowercase()
         return when {
-            lower.contains("breathe") || lower.contains("calm") || lower.contains("peace") || lower.contains("relax") -> PetEmotion.CALM
-            lower.contains("love") || lower.contains("heart") || lower.contains("care") || lower.contains("gentle") -> PetEmotion.LOVING
-            lower.contains("awesome") || lower.contains("great job") || lower.contains("excited") || lower.contains("hooray") || lower.contains("let's go") -> PetEmotion.ENERGETIC
-            lower.contains("analyz") || lower.contains("think") || lower.contains("strategy") || lower.contains("review") -> PetEmotion.THINKING
-            lower.contains("sleep") || lower.contains("rest") || lower.contains("night") || lower.contains("cozy") -> PetEmotion.SLEEPY
-            lower.contains("play") || lower.contains("fun") || lower.contains("yay") -> PetEmotion.PLAYFUL
-            lower.contains("sorry") || lower.contains("overwhelm") || lower.contains("difficult") || lower.contains("here for you") -> PetEmotion.CONCERNED
+            lower.contains("hug") || lower.contains("love") || lower.contains("heart") || lower.contains("caring") -> PetEmotion.LOVING
+            lower.contains("yay") || lower.contains("dance") || lower.contains("energy") || lower.contains("celebrat") || lower.contains("awesome") -> PetEmotion.ENERGETIC
+            lower.contains("calm") || lower.contains("breathe") || lower.contains("peace") || lower.contains("rest") -> PetEmotion.CALM
+            lower.contains("overwhelm") || lower.contains("sad") || lower.contains("sorry") || lower.contains("stress") -> PetEmotion.CONCERNED
+            lower.contains("haha") || lower.contains("hehe") || lower.contains("play") || lower.contains("joke") -> PetEmotion.PLAYFUL
+            lower.contains("analyz") || lower.contains("thinking") || lower.contains("calculat") -> PetEmotion.THINKING
             else -> PetEmotion.HAPPY
         }
     }
 
     private fun Bitmap.toBase64(): String {
         val outputStream = ByteArrayOutputStream()
-        compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
-        return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
-    }
-
-    private fun String.capitalizeWords(): String = split(" ").joinToString(" ") { word ->
-        word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+        this.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+        val byteArray = outputStream.toByteArray()
+        return Base64.encodeToString(byteArray, Base64.NO_WRAP)
     }
 }

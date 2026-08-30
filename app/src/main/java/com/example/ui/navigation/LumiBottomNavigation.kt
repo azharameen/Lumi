@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.theme.ObsidianDark
@@ -19,8 +20,8 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 
 /**
- * Modern Material 3 Navigation Bar for navigating Lumi's 3 primary core tabs:
- * Companion (Pet & Sanctuary), Assistant (Gemini AI Brain), and Life Hub (Productivity & Wellness).
+ * Modern Material 3 Navigation Bar for navigating Lumi's 5 core tabs:
+ * Companion, Assistant, Productivity, Wellness, and Account.
  */
 @Composable
 fun LumiBottomNavigation(
@@ -32,7 +33,7 @@ fun LumiBottomNavigation(
         containerColor = SurfaceDark,
         contentColor = TextPrimary,
         tonalElevation = 10.dp,
-        modifier = modifier.height(76.dp)
+        modifier = modifier.height(72.dp)
     ) {
         NavDestination.allDestinations.forEach { destination ->
             val isSelected = selectedTabIndex == destination.tabIndex
@@ -43,14 +44,16 @@ fun LumiBottomNavigation(
                     Icon(
                         imageVector = destination.icon,
                         contentDescription = destination.title,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 },
                 label = {
                     Text(
                         text = destination.title,
-                        fontSize = 12.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                        fontSize = 10.5.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 colors = NavigationBarItemDefaults.colors(

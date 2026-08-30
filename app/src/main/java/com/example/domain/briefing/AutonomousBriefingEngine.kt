@@ -5,7 +5,16 @@ import com.example.data.local.entity.CalendarEventEntity
 import com.example.data.local.entity.PetEvolutionEntity
 import com.example.data.local.entity.TaskEntity
 import com.example.data.local.entity.WellnessLogEntity
+import com.example.data.remote.GeminiClient
+import com.example.data.remote.GeminiContent
+import com.example.data.remote.GeminiGenerationConfig
+import com.example.data.remote.GeminiPart
+import com.example.data.remote.GeminiRequest
 import com.example.domain.model.PetStatus
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -33,7 +42,7 @@ data class DailyBriefing(
 
 class AutonomousBriefingEngine(private val context: Context) {
 
-    fun generateBriefing(
+    suspend fun generateBriefing(
         type: BriefingType? = null,
         petStatus: PetStatus,
         petEvolution: PetEvolutionEntity?,
@@ -41,7 +50,7 @@ class AutonomousBriefingEngine(private val context: Context) {
         events: List<CalendarEventEntity>,
         wellnessLogs: List<WellnessLogEntity>,
         locationCity: String? = null
-    ): DailyBriefing {
+    ): DailyBriefing = withContext(Dispatchers.IO) {
         val now = Calendar.getInstance()
         val hour = now.get(Calendar.HOUR_OF_DAY)
         val resolvedType = type ?: when {
@@ -64,116 +73,98 @@ class AutonomousBriefingEngine(private val context: Context) {
         }
 
         val totalWaterGlasses = wellnessLogs.sumOf { it.hydrationCups }
-
         val petName = petStatus.name
         val petLevel = petEvolution?.level ?: 1
         val bondScore = petEvolution?.bondScore ?: 50
 
-        val highlights = mutableListOf<String>()
-        val scriptBuilder = StringBuilder()
-
-        val title: String
-        val greeting: String
-        val motivationalQuote: String
-        val focusGoal: String
-        val recommendedAction: String
-        val recommendedActionType: String
-
-        when (resolvedType) {
-            BriefingType.MORNING -> {
-                title = "🌅 Morning Intelligence Briefing"
-                greeting = "Good morning! $petName is energized and ready for Level $petLevel milestones."
-                scriptBuilder.append("Good morning! Here is your Lumi daily intelligence briefing for $dateString. ")
-
-                if (todayEvents.isNotEmpty()) {
-                    highlights.add("📅 ${todayEvents.size} calendar event(s) scheduled today.")
-                    val firstEvent = todayEvents.first()
-                    val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-                    highlights.add("⏰ Next up: \"${firstEvent.title}\" at ${timeFormat.format(Date(firstEvent.startTimeMillis))}.")
-                    scriptBuilder.append("You have ${todayEvents.size} event scheduled today, starting with ${firstEvent.title}. ")
-                } else {
-                    highlights.add("📅 Clear calendar day ahead — great for uninterrupted deep work.")
-                    scriptBuilder.append("Your calendar is wide open today, perfect for deep uninterrupted focus. ")
-                }
-
-                if (pendingTasks.isNotEmpty()) {
-                    highlights.add("⚡ ${pendingTasks.size} pending task(s) on your radar.")
-                    if (highPriorityTasks.isNotEmpty()) {
-                        highlights.add("🔥 Top priority: \"${highPriorityTasks.first().title}\".")
-                        scriptBuilder.append("You have ${pendingTasks.size} pending tasks, with top priority on ${highPriorityTasks.first().title}. ")
-                    } else {
-                        scriptBuilder.append("You have ${pendingTasks.size} pending tasks to tackle. ")
+        // Dynamic LLM Synthesis if API available
+        val apiKey = GeminiClient.getApiKey()
+        if (apiKey.isNotBlank() && apiKey != "MY_GEMINI_API_KEY") {
+            try {
+                val prompt = """
+                    You are Lumi, a sentient companion AI generating a personalized daily intelligence briefing for the user.
+                    Time of day: ${resolvedType.name}
+                    Date: $dateString
+                    Companion: $petName (Level $petLevel, Bond $bondScore%)
+                    Events today: ${todayEvents.map { "${it.title} at ${it.startTimeMillis}" }}
+                    Pending Tasks (${pendingTasks.size}): ${pendingTasks.take(5).map { "${it.title} [${it.priority}]" }}
+                    Completed Today: ${completedTasksToday.size}
+                    Water Logged: $totalWaterGlasses glasses
+                    
+                    Return ONLY a JSON object:
+                    {
+                      "title": "Title with emoji",
+                      "greeting": "Personalized companion greeting",
+                      "highlights": ["highlight 1", "highlight 2", "highlight 3"],
+                      "motivationalQuote": "A profound, uplifting quote matching their current workload",
+                      "focusGoal": "Clear, single highest-leverage focus objective",
+                      "recommendedAction": "Action button text",
+                      "recommendedActionType": "BREATHING" or "HYDRATE" or "TASKS" or "SCHEDULE",
+                      "audioScript": "Conversational speech script for voice narration"
                     }
-                } else {
-                    highlights.add("✨ Zero pending tasks. Inbox zero state!")
-                    scriptBuilder.append("Your task queue is completely clear. ")
+                """.trimIndent()
+
+                val request = GeminiRequest(
+                    contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
+                    generationConfig = GeminiGenerationConfig(temperature = 0.5f)
+                )
+
+                val response = GeminiClient.apiService.generateContent(apiKey, request)
+                val jsonText = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+
+                if (!jsonText.isNullOrBlank()) {
+                    val cleanJson = jsonText.trim().removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
+                    val jsonObj = JSONObject(cleanJson)
+
+                    val highlightsList = mutableListOf<String>()
+                    val highlightsArr = jsonObj.optJSONArray("highlights")
+                    if (highlightsArr != null) {
+                        for (i in 0 until highlightsArr.length()) {
+                            highlightsList.add(highlightsArr.getString(i))
+                        }
+                    }
+
+                    return@withContext DailyBriefing(
+                        type = resolvedType,
+                        title = jsonObj.optString("title", "✨ Daily Intelligence Briefing"),
+                        greeting = jsonObj.optString("greeting", "Hello from $petName! Ready to make today great!"),
+                        dateFormatted = dateString,
+                        highlights = if (highlightsList.isNotEmpty()) highlightsList else listOf("Track your tasks and wellness", "Stay focused and hydrated"),
+                        motivationalQuote = jsonObj.optString("motivationalQuote", "\"The journey of a thousand miles begins with a single step.\""),
+                        focusGoal = jsonObj.optString("focusGoal", "Deep focus on top priority goals"),
+                        recommendedAction = jsonObj.optString("recommendedAction", "Start Focus Session"),
+                        recommendedActionType = jsonObj.optString("recommendedActionType", "TASKS"),
+                        audioScript = jsonObj.optString("audioScript", "Here is your daily update with Lumi.")
+                    )
                 }
-
-                highlights.add("💧 Hydration target: 8 glasses (Logged so far: $totalWaterGlasses).")
-                scriptBuilder.append("Remember to hydrate early. Let's make today productive and calm!")
-
-                motivationalQuote = "\"Small daily steps compounded over time create extraordinary transformations.\""
-                focusGoal = if (highPriorityTasks.isNotEmpty()) "Conquer \"${highPriorityTasks.first().title}\"" else "Maintain momentum and high energy"
-                recommendedAction = if (totalWaterGlasses == 0) "Log 1st Glass of Water" else "Review Top Priority Task"
-                recommendedActionType = if (totalWaterGlasses == 0) "HYDRATE" else "TASKS"
-            }
-
-            BriefingType.AFTERNOON -> {
-                title = "☀️ Midday Energy & Progress Check"
-                greeting = "Keep going! $petName is cheering you on through the afternoon."
-                scriptBuilder.append("Hey there! Here is your midday pulse check. ")
-
-                highlights.add("✅ Completed today: ${completedTasksToday.size} task(s).")
-                highlights.add("⏳ Remaining tasks: ${pendingTasks.size}.")
-                scriptBuilder.append("You've completed ${completedTasksToday.size} tasks so far with ${pendingTasks.size} remaining. ")
-
-                if (todayEvents.isNotEmpty()) {
-                    highlights.add("📆 Remaining afternoon schedule: ${todayEvents.size} block(s).")
-                }
-
-                highlights.add("💧 Water tracker: $totalWaterGlasses / 8 glasses logged.")
-                scriptBuilder.append("You have logged $totalWaterGlasses glasses of water. Take a deep breath and stay hydrated!")
-
-                motivationalQuote = "\"Focus is a muscle. Take a 2-minute reset to sharpen your mind.\""
-                focusGoal = "Power through remaining afternoon blocks"
-                recommendedAction = "Take 2-Min Reset Breathing"
-                recommendedActionType = "BREATHING"
-            }
-
-            BriefingType.EVENING -> {
-                title = "🌙 Evening Reflection & Wind-Down"
-                greeting = "Great work today! $petName is cozy and resting."
-                scriptBuilder.append("Good evening! Time for your daily reflection and wind-down summary. ")
-
-                highlights.add("🎉 Total tasks crushed today: ${completedTasksToday.size}.")
-                highlights.add("🌟 Companion bond: $bondScore% (Level $petLevel).")
-                scriptBuilder.append("You crushed ${completedTasksToday.size} tasks today. Your Lumi companion bond is at $bondScore percent. ")
-
-                if (pendingTasks.isNotEmpty()) {
-                    highlights.add("📋 ${pendingTasks.size} task(s) rolled over smoothly to tomorrow.")
-                }
-
-                highlights.add("💧 Final hydration count: $totalWaterGlasses / 8 glasses.")
-                scriptBuilder.append("Outstanding effort today. Prepare for a restful night and recharge your energy for tomorrow.")
-
-                motivationalQuote = "\"Rest is not a reward for work; it is a vital part of the creative process.\""
-                focusGoal = "Unplug, relax, and restore your mind"
-                recommendedAction = "Start 4-7-8 Bedtime Relaxation"
-                recommendedActionType = "BREATHING"
+            } catch (e: Exception) {
+                return@withContext DailyBriefing(
+                    type = resolvedType,
+                    title = "⚠️ Briefing Unavailable",
+                    greeting = "Please configure your AI API key in Settings.",
+                    dateFormatted = dateString,
+                    highlights = listOf("Requires AI Engine to synthesize briefing."),
+                    motivationalQuote = "Waiting for intelligence uplink...",
+                    focusGoal = "Configure API Key",
+                    recommendedAction = "Open Settings",
+                    recommendedActionType = "TASKS",
+                    audioScript = "Please configure your AI API key in Settings."
+                )
             }
         }
 
-        return DailyBriefing(
+        // If API key is blank, just return the exact same fallback
+        return@withContext DailyBriefing(
             type = resolvedType,
-            title = title,
-            greeting = greeting,
+            title = "⚠️ Briefing Unavailable",
+            greeting = "Please configure your AI API key in Settings.",
             dateFormatted = dateString,
-            highlights = highlights,
-            motivationalQuote = motivationalQuote,
-            focusGoal = focusGoal,
-            recommendedAction = recommendedAction,
-            recommendedActionType = recommendedActionType,
-            audioScript = scriptBuilder.toString()
+            highlights = listOf("Requires AI Engine to synthesize briefing."),
+            motivationalQuote = "Waiting for intelligence uplink...",
+            focusGoal = "Configure API Key",
+            recommendedAction = "Open Settings",
+            recommendedActionType = "TASKS",
+            audioScript = "Please configure your AI API key in Settings."
         )
     }
 }

@@ -1,5 +1,6 @@
 package com.example.data.remote
 
+import android.content.Context
 import android.graphics.Bitmap
 import com.example.data.local.dao.AiExecutionLogDao
 import com.example.data.local.entity.AiExecutionLogEntity
@@ -17,10 +18,12 @@ import kotlin.math.ceil
 
 class HybridAiEngine(
     private val toolDispatcher: AgentToolDispatcher,
-    private val aiAnalyticsDao: AiExecutionLogDao
+    private val aiAnalyticsDao: AiExecutionLogDao,
+    context: Context? = null
 ) {
     private val geminiEngine = GeminiAgentEngine(toolDispatcher)
-    val onDeviceGemmaEngine = OnDeviceGemmaEngine(toolDispatcher)
+    private val downloadManager = context?.let { ModelDownloadManager.getInstance(it) }
+    val onDeviceGemmaEngine = OnDeviceGemmaEngine(toolDispatcher, downloadManager)
 
     private val _routingMode = MutableStateFlow(AiRoutingMode.HYBRID_AUTO)
     val routingMode = _routingMode.asStateFlow()
@@ -72,7 +75,8 @@ class HybridAiEngine(
             errorMessage = "Cloud error (${e.message ?: "network failure"}). Auto-routed to On-Device Gemma fallback."
 
             finalEngineType = AiEngineProvider.ON_DEVICE_GEMMA.name
-            finalModelName = AiModelRegistry.GEMMA_2B_INT4.id
+            val activeSpec = downloadManager?.getActiveModelSpec()
+            finalModelName = activeSpec?.id ?: AiModelRegistry.GEMMA_2B_INT4.id
             hardwareTarget = "GPU (OpenCL / Fallback Local NPU)"
 
             executionResult = onDeviceGemmaEngine.executeOnDeviceTurn(userMessage, recentHistory)
@@ -100,8 +104,8 @@ class HybridAiEngine(
             taskCategory = decision.taskCategory.displayName,
             engineType = finalEngineType,
             modelName = finalModelName,
-            promptPreview = userMessage.take(120),
-            responsePreview = executionResult.responseText.take(160),
+            promptPreview = userMessage.take(80),
+            responsePreview = executionResult.responseText.take(120),
             promptTokens = promptTokens,
             completionTokens = completionTokens,
             totalTokens = totalTokens,
@@ -109,19 +113,11 @@ class HybridAiEngine(
             startTimeMillis = startTime,
             finishTimeMillis = finishTime,
             durationMs = durationMs,
-            isSuccess = isSuccess || fallbackTriggered, // Fallback provides valid output to user
-            errorMessage = errorMessage,
-            isOffline = (finalEngineType == AiEngineProvider.ON_DEVICE_GEMMA.name),
-            hardwareTarget = hardwareTarget,
-            routingReason = decision.routingReason,
-            fallbackTriggered = fallbackTriggered
+            isSuccess = isSuccess,
+            isOffline = decision.isLocalOnDevice || fallbackTriggered,
+            hardwareTarget = hardwareTarget
         )
-
-        try {
-            aiAnalyticsDao.insertLog(logEntity)
-        } catch (e: Exception) {
-            // Non-blocking log insert
-        }
+        aiAnalyticsDao.insertLog(logEntity)
 
         executionResult
     }

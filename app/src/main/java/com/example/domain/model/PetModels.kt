@@ -11,13 +11,28 @@ enum class PetEmotion(val displayName: String, val glowHex: String) {
     CONCERNED("Supportive & Gentle", "#70C1FF")
 }
 
-enum class PetAccessory(val id: String, val displayName: String, val requiredLevel: Int, val description: String) {
-    NONE("NONE", "Natural Lumi", 1, "Pure ethereal companion"),
-    SPROUT("SPROUT", "Sprout of Life", 1, "A tiny green seedling glowing with hope"),
-    GLASSES("GLASSES", "Wisdom Specs", 2, "Chic glowing glasses for deep scheduling thoughts"),
-    HEADPHONES("HEADPHONES", "Cozy Headphones", 3, "For jamming to relaxing lofi frequencies"),
-    HALO("HALO", "Angel Halo", 4, "A radiant circle of empathetic warmth"),
-    CROWN("CROWN", "Starlight Crown", 5, "Unlocked by master companions who care daily")
+enum class BloubShape(val id: String, val displayName: String, val iconEmoji: String) {
+    SPHERE("SPHERE", "Sphere", "🔮"),
+    CUBE("CUBE", "Cube", "🧊"),
+    CAPSULE("CAPSULE", "Capsule", "💊")
+}
+
+enum class BloubSkinColor(
+    val id: String,
+    val displayName: String,
+    val primaryHex: Long,
+    val midHex: Long,
+    val endHex: Long,
+    val glowHex: Long
+) {
+    ELECTRIC_CYAN("CYAN", "Electric Cyan", 0xFF00F0FF, 0xFF00B4D8, 0xFF0077B6, 0x6600F0FF),
+    BUBBLEGUM_PINK("PINK", "Bubblegum Clay", 0xFFFF70A6, 0xFFFF4081, 0xFFE63946, 0x66FF70A6),
+    SUNSHINE_GOLD("GOLD", "Sunshine Honey", 0xFFFFD166, 0xFFFFB703, 0xFFFB8500, 0x66FFD166),
+    LAVENDER_VIOLET("LAVENDER", "Lavender Velvet", 0xFFB5A6FF, 0xFF9D65FF, 0xFF7209B7, 0x66B5A6FF),
+    MINT_JELLY("MINT", "Mint Glaze", 0xFF06D6A0, 0xFF2EC4B6, 0xFF118AB2, 0x6606D6A0),
+    MATCHA_CREAM("MATCHA", "Matcha Cream", 0xFFA7C957, 0xFF6A994E, 0xFF386641, 0x66A7C957),
+    PEACH_SUNSET("PEACH", "Peach Sunset", 0xFFFF9E7D, 0xFFFF6392, 0xFFD81159, 0x66FF9E7D),
+    HOLO_OBSIDIAN("OBSIDIAN", "Dark Holo", 0xFF64DFDF, 0xFF48CAE4, 0xFF3A0CA3, 0x6648CAE4)
 }
 
 data class PetStatus(
@@ -30,7 +45,8 @@ data class PetStatus(
     val energy: Int = 90,
     val personalityTrait: String = "Empathetic Explorer",
     val currentEmotion: PetEmotion = PetEmotion.HAPPY,
-    val activeAccessory: PetAccessory = PetAccessory.SPROUT,
+    val bloubShape: BloubShape = BloubShape.SPHERE,
+    val bloubSkinColor: BloubSkinColor = BloubSkinColor.ELECTRIC_CYAN,
     val isSpeaking: Boolean = false,
     val isListening: Boolean = false,
     val isThinking: Boolean = false,

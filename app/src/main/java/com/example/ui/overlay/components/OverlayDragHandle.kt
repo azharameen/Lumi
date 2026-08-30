@@ -1,8 +1,8 @@
 package com.example.ui.overlay.components
 
+import android.view.MotionEvent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -19,9 +19,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,12 +35,13 @@ import com.example.ui.theme.TextSecondary
 /**
  * Tactical Drag Handle Pill positioned under the floating Lumi avatar to easily reposition the overlay.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun OverlayPetDragHandle(
     isDragging: Boolean,
-    onDragStart: () -> Unit,
+    onDragStart: (Float, Float) -> Unit,
+    onDragMove: (Float, Float) -> Unit,
     onDragEnd: () -> Unit,
-    onMoveOverlay: (Float, Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -52,16 +54,22 @@ fun OverlayPetDragHandle(
         shadowElevation = if (isDragging) 8.dp else 3.dp,
         modifier = modifier
             .padding(top = 1.dp)
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { onDragStart() },
-                    onDragEnd = { onDragEnd() },
-                    onDragCancel = { onDragEnd() },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        onMoveOverlay(dragAmount.x, dragAmount.y)
+            .pointerInteropFilter { motionEvent ->
+                when (motionEvent.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        onDragStart(motionEvent.rawX, motionEvent.rawY)
+                        true
                     }
-                )
+                    MotionEvent.ACTION_MOVE -> {
+                        onDragMove(motionEvent.rawX, motionEvent.rawY)
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        onDragEnd()
+                        true
+                    }
+                    else -> false
+                }
             }
     ) {
         Row(
@@ -89,27 +97,34 @@ fun OverlayPetDragHandle(
 /**
  * Top Grab Bar positioned at the header of the expanded Companion Hub card.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun OverlayCardDragBar(
-    onDragStart: () -> Unit,
+    onDragStart: (Float, Float) -> Unit,
+    onDragMove: (Float, Float) -> Unit,
     onDragEnd: () -> Unit,
-    onMoveOverlay: (Float, Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = 6.dp)
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { onDragStart() },
-                    onDragEnd = { onDragEnd() },
-                    onDragCancel = { onDragEnd() },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        onMoveOverlay(dragAmount.x, dragAmount.y)
+            .pointerInteropFilter { motionEvent ->
+                when (motionEvent.actionMasked) {
+                    MotionEvent.ACTION_DOWN -> {
+                        onDragStart(motionEvent.rawX, motionEvent.rawY)
+                        true
                     }
-                )
+                    MotionEvent.ACTION_MOVE -> {
+                        onDragMove(motionEvent.rawX, motionEvent.rawY)
+                        true
+                    }
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        onDragEnd()
+                        true
+                    }
+                    else -> false
+                }
             },
         contentAlignment = Alignment.Center
     ) {
@@ -130,3 +145,4 @@ fun OverlayCardDragBar(
         }
     }
 }
+

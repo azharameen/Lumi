@@ -7,7 +7,6 @@ import com.example.data.local.entity.PetEvolutionEntity
 import com.example.data.local.entity.PetMemoryEntity
 import com.example.data.local.entity.TaskEntity
 import com.example.data.local.entity.WellnessLogEntity
-import com.example.domain.model.PetAccessory
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
 import kotlinx.coroutines.flow.Flow
@@ -23,7 +22,8 @@ interface LumiRepository {
 
     suspend fun sendMessage(userText: String, image: Bitmap? = null): ChatMessageEntity
     suspend fun petTheCharacter()
-    suspend fun setActiveAccessory(accessory: PetAccessory)
+    suspend fun setBloubShape(shape: com.example.domain.model.BloubShape)
+    suspend fun setBloubSkinColor(skinColor: com.example.domain.model.BloubSkinColor)
     suspend fun addTask(title: String, priority: String, category: String, estimatedMinutes: Int, notes: String): Long
     suspend fun toggleTaskCompleted(taskId: Long, isCompleted: Boolean)
     suspend fun deleteTask(task: TaskEntity)

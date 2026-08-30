@@ -72,9 +72,17 @@ class MainActivity : ComponentActivity() {
         // Initialize Dynamic App Shortcuts
         AppShortcutsManager.initDynamicShortcuts(this)
 
-        // Audio permission for speech recognition features
+        // Audio and Location permissions
+        val permissionsToRequest = mutableListOf<String>()
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), PERMISSION_RECORD_AUDIO_CODE)
+            permissionsToRequest.add(Manifest.permission.RECORD_AUDIO)
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+            permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+        if (permissionsToRequest.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), PERMISSION_RECORD_AUDIO_CODE)
         }
 
         // Handle incoming intent (Shares, Shortcuts, Alarms, Widgets)
@@ -240,7 +248,17 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                         onNavigateToChat = { viewModel.setSelectedTab(NavDestination.Assistant.tabIndex) },
                         onNavigateToLifeHub = { subTab -> viewModel.navigateToLifeHub(subTab) },
                         onNavigateToAccount = { viewModel.setSelectedTab(NavDestination.Account.tabIndex) },
-                        onNavigateToWellness = { viewModel.setSelectedTab(NavDestination.Wellness.tabIndex) }
+                        onNavigateToWellness = { viewModel.setSelectedTab(NavDestination.Wellness.tabIndex) },
+                        locationContext = viewModel.locationState.collectAsStateWithLifecycle().value,
+                        userProfile = userProfile,
+                        onFeedPet = { petViewModel.feedPet() },
+                        onDancePet = { petViewModel.dancePet() },
+                        onPokePet = { petViewModel.pokePet() },
+                        onToggleTask = { id, isCompleted -> lifeHubViewModel.toggleTask(id, isCompleted) },
+                        onQuickAgentPrompt = { prompt ->
+                            viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
+                            chatViewModel.sendMessage(prompt)
+                        }
                     )
                     NavDestination.Assistant.tabIndex -> ChatScreen(
                         
@@ -324,7 +342,17 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                         onNavigateToChat = { viewModel.setSelectedTab(NavDestination.Assistant.tabIndex) },
                         onNavigateToLifeHub = { subTab -> viewModel.navigateToLifeHub(subTab) },
                         onNavigateToAccount = { viewModel.setSelectedTab(NavDestination.Account.tabIndex) },
-                        onNavigateToWellness = { viewModel.setSelectedTab(NavDestination.Wellness.tabIndex) }
+                        onNavigateToWellness = { viewModel.setSelectedTab(NavDestination.Wellness.tabIndex) },
+                        locationContext = viewModel.locationState.collectAsStateWithLifecycle().value,
+                        userProfile = userProfile,
+                        onFeedPet = { petViewModel.feedPet() },
+                        onDancePet = { petViewModel.dancePet() },
+                        onPokePet = { petViewModel.pokePet() },
+                        onToggleTask = { id, isCompleted -> lifeHubViewModel.toggleTask(id, isCompleted) },
+                        onQuickAgentPrompt = { prompt ->
+                            viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
+                            chatViewModel.sendMessage(prompt)
+                        }
                     )
                 }
             }

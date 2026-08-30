@@ -82,8 +82,10 @@ class LumiViewModel(application: Application) : AndroidViewModel(application) {
     val networkStatus = networkEngine.networkStatus
     val headsetStatus = headsetManager.headsetStatus
     val zenStatus = zenManager.zenStatus
+    val locationState = locationEngine.locationState
 
     init {
+        locationEngine.startLocationUpdates()
         viewModelScope.launch {
             voiceEngine.isSpeaking.collect { isSpeaking ->
                 repository.setSpeaking(isSpeaking)

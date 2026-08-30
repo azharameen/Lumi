@@ -87,10 +87,22 @@ class ContextLocationEngine(private val context: Context) {
     }
 
     private fun updateLocation(loc: Location) {
-        val placeDescription = if (loc.latitude != 0.0) {
-            "Nearby Lat: ${"%.2f".format(loc.latitude)}, Lng: ${"%.2f".format(loc.longitude)}"
-        } else {
-            "Cozy Sanctuary"
+        var placeDescription = "Earth Sanctuary"
+        try {
+            val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
+            val addresses = geocoder.getFromLocation(loc.latitude, loc.longitude, 1)
+            val city = addresses?.firstOrNull()?.locality 
+                ?: addresses?.firstOrNull()?.subAdminArea 
+                ?: addresses?.firstOrNull()?.adminArea
+            if (!city.isNullOrBlank()) {
+                placeDescription = city
+            }
+        } catch (e: Exception) {
+            placeDescription = if (loc.latitude != 0.0) {
+                "${"%.2f".format(loc.latitude)}, ${"%.2f".format(loc.longitude)}"
+            } else {
+                "Earth Sanctuary"
+            }
         }
 
         _locationState.value = LocationContext(

@@ -39,7 +39,7 @@ class LumiRepositoryImpl private constructor(
     private val hybridAiEngine = HybridAiEngine(toolDispatcher, database.aiExecutionLogDao(), context)
     private val autonomousGoalPlanner = com.example.domain.planner.AutonomousGoalPlanner(context, database, toolDispatcher, integrationService)
     private val autonomousBriefingEngine = com.example.domain.briefing.AutonomousBriefingEngine(context)
-    private val soundscapeEngine = com.example.service.ProceduralSoundscapeEngine.getInstance()
+    private val soundscapeEngine = com.example.service.ProceduralSoundscapeEngine.getInstance(context)
 
     private val _currentEmotion = MutableStateFlow(PetEmotion.HAPPY)
     private val _isSpeaking = MutableStateFlow(false)

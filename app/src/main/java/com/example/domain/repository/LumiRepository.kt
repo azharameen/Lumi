@@ -61,8 +61,8 @@ interface LumiRepository {
     suspend fun getDailyBriefing(): com.example.domain.briefing.DailyBriefing
 
     // Procedural Ambient Soundscape Engine
-    val soundscapeState: kotlinx.coroutines.flow.StateFlow<com.example.service.SoundscapeState>
-    fun startSoundscape(type: com.example.service.SoundscapeType)
+    val soundscapeState: kotlinx.coroutines.flow.StateFlow<com.example.data.device.SoundscapeState>
+    fun startSoundscape(type: com.example.data.device.SoundscapeType)
     fun stopSoundscape()
     fun setSoundscapeVolume(volume: Float)
     fun startFocusTimerWithSoundscape(minutes: Int)

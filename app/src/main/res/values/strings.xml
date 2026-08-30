@@ -1,11 +1,229 @@
+<?xml version="1.0" ?>
+
 <resources>
+
     <string name="app_name">Lumi AI Friend</string>
+
     <string name="shortcut_voice_short">Voice Chat</string>
+
     <string name="shortcut_voice_long">Talk with Lumi</string>
+
     <string name="shortcut_water_short">+1 Water</string>
+
     <string name="shortcut_water_long">Quick Hydration Log</string>
+
     <string name="shortcut_breath_short">Breathing</string>
+
     <string name="shortcut_breath_long">Start 4-7-8 Breathing</string>
+
     <string name="shortcut_pet_short">Screen Pet</string>
+
     <string name="shortcut_pet_long">Toggle Floating Lumi</string>
+
+    <string name="text_finish_exercise">Finish Exercise</string>
+
+    <string name="desc_close">Close</string>
+
+    <string name="text_grant_camera_access">Grant Camera Access</string>
+
+    <string name="text_cancel">Cancel</string>
+
+    <string name="text_lumi_multimodal_vision">Lumi Multimodal Vision</string>
+
+    <string name="desc_camera_permission">Camera Permission</string>
+
+    <string name="desc_capture">Capture</string>
+
+    <string name="desc_configure">Configure</string>
+
+    <string name="desc_briefing">Briefing</string>
+
+    <string name="desc_refresh_briefing">Refresh Briefing</string>
+
+    <string name="desc_read_aloud">Read Aloud</string>
+
+    <string name="desc_toggle">Toggle</string>
+
+    <string name="text_life_hub">Life Hub</string>
+
+    <string name="text_goals_schedule">Goals &amp; Schedule</string>
+
+    <string name="text_wellness">Wellness</string>
+
+    <string name="text_zen_vitality">Zen &amp; Vitality</string>
+
+    <string name="text_active_quests_bounties">Active Quests &amp; Bounties</string>
+
+    <string name="text_all_quests_cleared">All Quests Cleared!</string>
+
+    <string name="text_your_companion_is_thrilled_che">Your companion is thrilled. Check Life Hub for new goals.</string>
+
+    <string name="text_create_new_quest_in_life_hub">Create New Quest in Life Hub</string>
+
+    <string name="text_">•</string>
+
+    <string name="desc_charging">Charging</string>
+
+    <string name="desc_pet_care_actions">Pet Care Actions</string>
+
+    <string name="desc_pet_studio">Pet Studio</string>
+
+    <string name="desc_quests">Quests</string>
+
+    <string name="desc_cancel_voice_mode">Cancel Voice Mode</string>
+
+    <string name="desc_voice_input">Voice Input</string>
+
+    <string name="desc_chat_with_lumi">Chat with Lumi</string>
+
+    <string name="desc_camera_lens">Camera Lens</string>
+
+    <string name="text_ask_lumi_anything">Ask Lumi anything...</string>
+
+    <string name="desc_send">Send</string>
+
+    <string name="desc_reposition_handle">Reposition Handle</string>
+
+    <string name="desc_open_app">Open App</string>
+
+    <string name="desc_minimize">Minimize</string>
+
+    <string name="desc_complete">Complete</string>
+
+    <string name="text_stop_timer">Stop Timer</string>
+
+    <string name="text_goal_title_e_g_launch_mobile_a">Goal Title (e.g., Launch Mobile App)</string>
+
+    <string name="text_key_outcomes_notes_optional">Key Outcomes &amp; Notes (Optional)</string>
+
+    <string name="desc_new_goal_swarm">New Goal Swarm</string>
+
+    <string name="desc_delete_goal">Delete Goal</string>
+
+    <string name="desc_voice_toggle">Voice Toggle</string>
+
+    <string name="desc_camera_vision">Camera Vision</string>
+
+    <string name="text_begin_journey">Begin Journey</string>
+
+    <string name="text_continue">Continue</string>
+
+    <string name="text_your_name">Your Name</string>
+
+    <string name="text_primary_focus_goal">Primary Focus / Goal</string>
+
+    <string name="text_complete_setup">Complete Setup</string>
+
+    <string name="text_reset_memory_history">Reset Memory &amp; History?</string>
+
+    <string name="text_this_will_clear_chat_conversat">This will clear chat conversation logs and reset AI analytics. Your user profile and custom memory facts will remain intact.</string>
+
+    <string name="text_clear_logs">Clear Logs</string>
+
+    <string name="desc_user_avatar">User Avatar</string>
+
+    <string name="desc_edit_profile">Edit Profile</string>
+
+    <string name="text_what_are_you_grateful_for_toda">What are you grateful for today?</string>
+
+    <string name="text_lock">Lock</string>
+
+    <string name="text_unlock_with_fingerprint_pin">Unlock with Fingerprint / PIN</string>
+
+    <string name="desc_breathing_exercise">Breathing Exercise</string>
+
+    <string name="desc_add_cup">Add Cup</string>
+
+    <string name="desc_vault_security">Vault Security</string>
+
+    <string name="desc_add_water">Add Water</string>
+
+    <string name="text_category">Category</string>
+
+    <string name="text_what_should_lumi_know_about_yo">What should Lumi know about you?</string>
+
+    <string name="text_e_g_i_prefer_vegetarian_meals_">e.g. I prefer vegetarian meals and morning flow state</string>
+
+    <string name="text_pin_as_high_priority_core_cont">Pin as high-priority core context</string>
+
+    <string name="text_configure_github_token">Configure GitHub Token</string>
+
+    <string name="text_github_username">GitHub Username</string>
+
+    <string name="text_personal_access_token_pat">Personal Access Token (PAT)</string>
+
+    <string name="text_save_connect">Save &amp; Connect</string>
+
+    <string name="text_configure_slack_webhook">Configure Slack Webhook</string>
+
+    <string name="text_channel_e_g_daily_briefings">Channel (e.g. #daily-briefings)</string>
+
+    <string name="text_webhook_url">Webhook URL</string>
+
+    <string name="text_email_address">Email Address</string>
+
+    <string name="text_role_occupation">Role / Occupation</string>
+
+    <string name="text_primary_goal_mission">Primary Goal / Mission</string>
+
+    <string name="text_wake_time">Wake Time</string>
+
+    <string name="text_sleep_time">Sleep Time</string>
+
+    <string name="text_set_active">Set Active</string>
+
+    <string name="text_0_0_precise_deterministic">0.0 (Precise &amp; Deterministic)</string>
+
+    <string name="text_1_0_creative_playful">1.0 (Creative &amp; Playful)</string>
+
+    <string name="text_save_instructions">Save Instructions</string>
+
+    <string name="text_run_test">Run Test</string>
+
+    <string name="desc_active">Active</string>
+
+    <string name="desc_delete_model_weights">Delete Model Weights</string>
+
+    <string name="text_add_fact">Add Fact</string>
+
+    <string name="text_no_memory_facts_in_this_catego">No memory facts in this category</string>
+
+    <string name="text_tap_add_fact_above_to_teach_lu">Tap \'Add Fact\' above to teach Lumi about your work style, projects, or diet!</string>
+
+    <string name="desc_pin_fact">Pin Fact</string>
+
+    <string name="desc_delete_fact">Delete Fact</string>
+
+    <string name="text_lumi_floating_pet">Lumi Floating Pet</string>
+
+    <string name="text_keep_lumi_active_on_screen_ove">Keep Lumi active on screen over other apps</string>
+
+    <string name="text_biometric_lock_for_memory_vaul">Biometric Lock for Memory Vault</string>
+
+    <string name="text_require_fingerprint_face_to_vi">Require Fingerprint/Face to view private wellness reflections</string>
+
+    <string name="text_export_data_vault_json">Export Data Vault (JSON)</string>
+
+    <string name="text_clear_chat_logs_analytics">Clear Chat Logs &amp; Analytics</string>
+
+    <string name="desc_edit">Edit</string>
+
+    <string name="desc_selected">Selected</string>
+
+    <string name="text_event_title">Event Title</string>
+
+    <string name="text_location_link_optional">Location / Link (Optional)</string>
+
+    <string name="text_task_description">Task Description</string>
+
+    <string name="desc_delete_event">Delete Event</string>
+
+    <string name="desc_add_event">Add Event</string>
+
+    <string name="desc_delete_task">Delete Task</string>
+
+    <string name="desc_add_task">Add Task</string>
+
+    <string name="text_a_productive_morning_good_coff">A productive morning, good coffee...</string>
+
 </resources>

@@ -1,6 +1,7 @@
 package com.example.data.repository
 
 import android.content.Context
+import com.example.data.device.HealthConnectManager
 import android.graphics.Bitmap
 import com.example.data.local.LumiDatabase
 import com.example.data.local.entity.AiExecutionLogEntity
@@ -35,11 +36,11 @@ class LumiRepositoryImpl private constructor(
 
     private val connectorManager = com.example.domain.connectors.ConnectorManager(context)
     private val integrationService = com.example.domain.connectors.IntegrationService(connectorManager)
-    private val toolDispatcher = AgentToolDispatcher(database, integrationService)
+    private val toolDispatcher = AgentToolDispatcher(database, integrationService, healthConnectManager)
     private val hybridAiEngine = HybridAiEngine(toolDispatcher, database.aiExecutionLogDao(), context)
     private val autonomousGoalPlanner = com.example.domain.planner.AutonomousGoalPlanner(context, database, toolDispatcher, integrationService)
     private val autonomousBriefingEngine = com.example.domain.briefing.AutonomousBriefingEngine(context)
-    private val soundscapeEngine = com.example.service.ProceduralSoundscapeEngine.getInstance(context)
+    private val soundscapeEngine = com.example.data.device.ProceduralSoundscapeEngine.getInstance(context)
 
     private val _currentEmotion = MutableStateFlow(PetEmotion.HAPPY)
     private val _isSpeaking = MutableStateFlow(false)
@@ -249,12 +250,15 @@ class LumiRepositoryImpl private constructor(
         )
 
         _currentEmotion.value = PetEmotion.LOVING
-        _speechBubbleText.value = listOf(
-            "*Purrrrr* That feels so warm! 🥰",
-            "I love spending time with you! ✨",
-            "Yay! Feeling so happy! 💖",
-            "*Giggles happily* Let's have a great day! 🌸"
-        ).random()
+        _speechBubbleText.value = "..."
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            try {
+                val response = hybridAiEngine.executeUserTurn("The user just pet you affectionately. Give a very short, cute 1-sentence reaction as a virtual companion.")
+                _speechBubbleText.value = response.responseText
+            } catch (e: Exception) {
+                _speechBubbleText.value = "*Purrrrr* So warm!"
+            }
+        }
     }
 
     override suspend fun setBloubShape(shape: com.example.domain.model.BloubShape) {
@@ -411,10 +415,10 @@ class LumiRepositoryImpl private constructor(
     }
 
     // Procedural Ambient Soundscape Engine
-    override val soundscapeState: kotlinx.coroutines.flow.StateFlow<com.example.service.SoundscapeState> =
+    override val soundscapeState: kotlinx.coroutines.flow.StateFlow<com.example.data.device.SoundscapeState> =
         soundscapeEngine.state
 
-    override fun startSoundscape(type: com.example.service.SoundscapeType) {
+    override fun startSoundscape(type: com.example.data.device.SoundscapeType) {
         soundscapeEngine.startSoundscape(type)
     }
 
@@ -438,7 +442,7 @@ class LumiRepositoryImpl private constructor(
         @Volatile
         private var INSTANCE: LumiRepositoryImpl? = null
 
-        fun getInstance(context: Context): LumiRepositoryImpl {
+        fun getInstance(context: Context, healthConnectManager: HealthConnectManager? = null): LumiRepositoryImpl {
             return INSTANCE ?: synchronized(this) {
                 val appContext = context.applicationContext
                 val db = LumiDatabase.getDatabase(appContext)

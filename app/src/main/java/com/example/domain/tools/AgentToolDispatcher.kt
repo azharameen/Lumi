@@ -1,5 +1,7 @@
 package com.example.domain.tools
 
+import com.example.data.device.HealthConnectManager
+
 import com.example.data.local.LumiDatabase
 import com.example.data.local.entity.CalendarEventEntity
 import com.example.data.local.entity.PetMemoryEntity
@@ -20,7 +22,8 @@ import java.util.Locale
  */
 class AgentToolDispatcher(
     private val database: LumiDatabase,
-    private val integrationService: IntegrationService
+    private val integrationService: IntegrationService,
+    private val healthConnectManager: HealthConnectManager
 ) {
 
     /**
@@ -228,18 +231,18 @@ class AgentToolDispatcher(
         return output to report
     }
 
-    private fun handleGetWellnessInsights(): Pair<Map<String, Any?>, ToolExecutionReport> {
+    private suspend fun handleGetWellnessInsights(): Pair<Map<String, Any?>, ToolExecutionReport> {
+        val insights = healthConnectManager.getWellnessInsights()
         val output = mapOf(
             "status" to "success",
-            "circadianWindow" to "Peak focus window: 9:30 AM - 12:00 PM",
-            "hydrationTarget" to "6-8 cups daily (current: on track)",
+            "healthConnectData" to insights,
             "stressReliefTip" to "Taking 3 deep diaphragmatic breaths reduces cortisol by up to 23%."
         )
         val report = ToolExecutionReport(
             toolName = "get_wellness_insights",
-            title = "Circadian & Focus Insights 💡",
-            description = "Retrieved biophilic focus tips",
-            payloadPreview = "Peak focus window: 9:30 AM - 12:00 PM"
+            title = "Circadian & Focus Insights",
+            description = "Retrieved health metrics",
+            payloadPreview = insights
         )
         return output to report
     }

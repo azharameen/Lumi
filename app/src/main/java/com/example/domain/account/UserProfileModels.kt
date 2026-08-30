@@ -10,13 +10,13 @@ import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.ui.theme.LumiCyan
-import com.example.ui.theme.LumiGold
-import com.example.ui.theme.LumiGreen
-import com.example.ui.theme.LumiMint
-import com.example.ui.theme.LumiPink
-import com.example.ui.theme.LumiViolet
-import com.example.ui.theme.LumiYellow
+import com.example.core.theme.LumiCyan
+import com.example.core.theme.LumiGold
+import com.example.core.theme.LumiGreen
+import com.example.core.theme.LumiMint
+import com.example.core.theme.LumiPink
+import com.example.core.theme.LumiViolet
+import com.example.core.theme.LumiYellow
 
 enum class LumiPersonaTone(
     val title: String,

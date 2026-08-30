@@ -31,26 +31,26 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.service.AppShortcutsManager
-import com.example.service.PetOverlayService
-import com.example.ui.components.BreathingExerciseModal
-import com.example.ui.components.CameraVisionDialog
-import com.example.ui.components.OverlayPermissionDialog
-import com.example.ui.navigation.NavDestination
-import com.example.ui.screens.ChatScreen
-import com.example.ui.screens.HomeScreen
-import com.example.ui.screens.LifeHubScreen
-import com.example.ui.screens.UserAccountScreen
+import com.example.framework.AppShortcutsManager
+import com.example.framework.PetOverlayService
+import com.example.presentation.components.BreathingExerciseModal
+import com.example.presentation.components.CameraVisionDialog
+import com.example.presentation.components.OverlayPermissionDialog
+import com.example.core.navigation.NavDestination
+import com.example.presentation.screens.ChatScreen
+import com.example.presentation.home.HomeScreen
+import com.example.presentation.screens.LifeHubScreen
+import com.example.presentation.screens.UserAccountScreen
 
-import com.example.ui.screens.WellnessScreen
-import com.example.ui.theme.MyApplicationTheme
-import com.example.ui.theme.ObsidianDark
-import com.example.ui.viewmodel.LumiViewModel
-import com.example.ui.viewmodel.ChatViewModel
-import com.example.ui.viewmodel.WellnessViewModel
-import com.example.ui.viewmodel.LifeHubViewModel
-import com.example.ui.viewmodel.PetViewModel
-import com.example.ui.viewmodel.AiSettingsViewModel
+import com.example.presentation.screens.WellnessScreen
+import com.example.core.theme.MyApplicationTheme
+import com.example.core.theme.ObsidianDark
+import com.example.presentation.viewmodel.LumiViewModel
+import com.example.presentation.viewmodel.ChatViewModel
+import com.example.presentation.viewmodel.WellnessViewModel
+import com.example.presentation.viewmodel.LifeHubViewModel
+import com.example.presentation.viewmodel.PetViewModel
+import com.example.presentation.viewmodel.AiSettingsViewModel
 
 /**
  * Main Activity hosting Lumi's full-screen application experience.
@@ -184,39 +184,57 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
     val context = LocalContext.current
 
     if (!userProfile.hasCompletedOnboarding) {
-        com.example.ui.screens.OnboardingScreen(
+        com.example.presentation.screens.OnboardingScreen(
             viewModel = viewModel,
             onComplete = { /* State handles recomposition automatically */ }
         )
     } else {
         
-    val handleLifeHubAction: (com.example.ui.viewmodel.LumiUiAction) -> Unit = { action ->
+    val handleLifeHubAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit = { action ->
         when (action) {
-            is com.example.ui.viewmodel.LumiUiAction.NavigateToChat -> {
-                viewModel.setSelectedTab(com.example.ui.navigation.NavDestination.Assistant.tabIndex)
+            is com.example.presentation.viewmodel.LumiUiAction.NavigateToChat -> {
+                viewModel.setSelectedTab(com.example.core.navigation.NavDestination.Assistant.tabIndex)
                 action.prompt?.let { chatViewModel.sendMessage(it) }
             }
-            is com.example.ui.viewmodel.LumiUiAction.SetLifeHubSubTab -> viewModel.setLifeHubSubTab(action.tabIndex)
-            is com.example.ui.viewmodel.LumiUiAction.AddCalendarEvent -> lifeHubViewModel.addCalendarEvent(action.event)
-            is com.example.ui.viewmodel.LumiUiAction.DeleteCalendarEvent -> lifeHubViewModel.deleteCalendarEvent(action.id)
-            is com.example.ui.viewmodel.LumiUiAction.SpeakBriefing -> {} // Removed voice briefing output for now // Remains in LumiViewModel for now if voice output
-            is com.example.ui.viewmodel.LumiUiAction.AddTask -> lifeHubViewModel.addTask(action.title, action.priority, action.category, action.estimatedMinutes, action.notes)
-            is com.example.ui.viewmodel.LumiUiAction.ToggleTask -> lifeHubViewModel.toggleTask(action.id, action.isCompleted)
-            is com.example.ui.viewmodel.LumiUiAction.DeleteTask -> lifeHubViewModel.deleteTask(action.task)
-            is com.example.ui.viewmodel.LumiUiAction.DecomposeGoal -> lifeHubViewModel.decomposeGoal(action.title, action.description, action.category, action.deadline)
-            is com.example.ui.viewmodel.LumiUiAction.DeleteGoal -> lifeHubViewModel.deleteGoal(action.id)
-            is com.example.ui.viewmodel.LumiUiAction.ToggleMilestone -> lifeHubViewModel.toggleMilestone(action.milestoneId, action.goalId, action.isCompleted)
-            is com.example.ui.viewmodel.LumiUiAction.ExecuteMilestone -> lifeHubViewModel.executeMilestone(action.milestoneId, action.goalId)
-            is com.example.ui.viewmodel.LumiUiAction.StartSoundscape -> lifeHubViewModel.startSoundscape(action.type)
-            is com.example.ui.viewmodel.LumiUiAction.StopSoundscape -> lifeHubViewModel.stopSoundscape()
-            is com.example.ui.viewmodel.LumiUiAction.SetSoundscapeVolume -> lifeHubViewModel.setSoundscapeVolume(action.volume)
-            is com.example.ui.viewmodel.LumiUiAction.StartFocusTimer -> lifeHubViewModel.startFocusTimerWithSoundscape(action.minutes)
-            is com.example.ui.viewmodel.LumiUiAction.StopFocusTimer -> lifeHubViewModel.stopFocusTimerWithSoundscape()
+            is com.example.presentation.viewmodel.LumiUiAction.SetLifeHubSubTab -> viewModel.setLifeHubSubTab(action.tabIndex)
+            is com.example.presentation.viewmodel.LumiUiAction.AddCalendarEvent -> lifeHubViewModel.addCalendarEvent(action.event)
+            is com.example.presentation.viewmodel.LumiUiAction.DeleteCalendarEvent -> lifeHubViewModel.deleteCalendarEvent(action.id)
+            is com.example.presentation.viewmodel.LumiUiAction.SpeakBriefing -> {} // Removed voice briefing output for now // Remains in LumiViewModel for now if voice output
+            is com.example.presentation.viewmodel.LumiUiAction.AddTask -> lifeHubViewModel.addTask(action.title, action.priority, action.category, action.estimatedMinutes, action.notes)
+            is com.example.presentation.viewmodel.LumiUiAction.ToggleTask -> lifeHubViewModel.toggleTask(action.id, action.isCompleted)
+            is com.example.presentation.viewmodel.LumiUiAction.DeleteTask -> lifeHubViewModel.deleteTask(action.task)
+            is com.example.presentation.viewmodel.LumiUiAction.DecomposeGoal -> lifeHubViewModel.decomposeGoal(action.title, action.description, action.category, action.deadline)
+            is com.example.presentation.viewmodel.LumiUiAction.DeleteGoal -> lifeHubViewModel.deleteGoal(action.id)
+            is com.example.presentation.viewmodel.LumiUiAction.ToggleMilestone -> lifeHubViewModel.toggleMilestone(action.milestoneId, action.goalId, action.isCompleted)
+            is com.example.presentation.viewmodel.LumiUiAction.ExecuteMilestone -> lifeHubViewModel.executeMilestone(action.milestoneId, action.goalId)
+            is com.example.presentation.viewmodel.LumiUiAction.StartSoundscape -> lifeHubViewModel.startSoundscape(action.type)
+            is com.example.presentation.viewmodel.LumiUiAction.StopSoundscape -> lifeHubViewModel.stopSoundscape()
+            is com.example.presentation.viewmodel.LumiUiAction.SetSoundscapeVolume -> lifeHubViewModel.setSoundscapeVolume(action.volume)
+            is com.example.presentation.viewmodel.LumiUiAction.StartFocusTimer -> lifeHubViewModel.startFocusTimerWithSoundscape(action.minutes)
+            is com.example.presentation.viewmodel.LumiUiAction.StopFocusTimer -> lifeHubViewModel.stopFocusTimerWithSoundscape()
         }
     }
 
+        val petStatus by petViewModel.petStatus.collectAsStateWithLifecycle()
+        val petPrimary = androidx.compose.ui.graphics.Color(petStatus.bloubSkinColor.primaryHex)
+
         Scaffold(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            floatingActionButton = {
+                if (uiState.selectedTab != NavDestination.PetCompanion.tabIndex && !uiState.showWardrobeScreen) {
+                    androidx.compose.material3.FloatingActionButton(
+                        onClick = { viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) },
+                        containerColor = petPrimary,
+                        contentColor = ObsidianDark,
+                        shape = androidx.compose.foundation.shape.CircleShape
+                    ) {
+                        androidx.compose.material3.Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = "Return to Companion Home"
+                        )
+                    }
+                }
+            }
         ) { innerPadding ->
             Box(
                 modifier = Modifier
@@ -261,7 +279,6 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                         }
                     )
                     NavDestination.Assistant.tabIndex -> ChatScreen(
-                        
                         uiState = uiState,
                         petStatus = petViewModel.petStatus.collectAsStateWithLifecycle().value,
                         chatMessages = chatViewModel.pagedChatMessages.collectAsLazyPagingItems(),
@@ -357,7 +374,7 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                 }
             }
             if (uiState.showWardrobeScreen) {
-                com.example.ui.screens.WardrobeScreen(petViewModel = petViewModel, wellnessViewModel = wellnessViewModel, onClose = { viewModel.setShowWardrobeScreen(false) })
+                com.example.presentation.screens.WardrobeScreen(petViewModel = petViewModel, wellnessViewModel = wellnessViewModel, onClose = { viewModel.setShowWardrobeScreen(false) })
             }
             // Camera / Vision Dialog Modal
             if (uiState.showCameraDialog) {
@@ -399,23 +416,6 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                         ContextCompat.startForegroundService(context, serviceIntent)
                     }
                 )
-            }
-
-
-            // Global Back to Home Button
-            if (uiState.selectedTab != NavDestination.PetCompanion.tabIndex) {
-                androidx.compose.material3.FloatingActionButton(
-                    onClick = { viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) },
-                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(24.dp)
-                ) {
-                    androidx.compose.material3.Icon(
-                        imageVector = Icons.Default.Home,
-                        contentDescription = "Back to Home"
-                    )
-                }
             }
         }
     }

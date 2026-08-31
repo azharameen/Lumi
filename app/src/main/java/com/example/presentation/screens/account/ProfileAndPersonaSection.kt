@@ -1,7 +1,8 @@
 package com.example.presentation.screens.account
 import androidx.compose.ui.res.stringResource
 import com.example.R
-
+import coil.compose.AsyncImage
+import com.example.domain.model.AuthUser
 
 import com.example.presentation.components.*
 
@@ -53,6 +54,7 @@ import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Psychology
@@ -70,6 +72,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -123,12 +126,14 @@ import com.example.domain.account.LumiPersonaTone
 import com.example.domain.account.UserFactItem
 import com.example.domain.account.UserProfileData
 import com.example.domain.connectors.ConnectorManager
+import com.example.core.theme.CyberCyan
 import com.example.core.theme.LumiGold
 import com.example.core.theme.LumiGreen
 import com.example.core.theme.LumiMint
 import com.example.core.theme.LumiPink
 import com.example.core.theme.LumiYellow
 import com.example.core.theme.ObsidianDark
+import com.example.core.theme.SlateDark
 import com.example.core.theme.SurfaceDark
 import com.example.core.theme.SurfaceDarkVariant
 import com.example.core.theme.SurfaceHighlight
@@ -142,6 +147,9 @@ import com.example.core.theme.spacing
 @Composable
 fun ProfileAndPersonaSection(
     userProfile: UserProfileData,
+    authUser: AuthUser? = null,
+    onSignInWithGoogle: () -> Unit = {},
+    onSignOut: () -> Unit = {},
     onUpdateProfile: (UserProfileData) -> Unit,
     onEditClicked: () -> Unit
 ) {
@@ -152,6 +160,140 @@ fun ProfileAndPersonaSection(
         contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 90.dp),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
     ) {
+        // Cloud Account Card
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
+                border = androidx.compose.foundation.BorderStroke(1.dp, CyberCyan.copy(alpha = 0.25f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Security,
+                                contentDescription = null,
+                                tint = CyberCyan,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "Account & Cloud Sync",
+                                color = CyberCyan,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (authUser != null) LumiGreen.copy(alpha = 0.15f) else LumiGold.copy(alpha = 0.15f)
+                        ) {
+                            Text(
+                                text = if (authUser != null) "Connected" else "Guest Mode",
+                                color = if (authUser != null) LumiGreen else LumiGold,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (authUser != null) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            if (authUser.photoUrl != null) {
+                                AsyncImage(
+                                    model = authUser.photoUrl,
+                                    contentDescription = "User Avatar",
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .clip(CircleShape)
+                                        .border(1.5.dp, CyberCyan, CircleShape)
+                                )
+                            } else {
+                                Surface(
+                                    modifier = Modifier.size(44.dp),
+                                    shape = CircleShape,
+                                    color = SlateDark
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Person,
+                                            contentDescription = null,
+                                            tint = CyberCyan,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = authUser.displayName ?: userProfile.userName,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = TextPrimary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = authUser.email ?: "No email registered",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Button(
+                            onClick = onSignOut,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = SurfaceDarkVariant)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Logout,
+                                contentDescription = null,
+                                tint = TextSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Sign Out", color = TextPrimary, fontSize = 13.sp)
+                        }
+                    } else {
+                        Text(
+                            text = "You are currently in Guest Mode. Sign in with Google to sync your companion across devices.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = onSignInWithGoogle,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = CyberCyan)
+                        ) {
+                            Text("Sign in with Google", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
+                    }
+                }
+            }
+        }
+
         // Identity Overview Card
         item {
             Card(

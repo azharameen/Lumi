@@ -51,6 +51,8 @@ import com.example.presentation.viewmodel.WellnessViewModel
 import com.example.presentation.viewmodel.LifeHubViewModel
 import com.example.presentation.viewmodel.PetViewModel
 import com.example.presentation.viewmodel.AiSettingsViewModel
+import com.example.presentation.viewmodel.AuthViewModel
+import com.example.presentation.screens.auth.LoginScreen
 
 /**
  * Main Activity hosting Lumi's full-screen application experience.
@@ -66,6 +68,7 @@ class MainActivity : ComponentActivity() {
     private val wellnessViewModel: WellnessViewModel by viewModel()
     private val lifeHubViewModel: LifeHubViewModel by viewModel()
     private val petViewModel: PetViewModel by viewModel()
+    private val authViewModel: AuthViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,7 +98,15 @@ class MainActivity : ComponentActivity() {
             val petPrimary = androidx.compose.ui.graphics.Color(petStatus.bloubSkinColor.primaryHex)
             val petSecondary = androidx.compose.ui.graphics.Color(petStatus.bloubSkinColor.endHex)
             MyApplicationTheme(petColorPrimary = petPrimary, petColorSecondary = petSecondary) {
-                LumiApp(viewModel = viewModel, aiSettingsViewModel = aiSettingsViewModel, chatViewModel = chatViewModel, wellnessViewModel = wellnessViewModel, lifeHubViewModel = lifeHubViewModel, petViewModel = petViewModel)
+                LumiApp(
+                    viewModel = viewModel,
+                    aiSettingsViewModel = aiSettingsViewModel,
+                    chatViewModel = chatViewModel,
+                    wellnessViewModel = wellnessViewModel,
+                    lifeHubViewModel = lifeHubViewModel,
+                    petViewModel = petViewModel,
+                    authViewModel = authViewModel
+                )
             }
         }
     }
@@ -180,12 +191,32 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, chatViewModel: ChatViewModel, wellnessViewModel: WellnessViewModel, lifeHubViewModel: LifeHubViewModel, petViewModel: PetViewModel) {
+fun LumiApp(
+    viewModel: LumiViewModel,
+    aiSettingsViewModel: AiSettingsViewModel,
+    chatViewModel: ChatViewModel,
+    wellnessViewModel: WellnessViewModel,
+    lifeHubViewModel: LifeHubViewModel,
+    petViewModel: PetViewModel,
+    authViewModel: AuthViewModel
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val authUiState by authViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    if (!userProfile.hasCompletedOnboarding) {
+    if (authUiState.user == null && !authUiState.isGuestMode) {
+        LoginScreen(
+            authViewModel = authViewModel,
+            petStatus = petViewModel.petStatus.collectAsStateWithLifecycle().value,
+            onLoginSuccess = {
+                // User signed in successfully
+            },
+            onContinueAsGuest = {
+                authViewModel.continueAsGuest()
+            }
+        )
+    } else if (!userProfile.hasCompletedOnboarding) {
         com.example.presentation.screens.OnboardingScreen(
             viewModel = viewModel,
             onComplete = { /* State handles recomposition automatically */ }
@@ -300,6 +331,9 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                     )
                     NavDestination.Account.tabIndex -> UserAccountScreen(
                         userProfile = userProfile,
+                        authUser = authUiState.user,
+                        onSignInWithGoogle = { authViewModel.signInWithGoogle(context) },
+                        onSignOut = { authViewModel.signOut() },
                         userFacts = viewModel.userFacts.collectAsStateWithLifecycle().value,
                         petStatus = petViewModel.petStatus.collectAsStateWithLifecycle().value,
                         benchmarkStatus = viewModel.benchmarkStatus.collectAsStateWithLifecycle().value ?: "",

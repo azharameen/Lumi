@@ -1,6 +1,9 @@
 package com.example.presentation.screens
 import androidx.compose.ui.res.stringResource
 import com.example.R
+import coil.compose.AsyncImage
+import com.example.domain.model.AuthUser
+
 
 
 import com.example.presentation.screens.account.*
@@ -158,6 +161,9 @@ data class AiModelInfo(
 @Composable
 fun UserAccountScreen(
     userProfile: com.example.domain.account.UserProfileData,
+    authUser: AuthUser? = null,
+    onSignInWithGoogle: () -> Unit = {},
+    onSignOut: () -> Unit = {},
     userFacts: List<com.example.domain.account.UserFactItem>,
     petStatus: com.example.domain.model.PetStatus,
     benchmarkStatus: String,
@@ -242,25 +248,33 @@ fun UserAccountScreen(
                                     .background(SurfaceDark),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Person,
-                                    contentDescription = stringResource(id = R.string.desc_user_avatar),
-                                    tint = LumiMint,
-                                    modifier = Modifier.size(28.dp)
-                                )
+                                if (authUser?.photoUrl != null) {
+                                    AsyncImage(
+                                        model = authUser.photoUrl,
+                                        contentDescription = stringResource(id = R.string.desc_user_avatar),
+                                        modifier = Modifier.fillMaxSize().clip(CircleShape)
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        contentDescription = stringResource(id = R.string.desc_user_avatar),
+                                        tint = LumiMint,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
                             }
 
                             Spacer(modifier = Modifier.width(12.dp))
 
                             Column {
                                 Text(
-                                    text = userProfile.userName,
+                                    text = authUser?.displayName ?: userProfile.userName,
                                     color = TextPrimary,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = userProfile.userEmail,
+                                    text = authUser?.email ?: userProfile.userEmail,
                                     color = LumiMint,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium
@@ -398,6 +412,9 @@ fun UserAccountScreen(
                 when (selectedSectionIndex) {
                     0 -> ProfileAndPersonaSection(
                         userProfile = userProfile,
+                        authUser = authUser,
+                        onSignInWithGoogle = onSignInWithGoogle,
+                        onSignOut = onSignOut,
                         onUpdateProfile = { updated -> onUpdateProfile(updated) },
                         onEditClicked = { showEditProfileDialog = true }
                     )

@@ -36,6 +36,13 @@ val LumiCoralDark = Color(0xFFE63946)
 val LumiCyanLight = Color(0xFF90E0EF)
 val LumiCyanTranslucent = Color(0x3300B4D8)
 
+// Aliases for Enterprise Theme Design
+val CyberCyan = LumiCyan
+val NeonViolet = LumiViolet
+val HoloGreen = LumiMint
+val CrimsonRed = LumiCoral
+val SolarAmber = LumiGold
+
 // =========================================================================
 // DARK LUXURY ETHEREAL CANVAS & GLASS SURFACES
 // =========================================================================

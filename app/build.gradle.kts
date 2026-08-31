@@ -76,6 +76,7 @@ googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.W
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.
 dependencies {
+    implementation("com.google.mediapipe:tasks-genai:0.10.14")
     implementation(libs.androidx.profileinstaller)
     implementation(libs.androidx.paging.runtime.ktx)
     implementation(libs.androidx.paging.compose)
@@ -147,3 +148,4 @@ dependencies {
   implementation("io.insert-koin:koin-androidx-compose:3.5.3")
   implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
 }
+

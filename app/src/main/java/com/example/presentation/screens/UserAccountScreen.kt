@@ -162,6 +162,8 @@ fun UserAccountScreen(
     events: List<com.example.data.local.entity.CalendarEventEntity>,
     memories: List<com.example.data.local.entity.PetMemoryEntity>,
     messages: List<com.example.data.local.entity.ChatMessageEntity>,
+    aiRoutingMode: com.example.data.remote.AiRoutingMode,
+    onSetAiRoutingMode: (com.example.data.remote.AiRoutingMode) -> Unit,
     localModelCatalog: List<LocalLlmModelSpec>,
     modelDownloadStates: Map<String, com.example.data.remote.ModelDownloadProgress>,
     activeLocalModelId: String?,
@@ -409,6 +411,8 @@ fun UserAccountScreen(
                     3 -> LlmSettingsSection(
                         userProfile = userProfile,
                         benchmarkStatus = benchmarkStatus,
+                        aiRoutingMode = aiRoutingMode,
+                        onSetAiRoutingMode = onSetAiRoutingMode,
                         localModelCatalog = localModelCatalog,
                         modelDownloadStates = modelDownloadStates,
                         activeLocalModelId = activeLocalModelId,
@@ -543,6 +547,7 @@ fun UserAccountScreen(
 // -------------------------------------------------------------
 // Dialogs
 // -------------------------------------------------------------
+
 
 
 

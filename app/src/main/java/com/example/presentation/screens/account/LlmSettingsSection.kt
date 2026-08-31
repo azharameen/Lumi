@@ -187,7 +187,12 @@ fun LlmSettingsSection(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     cloudModels.forEach { (modelId, label) ->
-                        val isSelected = userProfile.geminiModelChoice == modelId
+                        val isSelected = when (modelId) {
+                            "hybrid-auto" -> aiRoutingMode == com.example.data.remote.AiRoutingMode.HYBRID_AUTO
+                            "on-device-gemma" -> aiRoutingMode == com.example.data.remote.AiRoutingMode.STRICT_ON_DEVICE
+                            else -> aiRoutingMode == com.example.data.remote.AiRoutingMode.CLOUD_TURBO && userProfile.geminiModelChoice == modelId
+                        }
+                        
                         Surface(
                             color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else SurfaceDarkVariant,
                             shape = RoundedCornerShape(12.dp),
@@ -195,7 +200,15 @@ fun LlmSettingsSection(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = MaterialTheme.spacing.extraSmall)
-                                .clickable { onUpdateProfile(userProfile.copy(geminiModelChoice = modelId)) }
+                                .clickable {
+                                    val newRoutingMode = when (modelId) {
+                                        "hybrid-auto" -> com.example.data.remote.AiRoutingMode.HYBRID_AUTO
+                                        "on-device-gemma" -> com.example.data.remote.AiRoutingMode.STRICT_ON_DEVICE
+                                        else -> com.example.data.remote.AiRoutingMode.CLOUD_TURBO
+                                    }
+                                    onSetAiRoutingMode(newRoutingMode)
+                                    onUpdateProfile(userProfile.copy(geminiModelChoice = modelId))
+                                }
                         ) {
                             Row(
                                 modifier = Modifier.padding(12.dp),
@@ -696,3 +709,5 @@ fun LlmSettingsSection(
         }
     }
 }
+
+

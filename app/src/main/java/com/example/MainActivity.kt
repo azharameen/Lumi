@@ -305,6 +305,8 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                         events = lifeHubViewModel.allCalendarEvents.collectAsStateWithLifecycle().value,
                         memories = wellnessViewModel.allMemories.collectAsStateWithLifecycle().value,
                         messages = viewModel.chatMessages.collectAsStateWithLifecycle().value,
+                        aiRoutingMode = viewModel.aiRoutingMode.collectAsStateWithLifecycle().value,
+                        onSetAiRoutingMode = { mode -> viewModel.setAiRoutingMode(mode) },
                         localModelCatalog = aiSettingsViewModel.localModelCatalog,
                         modelDownloadStates = aiSettingsViewModel.modelDownloadStates.collectAsStateWithLifecycle().value,
                         activeLocalModelId = aiSettingsViewModel.activeLocalModelId.collectAsStateWithLifecycle().value,
@@ -410,4 +412,5 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
     }
 }
 }
+
 

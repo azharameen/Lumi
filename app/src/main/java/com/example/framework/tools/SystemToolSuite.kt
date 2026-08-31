@@ -1,5 +1,10 @@
 package com.example.framework.tools
 
+import android.os.SystemClock
+import android.view.KeyEvent
+import android.content.pm.PackageManager
+
+
 import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -62,7 +67,21 @@ object SystemToolSuite {
         // Communication (High Risk Guard)
         registry.registerTool(DraftSmsTool(context))
         registry.registerTool(DialPhoneTool(context))
+        // Media Player Controls
+        registry.registerTool(MediaPlayPauseTool(context))
+        registry.registerTool(MediaNextTrackTool(context))
+        registry.registerTool(MediaPreviousTrackTool(context))
+
+        // App Launcher & Shortcuts
+        registry.registerTool(OpenInstalledAppTool(context))
+        registry.registerTool(OpenLocationSettingsTool(context))
+        registry.registerTool(OpenDisplaySettingsTool(context))
+
+        // System Diagnostic & Health Sensors
+        registry.registerTool(DeviceUptimeTool())
+        registry.registerTool(HealthStepCountTool(context))
     }
+}
 }
 
 // ==========================================

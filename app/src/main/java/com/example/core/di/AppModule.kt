@@ -45,7 +45,7 @@ val appModule = module {
     single<LumiRepository> { LumiRepositoryImpl.getInstance(androidContext(), get()) }
 
     // Specialized Clean Domain Repositories
-    single<AuthRepository> { FirebaseAuthRepositoryImpl() }
+    single<AuthRepository> { FirebaseAuthRepositoryImpl(androidContext()) }
     single<PetCompanionRepository> { PetCompanionRepositoryImpl(get(), get()) }
     single<UserMemoryRepository> { UserMemoryRepositoryImpl(get(), get<LumiDatabase>().factKnowledgeDao(), get<LumiDatabase>().chatMessageDao(), get()) }
     single<TaskGoalRepository> { TaskGoalRepositoryImpl(get<LumiDatabase>().taskDao(), get<LumiDatabase>().calendarEventDao()) }

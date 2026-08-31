@@ -11,6 +11,8 @@ import com.example.domain.model.AuthUser
 import com.example.domain.repository.AuthRepository
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
@@ -22,13 +24,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import java.security.MessageDigest
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 class FirebaseAuthRepositoryImpl(
-    private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val context: Context
 ) : AuthRepository {
 
     private val _currentUser = MutableStateFlow<AuthUser?>(null)
@@ -42,11 +42,59 @@ class FirebaseAuthRepositoryImpl(
     }
 
     init {
-        // Observe Firebase Auth state changes
-        firebaseAuth.addAuthStateListener { auth ->
-            val user = auth.currentUser
-            _currentUser.value = user?.toDomainModel()
-            Log.d(TAG, "Auth state updated: uid=${user?.uid}, email=${user?.email}")
+        // Safely observe Firebase Auth state changes
+        try {
+            val auth = getFirebaseAuthSafe()
+            auth?.addAuthStateListener { firebaseAuth ->
+                val user = firebaseAuth.currentUser
+                _currentUser.value = user?.toDomainModel()
+                Log.d(TAG, "Auth state updated: uid=${user?.uid}, email=${user?.email}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to attach auth state listener", e)
+        }
+    }
+
+    private fun ensureFirebaseInitialized(): Boolean {
+        return try {
+            if (FirebaseApp.getApps(context).isEmpty()) {
+                val app = FirebaseApp.initializeApp(context)
+                if (app == null) {
+                    val options = FirebaseOptions.Builder()
+                        .setApplicationId("1:663377968514:android:bac0ab54e860f4ed40639b")
+                        .setApiKey("AIzaSyBwusrDv4IY6WvoP7Nqb5FKn3DcdmxYiXk")
+                        .setProjectId("studio-8325749739-eefac")
+                        .setDatabaseUrl("https://studio-8325749739-eefac-default-rtdb.asia-southeast1.firebasedatabase.app")
+                        .setStorageBucket("studio-8325749739-eefac.firebasestorage.app")
+                        .setGcmSenderId("663377968514")
+                        .build()
+                    FirebaseApp.initializeApp(context, options)
+                }
+            }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to initialize Firebase", e)
+            false
+        }
+    }
+
+    private fun getFirebaseAuthSafe(): FirebaseAuth? {
+        return try {
+            ensureFirebaseInitialized()
+            FirebaseAuth.getInstance()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting FirebaseAuth instance", e)
+            null
+        }
+    }
+
+    private fun getFirestoreSafe(): FirebaseFirestore? {
+        return try {
+            ensureFirebaseInitialized()
+            FirebaseFirestore.getInstance()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting FirebaseFirestore instance", e)
+            null
         }
     }
 
@@ -55,11 +103,15 @@ class FirebaseAuthRepositoryImpl(
     override fun getWebClientId(): String = WEB_CLIENT_ID
 
     override suspend fun getCurrentUser(): AuthUser? {
-        return firebaseAuth.currentUser?.toDomainModel()
+        val auth = getFirebaseAuthSafe()
+        return auth?.currentUser?.toDomainModel()
     }
 
     override suspend fun signInWithGoogle(context: Context): Result<AuthUser> = withContext(Dispatchers.IO) {
         try {
+            val auth = getFirebaseAuthSafe()
+                ?: return@withContext Result.failure(AuthGeneralException("Firebase service could not be initialized."))
+
             val credentialManager = CredentialManager.create(context)
 
             val googleIdOption = GetGoogleIdOption.Builder()
@@ -94,7 +146,7 @@ class FirebaseAuthRepositoryImpl(
 
             // Exchange Google ID Token with Firebase Auth
             val authCredential = GoogleAuthProvider.getCredential(idToken, null)
-            val authResult = firebaseAuth.signInWithCredential(authCredential).awaitTask()
+            val authResult = auth.signInWithCredential(authCredential).awaitTask()
 
             val firebaseUser = authResult.user
                 ?: return@withContext Result.failure(AuthGeneralException("Firebase user is null after authentication."))
@@ -115,7 +167,10 @@ class FirebaseAuthRepositoryImpl(
 
     override suspend fun syncUserWithFirestore(user: AuthUser): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val userDocRef = firestore.collection("users").document(user.uid)
+            val db = getFirestoreSafe()
+                ?: return@withContext Result.failure(AuthGeneralException("Firestore service is unavailable."))
+
+            val userDocRef = db.collection("users").document(user.uid)
             val snapshot = userDocRef.get().awaitTask()
 
             if (!snapshot.exists()) {
@@ -142,14 +197,15 @@ class FirebaseAuthRepositoryImpl(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to sync user with Firestore for uid=${user.uid}", e)
-            // Still return success false or failure so auth flow is not blocked if Firestore is offline
+            // Still return failure so auth flow is not blocked if Firestore is offline
             Result.failure(e)
         }
     }
 
     override suspend fun signOut(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
-            firebaseAuth.signOut()
+            val auth = getFirebaseAuthSafe()
+            auth?.signOut()
             _currentUser.value = null
             Result.success(Unit)
         } catch (e: Exception) {

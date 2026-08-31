@@ -56,6 +56,8 @@ import com.example.presentation.viewmodel.AiSettingsViewModel
  * Main Activity hosting Lumi's full-screen application experience.
  * Fully integrated with Android System Share Sheet, App Shortcuts, and Proactive Services.
  */
+import com.example.data.local.mapper.*
+
 class MainActivity : ComponentActivity() {
 
     private val viewModel: LumiViewModel by viewModel()

@@ -8,9 +8,15 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.view.MotionEvent
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,10 +24,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -31,27 +37,33 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.MainActivity
+import com.example.core.theme.LumiPink
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
 import com.example.domain.repository.LumiRepository
-import com.example.presentation.overlay.components.OverlayHubCard
 import com.example.presentation.overlay.components.OverlaySpeechBubble
-import com.example.presentation.overlay.models.OverlayTab
 import com.example.presentation.pet.LumiPetView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
 /**
- * Root Composable for the system overlay window.
- * Handles state for hub expansion, breathing loops, voice interaction, and position updates.
+ * Clean & Reactive Voice-First Pet Overlay Root.
+ * - Single Tap: Directly activates Voice Input to speak to Lumi companion.
+ * - Double Tap: Opens the full-screen MainActivity application.
+ * - Long-drag: Smoothly repositions the companion across the screen with gaze tracking.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -59,14 +71,11 @@ fun PetOverlayRoot(
     context: Context,
     repository: LumiRepository,
     isDockedPeeking: Boolean = false,
-    onHubStateChanged: (Boolean) -> Unit = {},
     onDragStart: (Float, Float) -> Unit,
     onDragMove: (Float, Float) -> Unit,
     onDragEnd: () -> Boolean,
     onPetTapped: () -> Unit = {},
-    onCloseService: () -> Unit,
-    onToggleRoamMode: (Boolean) -> Unit,
-    onSnapToEdge: () -> Unit = {}
+    onCloseService: () -> Unit = {}
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -80,22 +89,15 @@ fun PetOverlayRoot(
             currentEmotion = PetEmotion.HAPPY
         )
     )
-    val tasks by repository.allTasks.collectAsStateWithLifecycle(initialValue = emptyList())
     val messages by repository.chatMessages.collectAsStateWithLifecycle(initialValue = emptyList())
 
-    // UI Expansion and active tab state
-    var isHubExpanded by remember { mutableStateOf(false) }
-    var activeTab by remember { mutableStateOf(OverlayTab.QUICK_MENU) }
-    var isRoamMode by remember { mutableStateOf(false) }
-
-    LaunchedEffect(isHubExpanded) {
-        onHubStateChanged(isHubExpanded)
+    // Voice Input Speech Recognizer Setup
+    var isListening by remember { mutableStateOf(false) }
+    val speechRecognizer = remember {
+        if (SpeechRecognizer.isRecognitionAvailable(context)) {
+            SpeechRecognizer.createSpeechRecognizer(context)
+        } else null
     }
-
-    // Breathing Session in Hub
-    var isBreathingActive by remember { mutableStateOf(false) }
-    var breathingPhase by remember { mutableStateOf("Inhale (4s)") }
-    var breathingProgress by remember { mutableFloatStateOf(0f) }
 
     // Floating Speech Bubble synchronized with petStatus and chat messages
     val activeSpeechBubble = petStatus.speechBubbleText ?: messages.lastOrNull { it.sender == "LUMI" }?.content
@@ -104,7 +106,7 @@ fun PetOverlayRoot(
     LaunchedEffect(activeSpeechBubble) {
         if (!activeSpeechBubble.isNullOrBlank()) {
             showSpeechBubble = true
-            delay(7500)
+            delay(8000)
             showSpeechBubble = false
         }
     }
@@ -118,70 +120,29 @@ fun PetOverlayRoot(
     var externalGazeX by remember { mutableFloatStateOf(0f) }
     var externalGazeY by remember { mutableFloatStateOf(0f) }
 
-    // Overlay handle drag state
-    var isHandleDragging by remember { mutableStateOf(false) }
-
-    // Natural companion idle triggers
+    // Natural companion idle jumps
     LaunchedEffect(Unit) {
         while (true) {
             delay(Random.nextLong(14000, 24000))
-            if (!petStatus.isSpeaking && !petStatus.isThinking && !isHubExpanded) {
+            if (!petStatus.isSpeaking && !petStatus.isThinking && !isListening) {
                 petOffsetDeltaY.animateTo(-14f, tween(180))
                 petOffsetDeltaY.animateTo(0f, spring(dampingRatio = 0.5f, stiffness = 300f))
             }
         }
     }
 
-    // 4-7-8 Breathing Loop
-    LaunchedEffect(isBreathingActive) {
-        if (isBreathingActive) {
-            repository.setPetEmotion(PetEmotion.CALM)
-            while (isBreathingActive) {
-                // Inhale 4s
-                breathingPhase = "Inhale through nose (4s)"
-                val inhaleSteps = 40
-                for (i in 0..inhaleSteps) {
-                    if (!isBreathingActive) break
-                    breathingProgress = i / inhaleSteps.toFloat()
-                    delay(100)
-                }
-                // Hold 7s
-                breathingPhase = "Hold breath gently (7s)"
-                val holdSteps = 70
-                for (i in 0..holdSteps) {
-                    if (!isBreathingActive) break
-                    delay(100)
-                }
-                // Exhale 8s
-                breathingPhase = "Exhale slowly through mouth (8s)"
-                val exhaleSteps = 80
-                for (i in 0..exhaleSteps) {
-                    if (!isBreathingActive) break
-                    breathingProgress = 1f - (i / exhaleSteps.toFloat())
-                    delay(100)
-                }
-            }
-        }
-    }
-
-    // Voice Input Speech Recognizer Setup
-    var isListening by remember { mutableStateOf(false) }
-    var askInputText by remember { mutableStateOf("") }
-    var isSendingAsk by remember { mutableStateOf(false) }
-
-    val speechRecognizer = remember {
-        if (SpeechRecognizer.isRecognitionAvailable(context)) {
-            SpeechRecognizer.createSpeechRecognizer(context)
-        } else null
-    }
-
     DisposableEffect(Unit) {
         val listener = object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) { isListening = true }
+            override fun onReadyForSpeech(params: Bundle?) {
+                isListening = true
+                coroutineScope.launch { repository.setListening(true) }
+            }
             override fun onBeginningOfSpeech() {}
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() { isListening = false }
+            override fun onEndOfSpeech() {
+                isListening = false
+            }
             override fun onError(error: Int) {
                 isListening = false
                 coroutineScope.launch { repository.setListening(false) }
@@ -194,7 +155,11 @@ fun PetOverlayRoot(
                 if (!voiceText.isNullOrBlank()) {
                     coroutineScope.launch {
                         repository.setPetEmotion(PetEmotion.THINKING)
+                        showSpeechBubble = true
                         repository.sendMessage(voiceText)
+                        // Trigger joyful bounce upon sending
+                        petScale.animateTo(1.18f, tween(100))
+                        petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 350f))
                     }
                 }
             }
@@ -215,7 +180,11 @@ fun PetOverlayRoot(
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
         }
         speechRecognizer?.startListening(intent)
-        coroutineScope.launch { repository.setListening(true) }
+        isListening = true
+        coroutineScope.launch {
+            repository.setListening(true)
+            repository.setPetEmotion(PetEmotion.ENERGETIC)
+        }
     }
 
     fun stopListening() {
@@ -224,107 +193,60 @@ fun PetOverlayRoot(
         coroutineScope.launch { repository.setListening(false) }
     }
 
+    // Pulsing aura animation when listening
+    val infiniteTransition = rememberInfiniteTransition(label = "listeningPulse")
+    val listeningPulseScale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.35f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
+    val listeningPulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 0.15f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+
     Box(
         modifier = Modifier
-            .width(if (isHubExpanded) 280.dp else 125.dp)
-            .padding(4.dp),
+            .width(180.dp)
+            .padding(horizontal = 4.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxWidth()
         ) {
-            // 1. Floating Speech Bubble
+            // Floating Speech & Voice Status Bubble
             OverlaySpeechBubble(
                 speechText = activeSpeechBubble,
-                isVisible = showSpeechBubble && !isHubExpanded,
-                onBubbleClicked = { isHubExpanded = true }
-            )
-
-            // 2. Expanded Companion Hub Card
-            OverlayHubCard(
-                isExpanded = isHubExpanded,
-                petStatus = petStatus,
-                activeTab = activeTab,
-                onTabSelected = { activeTab = it },
-                tasks = tasks,
+                isVisible = showSpeechBubble,
                 isListening = isListening,
-                isSpeaking = petStatus.isSpeaking,
-                isRoamMode = isRoamMode,
-                askInputText = askInputText,
-                onAskInputChanged = { askInputText = it },
-                isSendingPrompt = isSendingAsk,
-                onSendPrompt = {
-                    if (askInputText.isNotBlank()) {
-                        val prompt = askInputText
-                        askInputText = ""
-                        isSendingAsk = true
-                        coroutineScope.launch {
-                            repository.sendMessage(prompt)
-                            isSendingAsk = false
-                        }
+                isThinking = petStatus.isThinking,
+                onBubbleClicked = {
+                    if (isListening) {
+                        stopListening()
+                    } else {
+                        showSpeechBubble = false
                     }
-                },
-                isBreathingRunning = isBreathingActive,
-                breathingPhase = breathingPhase,
-                breathingProgress = breathingProgress,
-                onToggleBreathing = { isBreathingActive = !isBreathingActive },
-                onToggleRoam = {
-                    isRoamMode = !isRoamMode
-                    onToggleRoamMode(isRoamMode)
-                },
-                onToggleTaskComplete = { taskId ->
-                    coroutineScope.launch { repository.toggleTaskCompleted(taskId, true) }
-                },
-                onVoiceToggle = {
-                    if (isListening) stopListening() else startListening()
-                },
-                onHydrateClicked = {
-                    coroutineScope.launch {
-                        repository.logWellness(8, "Hydrated", 8, 1, "Quick hydration logged via Overlay")
-                        repository.setPetEmotion(PetEmotion.HAPPY)
-                    }
-                },
-                onPetJoyClicked = {
-                    coroutineScope.launch {
-                        repository.petTheCharacter()
-                        petScale.animateTo(1.22f, tween(90))
-                        petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
-                    }
-                },
-                onOpenApp = {
-                    val launchIntent = Intent(context, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    }
-                    context.startActivity(launchIntent)
-                    isHubExpanded = false
-                },
-                onMinimize = {
-                    isHubExpanded = false
-                    onSnapToEdge()
-                },
-                onCloseService = onCloseService,
-                onDragStart = { x, y ->
-                    isHandleDragging = true
-                    onDragStart(x, y)
-                },
-                onDragMove = { x, y ->
-                    onDragMove(x, y)
-                },
-                onDragEnd = {
-                    isHandleDragging = false
-                    onDragEnd()
                 }
             )
 
-            // 3. Compact Floating Lumi Pet (Draggable, Single Tap to expand Popup Hub, Double Tap to open App)
+            // Compact Floating Lumi Pet
             var lastTapTime by remember { mutableStateOf(0L) }
             var prevRawX by remember { mutableFloatStateOf(0f) }
-            val density = androidx.compose.ui.platform.LocalDensity.current
+            val density = LocalDensity.current
             val petCenterPx = with(density) { 46.dp.toPx() }
 
-            val petAlpha by androidx.compose.animation.core.animateFloatAsState(
-                targetValue = if (isDockedPeeking && !isHubExpanded) 0.88f else 1f,
+            val petAlpha by animateFloatAsState(
+                targetValue = if (isDockedPeeking && !isListening) 0.88f else 1f,
                 animationSpec = tween(350),
                 label = "petAlpha"
             )
@@ -332,7 +254,7 @@ fun PetOverlayRoot(
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .size(92.dp)
+                    .size(94.dp)
                     .offset { IntOffset(0, petOffsetDeltaY.value.roundToInt()) }
                     .graphicsLayer {
                         scaleX = petScale.value
@@ -353,7 +275,7 @@ fun PetOverlayRoot(
                                 onDragMove(motionEvent.rawX, motionEvent.rawY)
                                 val deltaScreenX = motionEvent.rawX - prevRawX
                                 prevRawX = motionEvent.rawX
-                                if (Math.abs(deltaScreenX) > 2f) {
+                                if (abs(deltaScreenX) > 2f) {
                                     coroutineScope.launch {
                                         petRotation.animateTo(if (deltaScreenX > 0) 6f else -6f, tween(40))
                                     }
@@ -376,20 +298,24 @@ fun PetOverlayRoot(
                                     val now = System.currentTimeMillis()
                                     val timeDelta = now - lastTapTime
                                     if (timeDelta in 40..380) {
-                                        // DOUBLE TAP: Open the application
+                                        // DOUBLE TAP: Open the main application!
                                         lastTapTime = 0L
                                         val launchIntent = Intent(context, MainActivity::class.java).apply {
                                             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
                                         }
                                         context.startActivity(launchIntent)
                                     } else {
-                                        // SINGLE TAP: Toggle the companion popup window & pet reaction
+                                        // SINGLE TAP: Speak to the pet! Trigger voice listening directly!
                                         lastTapTime = now
-                                        isHubExpanded = !isHubExpanded
                                         coroutineScope.launch {
                                             repository.petTheCharacter()
                                             petScale.animateTo(1.2f, tween(80))
                                             petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
+                                        }
+                                        if (isListening) {
+                                            stopListening()
+                                        } else {
+                                            startListening()
                                         }
                                     }
                                 }
@@ -408,6 +334,17 @@ fun PetOverlayRoot(
                         }
                     }
             ) {
+                // Voice listening glowing ripple effect
+                if (isListening) {
+                    Box(
+                        modifier = Modifier
+                            .size(76.dp)
+                            .scale(listeningPulseScale)
+                            .background(LumiPink.copy(alpha = listeningPulseAlpha * 0.4f), CircleShape)
+                            .border(1.5.dp, LumiPink.copy(alpha = listeningPulseAlpha), CircleShape)
+                    )
+                }
+
                 LumiPetView(
                     petStatus = petStatus,
                     size = 88.dp,

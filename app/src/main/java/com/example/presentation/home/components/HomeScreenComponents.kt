@@ -188,17 +188,59 @@ fun SeamlessRpgPlayerHud(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
                         Text(
                             text = displayName,
                             color = TextPrimary,
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         SeamlessHexagonLevelBadge(level = petStatus.level)
+
+                        // RPG Coins Pill
+                        Surface(
+                            color = LumiGold.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(0.5.dp, LumiGold.copy(alpha = 0.4f))
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            ) {
+                                Text(text = "🪙", fontSize = 8.sp)
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    text = "${petStatus.coins}",
+                                    color = LumiGold,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        // RPG Gems Pill
+                        Surface(
+                            color = Color(0xFF00B4D8).copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(6.dp),
+                            border = BorderStroke(0.5.dp, Color(0xFF00B4D8).copy(alpha = 0.4f))
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            ) {
+                                Text(text = "💎", fontSize = 8.sp)
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    text = "${petStatus.gems}",
+                                    color = Color(0xFF90E0EF),
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
 
                     // Location & Network info pill

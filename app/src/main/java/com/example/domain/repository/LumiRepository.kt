@@ -49,6 +49,13 @@ interface LumiRepository {
     suspend fun clearAiAnalyticsLogs()
     suspend fun benchmarkOnDeviceGemma(): Pair<String, Long>
 
+    // Gamification & Wardrobe Economy
+    suspend fun earnCoinsAndExp(coins: Int, exp: Int, reason: String = "")
+    suspend fun earnGems(gems: Int, reason: String = "")
+    suspend fun buyAccessory(accessory: com.example.domain.model.PetAccessory): Boolean
+    suspend fun equipAccessory(accessoryId: String)
+    suspend fun updatePetName(name: String)
+
     // Autonomous Goal Planner ("Agent Swarms")
     val allGoalPlans: Flow<List<com.example.data.local.entity.GoalPlanEntity>>
     fun getMilestonesForGoal(goalId: Long): Flow<List<com.example.data.local.entity.GoalMilestoneEntity>>

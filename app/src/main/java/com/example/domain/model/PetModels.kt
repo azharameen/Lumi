@@ -37,19 +37,43 @@ enum class BloubSkinColor(
     HOLO_OBSIDIAN("OBSIDIAN", "Dark Holo", 0xFF64DFDF, 0xFF48CAE4, 0xFF3A0CA3, 0x6648CAE4)
 }
 
+enum class PetAccessory(
+    val id: String,
+    val displayName: String,
+    val iconEmoji: String,
+    val coinCost: Int,
+    val gemCost: Int,
+    val description: String
+) {
+    NONE("NONE", "None", "✨", 0, 0, "Natural companion form"),
+    SPROUT("SPROUT", "Leaf Sprout", "🌱", 0, 0, "Starter botanical antenna"),
+    GOLD_CROWN("CROWN", "Starlight Crown", "👑", 250, 10, "Majestic royal crown for high achievers"),
+    HEADPHONES("HEADPHONES", "Lo-Fi Beats", "🎧", 150, 5, "Cozy studio audio headphones"),
+    WIZARD_HAT("WIZARD_HAT", "Arcane Mage", "🧙", 300, 15, "Enchanted astral wizard cap"),
+    HALO("HALO", "Celestial Halo", "😇", 400, 20, "Radiant glowing angelic ring"),
+    STAR_GLASSES("STAR_GLASSES", "Star Shades", "🕶️", 180, 8, "Cool futuristic shades")
+}
+
 @Immutable
 data class PetStatus(
     val name: String = "Lumi",
     val level: Int = 1,
     val exp: Int = 0,
     val expToNextLevel: Int = 100,
+    val coins: Int = 150,
+    val gems: Int = 20,
+    val streakDays: Int = 1,
     val bondScore: Int = 50,
     val happiness: Int = 85,
     val energy: Int = 90,
     val personalityTrait: String = "Empathetic Explorer",
     val currentEmotion: PetEmotion = PetEmotion.HAPPY,
+    val activeAccessory: String = "NONE",
     val bloubShape: BloubShape = BloubShape.SPHERE,
     val bloubSkinColor: BloubSkinColor = BloubSkinColor.ELECTRIC_CYAN,
+    val unlockedAccessoriesCsv: String = "NONE,SPROUT",
+    val unlockedSkinsCsv: String = "CYAN,PINK,GOLD,LAVENDER,MINT,MATCHA,PEACH,OBSIDIAN",
+    val unlockedShapesCsv: String = "SPHERE,CUBE,CAPSULE",
     val isSpeaking: Boolean = false,
     val isListening: Boolean = false,
     val isThinking: Boolean = false,

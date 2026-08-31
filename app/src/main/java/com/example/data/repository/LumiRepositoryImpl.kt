@@ -31,7 +31,8 @@ import kotlin.math.min
 class LumiRepositoryImpl private constructor(
     private val database: LumiDatabase,
     private val scope: CoroutineScope,
-    private val context: Context
+    private val context: Context,
+    private val healthConnectManager: HealthConnectManager? = null
 ) : LumiRepository {
 
     private val connectorManager = com.example.domain.connectors.ConnectorManager(context)
@@ -139,13 +140,20 @@ class LumiRepositoryImpl private constructor(
             level = entity.level,
             exp = entity.exp,
             expToNextLevel = entity.expToNextLevel,
+            coins = entity.coins,
+            gems = entity.gems,
+            streakDays = entity.streakDays,
             bondScore = entity.bondScore,
             happiness = entity.happiness,
             energy = entity.energy,
             personalityTrait = entity.personalityTrait,
+            activeAccessory = entity.activeAccessory,
             currentEmotion = emotion,
             bloubShape = shape,
             bloubSkinColor = skinColor,
+            unlockedAccessoriesCsv = entity.unlockedAccessoriesCsv,
+            unlockedSkinsCsv = entity.unlockedSkinsCsv,
+            unlockedShapesCsv = entity.unlockedShapesCsv,
             isSpeaking = speaking,
             isListening = listening,
             isThinking = thinking,
@@ -231,11 +239,15 @@ class LumiRepositoryImpl private constructor(
         var newExp = current.exp + 10
         var newLevel = current.level
         var expNeeded = current.expToNextLevel
+        var newCoins = current.coins + 5
+        var newGems = current.gems
 
         if (newExp >= expNeeded) {
             newExp -= expNeeded
             newLevel += 1
-            expNeeded = (expNeeded * 1.35).toInt()
+            expNeeded = (expNeeded * 1.3).toInt()
+            newCoins += 50
+            newGems += 5
         }
 
         database.petEvolutionDao().insertOrUpdate(
@@ -245,6 +257,8 @@ class LumiRepositoryImpl private constructor(
                 exp = newExp,
                 level = newLevel,
                 expToNextLevel = expNeeded,
+                coins = newCoins,
+                gems = newGems,
                 totalInteractions = current.totalInteractions + 1
             )
         )
@@ -259,6 +273,82 @@ class LumiRepositoryImpl private constructor(
                 _speechBubbleText.value = "*Purrrrr* So warm!"
             }
         }
+    }
+
+    override suspend fun earnCoinsAndExp(coins: Int, exp: Int, reason: String) {
+        val current = database.petEvolutionDao().getPetEvolutionDirect() ?: PetEvolutionEntity()
+        var newExp = current.exp + exp
+        var newLevel = current.level
+        var expNeeded = current.expToNextLevel
+        var newCoins = current.coins + coins
+        var newGems = current.gems
+
+        val leveledUp = newExp >= expNeeded
+        while (newExp >= expNeeded) {
+            newExp -= expNeeded
+            newLevel += 1
+            expNeeded = (expNeeded * 1.3).toInt()
+            newCoins += 50
+            newGems += 5
+        }
+
+        database.petEvolutionDao().updateProgression(
+            exp = newExp,
+            level = newLevel,
+            expToNextLevel = expNeeded,
+            coins = newCoins,
+            gems = newGems
+        )
+
+        if (leveledUp) {
+            _currentEmotion.value = PetEmotion.ENERGETIC
+            _speechBubbleText.value = "LEVEL UP! We are now Level $newLevel! +50 Coins 🪙 +5 Gems 💎"
+        } else if (coins > 0 || exp > 0) {
+            _speechBubbleText.value = "+$coins 🪙 +$exp XP ${if (reason.isNotBlank()) "for $reason" else ""}"
+        }
+    }
+
+    override suspend fun earnGems(gems: Int, reason: String) {
+        val current = database.petEvolutionDao().getPetEvolutionDirect() ?: PetEvolutionEntity()
+        val newGems = current.gems + gems
+        database.petEvolutionDao().updateCurrencies(current.coins, newGems)
+        _currentEmotion.value = PetEmotion.HAPPY
+        _speechBubbleText.value = "+$gems Starlight Gems! 💎"
+    }
+
+    override suspend fun buyAccessory(accessory: com.example.domain.model.PetAccessory): Boolean {
+        val current = database.petEvolutionDao().getPetEvolutionDirect() ?: PetEvolutionEntity()
+        if (current.coins < accessory.coinCost || current.gems < accessory.gemCost) {
+            return false
+        }
+        val unlockedList = current.unlockedAccessoriesCsv.split(",").toMutableSet()
+        unlockedList.add(accessory.id)
+        val newCsv = unlockedList.joinToString(",")
+        val newCoins = current.coins - accessory.coinCost
+        val newGems = current.gems - accessory.gemCost
+
+        database.petEvolutionDao().insertOrUpdate(
+            current.copy(
+                coins = newCoins,
+                gems = newGems,
+                unlockedAccessoriesCsv = newCsv,
+                activeAccessory = accessory.id
+            )
+        )
+        _currentEmotion.value = PetEmotion.PLAYFUL
+        _speechBubbleText.value = "Equipped ${accessory.displayName}! ${accessory.iconEmoji} How stylish!"
+        return true
+    }
+
+    override suspend fun equipAccessory(accessoryId: String) {
+        database.petEvolutionDao().setActiveAccessory(accessoryId)
+        _currentEmotion.value = PetEmotion.HAPPY
+        _speechBubbleText.value = "Changed look! ✨ Looking sharp!"
+    }
+
+    override suspend fun updatePetName(name: String) {
+        database.petEvolutionDao().updatePetName(name)
+        _speechBubbleText.value = "My new name is $name! I love it!"
     }
 
     override suspend fun setBloubShape(shape: com.example.domain.model.BloubShape) {
@@ -298,12 +388,11 @@ class LumiRepositoryImpl private constructor(
             database.petEvolutionDao().insertOrUpdate(
                 current.copy(
                     tasksHelpedComplete = current.tasksHelpedComplete + 1,
-                    exp = current.exp + 20,
                     bondScore = min(100, current.bondScore + 2)
                 )
             )
+            earnCoinsAndExp(coins = 25, exp = 20, reason = "Completing Task")
             _currentEmotion.value = PetEmotion.ENERGETIC
-            _speechBubbleText.value = "Woohoo! Another milestone achieved! 🎉"
         }
     }
 
@@ -326,7 +415,7 @@ class LumiRepositoryImpl private constructor(
         hydrationCups: Int,
         gratitudeNote: String
     ): Long {
-        return database.wellnessLogDao().insertLog(
+        val id = database.wellnessLogDao().insertLog(
             WellnessLogEntity(
                 moodScore = moodScore,
                 moodLabel = moodLabel,
@@ -335,6 +424,8 @@ class LumiRepositoryImpl private constructor(
                 gratitudeNote = gratitudeNote
             )
         )
+        earnCoinsAndExp(coins = 15, exp = 15, reason = "Wellness Reflection")
+        return id
     }
 
     override suspend fun incrementHydration(logId: Long) {
@@ -391,6 +482,10 @@ class LumiRepositoryImpl private constructor(
 
     override suspend fun toggleMilestone(milestoneId: Long, goalId: Long, isCompleted: Boolean) {
         autonomousGoalPlanner.toggleMilestone(milestoneId, goalId, isCompleted)
+        if (isCompleted) {
+            earnCoinsAndExp(coins = 35, exp = 30, reason = "Goal Milestone Conquered")
+            earnGems(gems = 2, reason = "Goal Milestone")
+        }
     }
 
     override suspend fun deleteGoal(goalId: Long) {
@@ -447,7 +542,7 @@ class LumiRepositoryImpl private constructor(
                 val appContext = context.applicationContext
                 val db = LumiDatabase.getDatabase(appContext)
                 val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-                val instance = LumiRepositoryImpl(db, applicationScope, appContext)
+                val instance = LumiRepositoryImpl(db, applicationScope, appContext, healthConnectManager)
                 INSTANCE = instance
                 instance
             }

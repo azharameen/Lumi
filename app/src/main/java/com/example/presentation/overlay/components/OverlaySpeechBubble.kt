@@ -16,66 +16,98 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.theme.LumiCyan
+import com.example.core.theme.LumiGold
+import com.example.core.theme.LumiPink
 import com.example.core.theme.ObsidianDark
 import com.example.core.theme.TextPrimary
 
 /**
- * Floating speech bubble rendered directly over the compact Lumi avatar when speaking or offering advice.
+ * Floating speech/listening bubble rendered directly above the compact Lumi overlay pet.
  */
 @Composable
 fun OverlaySpeechBubble(
     speechText: String?,
     isVisible: Boolean,
+    isListening: Boolean = false,
+    isThinking: Boolean = false,
     onBubbleClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    speechText?.let { text ->
-        AnimatedVisibility(
-            visible = isVisible && text.isNotBlank(),
-            enter = fadeIn() + scaleIn(),
-            exit = fadeOut() + scaleOut(),
-            modifier = modifier
+    val displayIcon = when {
+        isListening -> Icons.Default.Mic
+        isThinking -> Icons.Default.Psychology
+        else -> Icons.Default.AutoAwesome
+    }
+
+    val iconTint = when {
+        isListening -> LumiPink
+        isThinking -> LumiGold
+        else -> LumiCyan
+    }
+
+    val bubbleBorderColor = when {
+        isListening -> LumiPink.copy(alpha = 0.7f)
+        isThinking -> LumiGold.copy(alpha = 0.6f)
+        else -> LumiCyan.copy(alpha = 0.45f)
+    }
+
+    val textToDisplay = when {
+        isListening -> "Listening... Speak to Lumi 🎙️"
+        isThinking -> "Thinking & executing... ✨"
+        else -> speechText
+    }
+
+    val shouldBeVisible = isVisible || isListening || isThinking
+
+    AnimatedVisibility(
+        visible = shouldBeVisible && !textToDisplay.isNullOrBlank(),
+        enter = fadeIn() + scaleIn(),
+        exit = fadeOut() + scaleOut(),
+        modifier = modifier
+    ) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = ObsidianDark.copy(alpha = 0.94f),
+            border = BorderStroke(1.2.dp, bubbleBorderColor),
+            shadowElevation = 8.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp)
+                .clickable { onBubbleClicked() }
         ) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = ObsidianDark.copy(alpha = 0.94f),
-                border = BorderStroke(1.dp, LumiCyan.copy(alpha = 0.4f)),
-                shadowElevation = 8.dp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 6.dp)
-                    .clickable { onBubbleClicked() }
+            Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AutoAwesome,
-                        contentDescription = null,
-                        tint = LumiCyan,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = text,
-                        color = TextPrimary,
-                        fontSize = 11.sp,
-                        maxLines = 2,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+                Icon(
+                    imageVector = displayIcon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(15.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = textToDisplay ?: "",
+                    color = TextPrimary,
+                    fontSize = 11.sp,
+                    maxLines = 3,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     }
 }
+

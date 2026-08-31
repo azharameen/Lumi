@@ -59,7 +59,6 @@ class PetOverlayService : Service() {
 
     private var isViewAttached = false
     private var isDockedPeeking = false
-    private var isHubOpen = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -144,15 +143,6 @@ class PetOverlayService : Service() {
                         context = this@PetOverlayService,
                         repository = repository,
                         isDockedPeeking = isDockedPeeking,
-                        onHubStateChanged = { expanded ->
-                            isHubOpen = expanded
-                            if (expanded) {
-                                cancelAutoHideTimer()
-                                unhidePetFromEdge(immediately = false)
-                            } else {
-                                scheduleAutoHideTimer()
-                            }
-                        },
                         onDragStart = { rawX, rawY ->
                             cancelAutoHideTimer()
                             glideAnimator?.cancel()
@@ -178,7 +168,6 @@ class PetOverlayService : Service() {
                         onDragEnd = {
                             val wasDragging = isDraggingOverlay
                             isDraggingOverlay = false
-                            // Free floating: clamp to safe visible bounds on release
                             clampPositionToScreenBounds()
                             scheduleAutoHideTimer()
                             wasDragging
@@ -191,9 +180,6 @@ class PetOverlayService : Service() {
                         },
                         onCloseService = {
                             stopSelf()
-                        },
-                        onToggleRoamMode = { isRoamEnabled ->
-                            setRoamMode(isRoamEnabled)
                         }
                     )
                 }
@@ -251,11 +237,10 @@ class PetOverlayService : Service() {
      */
     private fun scheduleAutoHideTimer() {
         cancelAutoHideTimer()
-        if (isHubOpen) return
 
         autoHideJob = serviceScope.launch {
             delay(AUTO_HIDE_IDLE_DELAY_MS)
-            if (!isDraggingOverlay && !isHubOpen) {
+            if (!isDraggingOverlay) {
                 smoothGlideToEdgeAndPeek()
             }
         }
@@ -338,7 +323,7 @@ class PetOverlayService : Service() {
             roamJob = serviceScope.launch {
                 while (isActive) {
                     delay(Random.nextLong(4000, 9000))
-                    if (!isDraggingOverlay && !isHubOpen) {
+                    if (!isDraggingOverlay) {
                         val moveX = Random.nextInt(-45, 45)
                         val moveY = Random.nextInt(-45, 45)
                         windowLayoutParams.x = (windowLayoutParams.x + moveX).coerceIn(12, getScreenWidth() - 120)

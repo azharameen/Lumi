@@ -23,7 +23,7 @@ import java.util.Locale
 class AgentToolDispatcher(
     private val database: LumiDatabase,
     private val integrationService: IntegrationService,
-    private val healthConnectManager: HealthConnectManager
+    private val healthConnectManager: HealthConnectManager?
 ) {
 
     /**
@@ -232,7 +232,7 @@ class AgentToolDispatcher(
     }
 
     private suspend fun handleGetWellnessInsights(): Pair<Map<String, Any?>, ToolExecutionReport> {
-        val insights = healthConnectManager.getWellnessInsights()
+        val insights = healthConnectManager?.getWellnessInsights() ?: "HealthConnect not available or permissions missing."
         val output = mapOf(
             "status" to "success",
             "healthConnectData" to insights,
@@ -302,9 +302,27 @@ class AgentToolDispatcher(
         try {
             val evolution = database.petEvolutionDao().getPetEvolutionDirect()
             if (evolution != null) {
+                var newExp = evolution.exp + 20
+                var newLevel = evolution.level
+                var expNeeded = evolution.expToNextLevel
+                var newCoins = evolution.coins + 25
+                var newGems = evolution.gems
+
+                while (newExp >= expNeeded) {
+                    newExp -= expNeeded
+                    newLevel += 1
+                    expNeeded = (expNeeded * 1.3).toInt()
+                    newCoins += 50
+                    newGems += 5
+                }
+
                 database.petEvolutionDao().insertOrUpdate(
                     evolution.copy(
-                        exp = evolution.exp + 15,
+                        exp = newExp,
+                        level = newLevel,
+                        expToNextLevel = expNeeded,
+                        coins = newCoins,
+                        gems = newGems,
                         happiness = (evolution.happiness + 5).coerceAtMost(100)
                     )
                 )

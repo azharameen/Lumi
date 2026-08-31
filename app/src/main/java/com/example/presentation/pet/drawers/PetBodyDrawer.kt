@@ -260,3 +260,175 @@ fun DrawScope.drawPetCheeks(
         center = Offset(cx + cheekDistance, cheekOffsetY)
     )
 }
+
+/**
+ * Procedural 3D Vector Accessory Renderer.
+ * Draws custom wearable items on Lumi's head/body based on activeAccessory id.
+ */
+fun DrawScope.drawPetAccessory(
+    cx: Float,
+    cy: Float,
+    baseRadius: Float,
+    accessoryId: String
+) {
+    when (accessoryId) {
+        "SPROUT" -> {
+            val stemTopY = cy - (baseRadius * 0.95f)
+            val stemBaseY = cy - (baseRadius * 0.78f)
+            // Tiny green sprout stem
+            val stemPath = Path().apply {
+                moveTo(cx, stemBaseY)
+                quadraticTo(cx - (baseRadius * 0.04f), (stemTopY + stemBaseY) * 0.5f, cx, stemTopY)
+            }
+            drawPath(
+                path = stemPath,
+                color = Color(0xFF4CAF50),
+                style = Stroke(width = (baseRadius * 0.045f).coerceAtLeast(2f), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+            )
+            // Left Leaf
+            val leftLeaf = Path().apply {
+                moveTo(cx, stemTopY)
+                cubicTo(
+                    cx - (baseRadius * 0.22f), stemTopY - (baseRadius * 0.12f),
+                    cx - (baseRadius * 0.28f), stemTopY + (baseRadius * 0.05f),
+                    cx, stemTopY + (baseRadius * 0.02f)
+                )
+                close()
+            }
+            drawPath(leftLeaf, color = Color(0xFF66BB6A))
+            // Right Leaf
+            val rightLeaf = Path().apply {
+                moveTo(cx, stemTopY + (baseRadius * 0.02f))
+                cubicTo(
+                    cx + (baseRadius * 0.25f), stemTopY - (baseRadius * 0.08f),
+                    cx + (baseRadius * 0.30f), stemTopY + (baseRadius * 0.08f),
+                    cx, stemTopY + (baseRadius * 0.06f)
+                )
+                close()
+            }
+            drawPath(rightLeaf, color = Color(0xFF81C784))
+        }
+
+        "CROWN" -> {
+            val crownY = cy - (baseRadius * 0.88f)
+            val crownW = baseRadius * 0.7f
+            val crownH = baseRadius * 0.4f
+            val crownPath = Path().apply {
+                moveTo(cx - (crownW * 0.5f), crownY)
+                lineTo(cx - (crownW * 0.55f), crownY - (crownH * 0.8f))
+                lineTo(cx - (crownW * 0.22f), crownY - (crownH * 0.35f))
+                lineTo(cx, crownY - crownH)
+                lineTo(cx + (crownW * 0.22f), crownY - (crownH * 0.35f))
+                lineTo(cx + (crownW * 0.55f), crownY - (crownH * 0.8f))
+                lineTo(cx + (crownW * 0.5f), crownY)
+                close()
+            }
+            drawPath(
+                path = crownPath,
+                brush = Brush.verticalGradient(
+                    listOf(Color(0xFFFFEE58), Color(0xFFFFB300), Color(0xFFFF8F00)),
+                    startY = crownY - crownH,
+                    endY = crownY
+                )
+            )
+            // Crown jewels
+            drawCircle(Color(0xFFE91E63), radius = baseRadius * 0.04f, center = Offset(cx, crownY - (crownH * 0.88f)))
+            drawCircle(Color(0xFF29B6F6), radius = baseRadius * 0.032f, center = Offset(cx - (crownW * 0.45f), crownY - (crownH * 0.72f)))
+            drawCircle(Color(0xFF29B6F6), radius = baseRadius * 0.032f, center = Offset(cx + (crownW * 0.45f), crownY - (crownH * 0.72f)))
+        }
+
+        "HEADPHONES" -> {
+            val topHeadY = cy - (baseRadius * 0.82f)
+            val bandW = baseRadius * 1.05f
+            // Headband arc
+            drawArc(
+                color = Color(0xFF37474F),
+                startAngle = 180f,
+                sweepAngle = 180f,
+                useCenter = false,
+                topLeft = Offset(cx - (bandW * 0.5f), topHeadY - (baseRadius * 0.15f)),
+                size = Size(bandW, baseRadius * 0.9f),
+                style = Stroke(width = (baseRadius * 0.06f).coerceAtLeast(3f), cap = androidx.compose.ui.graphics.StrokeCap.Round)
+            )
+            // Left Ear Cup
+            val cupW = baseRadius * 0.26f
+            val cupH = baseRadius * 0.46f
+            drawRoundRect(
+                color = Color(0xFFFF4081),
+                topLeft = Offset(cx - (bandW * 0.52f) - (cupW * 0.5f), cy - (cupH * 0.35f)),
+                size = Size(cupW, cupH),
+                cornerRadius = CornerRadius(cupW * 0.4f, cupW * 0.4f)
+            )
+            // Right Ear Cup
+            drawRoundRect(
+                color = Color(0xFFFF4081),
+                topLeft = Offset(cx + (bandW * 0.52f) - (cupW * 0.5f), cy - (cupH * 0.35f)),
+                size = Size(cupW, cupH),
+                cornerRadius = CornerRadius(cupW * 0.4f, cupW * 0.4f)
+            )
+        }
+
+        "WIZARD_HAT" -> {
+            val hatBaseY = cy - (baseRadius * 0.75f)
+            val brimW = baseRadius * 0.95f
+            val brimH = baseRadius * 0.22f
+            // Hat Brim Oval
+            drawOval(
+                color = Color(0xFF4A148C),
+                topLeft = Offset(cx - (brimW * 0.5f), hatBaseY - (brimH * 0.5f)),
+                size = Size(brimW, brimH)
+            )
+            // Pointed Wizard Cone
+            val conePath = Path().apply {
+                moveTo(cx - (brimW * 0.35f), hatBaseY)
+                quadraticTo(cx - (baseRadius * 0.1f), hatBaseY - (baseRadius * 0.5f), cx + (baseRadius * 0.15f), hatBaseY - (baseRadius * 0.95f))
+                quadraticTo(cx + (baseRadius * 0.25f), hatBaseY - (baseRadius * 0.4f), cx + (brimW * 0.35f), hatBaseY)
+                close()
+            }
+            drawPath(
+                path = conePath,
+                brush = Brush.verticalGradient(
+                    listOf(Color(0xFF7B1FA2), Color(0xFF4A148C)),
+                    startY = hatBaseY - (baseRadius * 0.95f),
+                    endY = hatBaseY
+                )
+            )
+            // Gold Star on hat tip
+            drawCircle(Color(0xFFFFD54F), radius = baseRadius * 0.05f, center = Offset(cx + (baseRadius * 0.15f), hatBaseY - (baseRadius * 0.95f)))
+        }
+
+        "HALO" -> {
+            val haloY = cy - (baseRadius * 1.05f)
+            val haloW = baseRadius * 0.9f
+            val haloH = baseRadius * 0.24f
+            // Golden glowing ring
+            drawOval(
+                brush = Brush.radialGradient(
+                    listOf(Color(0xFFFFEA00), Color(0xFFFFD600), Color(0x00FFD600)),
+                    center = Offset(cx, haloY),
+                    radius = haloW * 0.6f
+                ),
+                topLeft = Offset(cx - (haloW * 0.5f), haloY - (haloH * 0.5f)),
+                size = Size(haloW, haloH),
+                style = Stroke(width = (baseRadius * 0.065f).coerceAtLeast(3f))
+            )
+        }
+
+        "STAR_GLASSES" -> {
+            val glassesY = cy - (baseRadius * 0.08f)
+            val glassSize = baseRadius * 0.32f
+            val dist = baseRadius * 0.35f
+            // Bridge
+            drawLine(
+                color = Color(0xFFFFD700),
+                start = Offset(cx - (dist * 0.5f), glassesY),
+                end = Offset(cx + (dist * 0.5f), glassesY),
+                strokeWidth = (baseRadius * 0.035f).coerceAtLeast(2f)
+            )
+            // Left star
+            drawCircle(Color(0xBBFFD700), radius = glassSize * 0.5f, center = Offset(cx - dist, glassesY))
+            // Right star
+            drawCircle(Color(0xBBFFD700), radius = glassSize * 0.5f, center = Offset(cx + dist, glassesY))
+        }
+    }
+}

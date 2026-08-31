@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
 import com.example.presentation.pet.drawers.drawHeartParticle
+import com.example.presentation.pet.drawers.drawPetAccessory
 import com.example.presentation.pet.drawers.drawPetAura
 import com.example.presentation.pet.drawers.drawPetBody
 import com.example.presentation.pet.drawers.drawPetCheeks
@@ -345,6 +346,16 @@ fun LumiPetView(
                         talkAmount = mouthTalkProgress,
                         baseRadius = baseRadius
                     )
+
+                    // Equipped 3D Wearable Accessory (Crown, Sprout, Headphones, Hat, Halo, etc.)
+                    if (petStatus.activeAccessory != "NONE") {
+                        drawPetAccessory(
+                            cx = cx,
+                            cy = cy,
+                            baseRadius = baseRadius,
+                            accessoryId = petStatus.activeAccessory
+                        )
+                    }
                 }
             }
 

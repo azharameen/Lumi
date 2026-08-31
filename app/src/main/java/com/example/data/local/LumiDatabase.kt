@@ -34,7 +34,7 @@ import com.example.data.local.entity.WellnessLogEntity
         GoalPlanEntity::class,
         GoalMilestoneEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class LumiDatabase : RoomDatabase() {

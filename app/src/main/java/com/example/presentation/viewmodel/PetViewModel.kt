@@ -50,8 +50,36 @@ class PetViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setBloubShape(shape: BloubShape) { viewModelScope.launch { repository.setBloubShape(shape) } }
     fun setBloubSkinColor(skinColor: BloubSkinColor) { viewModelScope.launch { repository.setBloubSkinColor(skinColor) } }
-    fun feedPet() { viewModelScope.launch { repository.setPetEmotion(PetEmotion.ENERGETIC) } }
-    fun dancePet() { viewModelScope.launch { repository.setPetEmotion(PetEmotion.PLAYFUL) } }
+    fun buyAccessory(accessory: com.example.domain.model.PetAccessory, onResult: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            val success = repository.buyAccessory(accessory)
+            if (success) {
+                sensorsManager.vibratePurr()
+            }
+            onResult(success)
+        }
+    }
+    fun equipAccessory(accessoryId: String) {
+        viewModelScope.launch {
+            repository.equipAccessory(accessoryId)
+            sensorsManager.vibrateTap()
+        }
+    }
+    fun updatePetName(name: String) { viewModelScope.launch { repository.updatePetName(name) } }
+    fun feedPet() {
+        viewModelScope.launch {
+            repository.setPetEmotion(PetEmotion.ENERGETIC)
+            repository.earnCoinsAndExp(coins = 10, exp = 15, reason = "Feeding Lumi")
+            sensorsManager.vibratePurr()
+        }
+    }
+    fun dancePet() {
+        viewModelScope.launch {
+            repository.setPetEmotion(PetEmotion.PLAYFUL)
+            repository.earnCoinsAndExp(coins = 10, exp = 15, reason = "Dancing with Lumi")
+            sensorsManager.vibrateTap()
+        }
+    }
     fun pokePet() { viewModelScope.launch { repository.setPetEmotion(PetEmotion.CONCERNED) } }
 
     fun togglePetSleep() {

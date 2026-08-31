@@ -358,96 +358,24 @@ fun LlmSettingsSection(
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Bold
                                             )
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Surface(
-                                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                                shape = RoundedCornerShape(MaterialTheme.spacing.extraSmall)
-                                            ) {
-                                                Text(
-                                                    text = modelSpec.quantization,
-                                                    color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                                    fontSize = 9.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    modifier = Modifier.padding(horizontal = MaterialTheme.spacing.extraSmall, vertical = 1.dp)
-                                                )
+                                            if (!modelSpec.isDeviceCompatible) {
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Icon(androidx.compose.material.icons.Icons.Default.Warning, contentDescription = "Warning", tint = LumiCoral, modifier = Modifier.size(14.dp))
                                             }
                                         }
                                         Text(
-                                            text = "${modelSpec.parameterCount} • ${modelSpec.sizeDisplay} • RAM: ${modelSpec.memoryRequiredRam}",
+                                            text = "${modelSpec.parameterCount} params • ${modelSpec.sizeDisplay}",
                                             color = TextSecondary,
-                                            fontSize = 11.sp,
-                                            modifier = Modifier.padding(top = 2.dp)
+                                            fontSize = 11.sp
                                         )
-                                    }
-
-                                    if (isActive) {
-                                        Surface(
-                                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                            shape = RoundedCornerShape(6.dp)
-                                        ) {
+                                        if (!modelSpec.isDeviceCompatible) {
                                             Text(
-                                                text = stringResource(R.string.text_active),
-                                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                                text = modelSpec.compatibilityReason,
+                                                color = LumiCoral,
                                                 fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                                modifier = Modifier.padding(top = 4.dp)
                                             )
                                         }
-                                    }
-                                }
-
-                                Text(
-                                    text = modelSpec.description,
-                                    color = TextTertiary,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier.padding(vertical = 6.dp)
-                                )
-
-                                // Download Progress if active
-                                if (isDownloading && progress != null) {
-                                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
-                                    LinearProgressIndicator(
-                                        progress = { progress.progress },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(6.dp),
-                                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                        trackColor = ObsidianDark
-                                    )
-                                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Text(
-                                            text = "${(progress.progress * 100).toInt()}% (${progress.bytesDownloaded / (1024 * 1024)} MB / ${modelSpec.sizeDisplay})",
-                                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                            fontSize = 10.sp
-                                        )
-                                        Text(
-                                            text = "${progress.speedMegaBytesPerSec} MB/s • ETA ${progress.etaSeconds}s",
-                                            color = TextSecondary,
-                                            fontSize = 10.sp
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-
-                                // Action Buttons
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (isDownloading) {
-                                        OutlinedButton(
-                                            onClick = { onCancelModelDownload(modelSpec.id) },
-                                            colors = ButtonDefaults.outlinedButtonColors(contentColor = LumiCoral),
-                                            shape = RoundedCornerShape(MaterialTheme.spacing.small),
-                                            modifier = Modifier.height(MaterialTheme.spacing.extraLarge)
-                                        ) {
-                                            Text(stringResource(id = R.string.text_cancel), fontSize = 11.sp)
                                         }
                                     } else if (isDownloaded) {
                                         if (!isActive) {
@@ -711,6 +639,7 @@ fun LlmSettingsSection(
         }
     }
 }
+
 
 
 

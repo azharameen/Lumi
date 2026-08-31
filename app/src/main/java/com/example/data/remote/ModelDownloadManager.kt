@@ -52,7 +52,9 @@ data class LocalLlmModelSpec(
     val downloadUrl: String,
     val description: String,
     val recommendedFor: String,
-    val sha256Checksum: String = ""
+    val sha256Checksum: String = "",
+    val isDeviceCompatible: Boolean = true,
+    val compatibilityReason: String = ""
 )
 
 data class ModelDownloadProgress(
@@ -84,56 +86,111 @@ class ModelDownloadManager private constructor(private val context: Context) {
         .readTimeout(60, TimeUnit.SECONDS)
         .build()
 
-    val catalog: List<LocalLlmModelSpec> = listOf(
-        LocalLlmModelSpec(
-            id = "gemma-2b-it-cpu-int4",
-            name = "Gemma 2B IT (CPU INT4)",
-            publisher = "Google DeepMind",
-            parameterCount = "2.0 Billion",
-            quantization = "INT4 (MediaPipe TFL3)",
-            sizeBytes = 1_438_400_000L,
-            sizeDisplay = "1.34 GB",
-            contextWindowTokens = 2048,
-            memoryRequiredRam = "2.2 GB VRAM/RAM",
-            requiredRamBytes = 2_200_000_000L,
-            downloadUrl = "https://storage.googleapis.com/mediapipe-models/llm/gemma-2b-it-cpu-int4.bin",
-            description = "Official Google MediaPipe LLM format. State-of-the-art compact instruction-tuned model. Works flawlessly with True Local Inference.",
-            recommendedFor = "Recommended for all Android 12+ devices",
-            sha256Checksum = ""
-        ),
-        LocalLlmModelSpec(
-            id = "gemma-2b-it-gpu-int4",
-            name = "Gemma 2B IT (GPU INT4)",
-            publisher = "Google DeepMind",
-            parameterCount = "2.0 Billion",
-            quantization = "INT4 (MediaPipe TFL3)",
-            sizeBytes = 1_438_400_000L,
-            sizeDisplay = "1.34 GB",
-            contextWindowTokens = 2048,
-            memoryRequiredRam = "2.2 GB VRAM/RAM",
-            requiredRamBytes = 2_200_000_000L,
-            downloadUrl = "https://storage.googleapis.com/mediapipe-models/llm/gemma-2b-it-gpu-int4.bin",
-            description = "Official Google MediaPipe LLM format optimized for GPU acceleration. Faster token generation.",
-            recommendedFor = "Best for flagship devices with powerful GPUs",
-            sha256Checksum = ""
-        ),
-        LocalLlmModelSpec(
-            id = "phi-2-cpu-int4",
-            name = "Phi-2 (CPU INT4)",
-            publisher = "Microsoft / MediaPipe",
-            parameterCount = "2.7 Billion",
-            quantization = "INT4 (MediaPipe TFL3)",
-            sizeBytes = 1_850_000_000L,
-            sizeDisplay = "1.75 GB",
-            contextWindowTokens = 2048,
-            memoryRequiredRam = "2.6 GB VRAM/RAM",
-            requiredRamBytes = 2_600_000_000L,
-            downloadUrl = "https://storage.googleapis.com/mediapipe-models/llm/phi-2-cpu-int4.bin",
-            description = "Highly capable reasoning model converted officially for MediaPipe LLM Inference.",
-            recommendedFor = "Best for heavy reasoning tasks on device",
-            sha256Checksum = ""
+        val catalog: List<LocalLlmModelSpec> by lazy {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+        val memoryInfo = android.app.ActivityManager.MemoryInfo()
+        activityManager.getMemoryInfo(memoryInfo)
+        val totalDeviceRam = memoryInfo.totalMem
+        val osBufferBytes = 1_600_000_000L // Assume Android OS and other apps need ~1.6 GB minimum
+        
+        fun evaluateCompatibility(requiredBytes: Long): Pair<Boolean, String> {
+            val availableForApp = totalDeviceRam - osBufferBytes
+            return if (availableForApp >= requiredBytes) {
+                Pair(true, "Perfect for your device.")
+            } else {
+                val reqGb = String.format("%.1f", requiredBytes / 1_000_000_000.0)
+                val totalGb = String.format("%.1f", totalDeviceRam / 1_000_000_000.0)
+                Pair(false, "Requires ${reqGb}GB free RAM. Your device total is ${totalGb}GB. Downloading this may cause app crashes or system freezes.")
+            }
+        }
+
+        listOf(
+            run {
+                val reqRam = 2_200_000_000L
+                val (isCompat, reason) = evaluateCompatibility(reqRam)
+                LocalLlmModelSpec(
+                    id = "gemma-2b-it-cpu-int4",
+                    name = "Gemma 2B IT (CPU INT4)",
+                    publisher = "Google DeepMind",
+                    parameterCount = "2.0 Billion",
+                    quantization = "INT4 (MediaPipe TFL3)",
+                    sizeBytes = 1_438_400_000L,
+                    sizeDisplay = "1.34 GB",
+                    contextWindowTokens = 2048,
+                    memoryRequiredRam = "2.2 GB VRAM/RAM",
+                    requiredRamBytes = reqRam,
+                    downloadUrl = "https://storage.googleapis.com/mediapipe-models/llm/gemma-2b-it-cpu-int4.bin",
+                    description = "Official Google MediaPipe LLM format. State-of-the-art compact instruction-tuned model.",
+                    recommendedFor = "Recommended for all Android 12+ devices",
+                    isDeviceCompatible = isCompat,
+                    compatibilityReason = reason
+                )
+            },
+            run {
+                val reqRam = 2_200_000_000L
+                val (isCompat, reason) = evaluateCompatibility(reqRam)
+                LocalLlmModelSpec(
+                    id = "gemma-2b-it-gpu-int4",
+                    name = "Gemma 2B IT (GPU INT4)",
+                    publisher = "Google DeepMind",
+                    parameterCount = "2.0 Billion",
+                    quantization = "INT4 (MediaPipe TFL3)",
+                    sizeBytes = 1_438_400_000L,
+                    sizeDisplay = "1.34 GB",
+                    contextWindowTokens = 2048,
+                    memoryRequiredRam = "2.2 GB VRAM/RAM",
+                    requiredRamBytes = reqRam,
+                    downloadUrl = "https://storage.googleapis.com/mediapipe-models/llm/gemma-2b-it-gpu-int4.bin",
+                    description = "Official Google MediaPipe LLM format optimized for GPU acceleration. Faster token generation.",
+                    recommendedFor = "Best for flagship devices with powerful GPUs",
+                    isDeviceCompatible = isCompat,
+                    compatibilityReason = reason
+                )
+            },
+            run {
+                val reqRam = 2_600_000_000L
+                val (isCompat, reason) = evaluateCompatibility(reqRam)
+                LocalLlmModelSpec(
+                    id = "phi-2-cpu-int4",
+                    name = "Phi-2 (CPU INT4)",
+                    publisher = "Microsoft / MediaPipe",
+                    parameterCount = "2.7 Billion",
+                    quantization = "INT4 (MediaPipe TFL3)",
+                    sizeBytes = 1_850_000_000L,
+                    sizeDisplay = "1.75 GB",
+                    contextWindowTokens = 2048,
+                    memoryRequiredRam = "2.6 GB VRAM/RAM",
+                    requiredRamBytes = reqRam,
+                    downloadUrl = "https://storage.googleapis.com/mediapipe-models/llm/phi-2-cpu-int4.bin",
+                    description = "Highly capable reasoning model converted officially for MediaPipe LLM Inference.",
+                    recommendedFor = "Best for heavy reasoning tasks on device",
+                    isDeviceCompatible = isCompat,
+                    compatibilityReason = reason
+                )
+            },
+            run {
+                val reqRam = 5_800_000_000L
+                val (isCompat, reason) = evaluateCompatibility(reqRam)
+                LocalLlmModelSpec(
+                    id = "gemma-7b-it-cpu-int4",
+                    name = "Gemma 7B IT (CPU INT4)",
+                    publisher = "Google DeepMind",
+                    parameterCount = "7.0 Billion",
+                    quantization = "INT4 (MediaPipe TFL3)",
+                    sizeBytes = 5_200_000_000L,
+                    sizeDisplay = "5.1 GB",
+                    contextWindowTokens = 2048,
+                    memoryRequiredRam = "5.8 GB VRAM/RAM",
+                    requiredRamBytes = reqRam,
+                    downloadUrl = "https://storage.googleapis.com/mediapipe-models/llm/gemma-7b-it-cpu-int4.bin",
+                    description = "Massive 7-Billion parameter edge model. Unmatched local intelligence but extreme hardware requirements.",
+                    recommendedFor = "Only for ultra-premium devices (e.g. 12GB+ RAM)",
+                    isDeviceCompatible = isCompat,
+                    compatibilityReason = reason
+                )
+            }
         )
-    )
+    }
 
     private val _downloadStates = MutableStateFlow<Map<String, ModelDownloadProgress>>(emptyMap())
     val downloadStates: StateFlow<Map<String, ModelDownloadProgress>> = _downloadStates.asStateFlow()

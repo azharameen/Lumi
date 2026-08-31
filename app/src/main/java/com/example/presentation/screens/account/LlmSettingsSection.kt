@@ -72,6 +72,10 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.CircularProgressIndicator
+
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -360,7 +364,12 @@ fun LlmSettingsSection(
                                             )
                                             if (!modelSpec.isDeviceCompatible) {
                                                 Spacer(modifier = Modifier.width(6.dp))
-                                                Icon(androidx.compose.material.icons.Icons.Default.Warning, contentDescription = "Warning", tint = LumiCoral, modifier = Modifier.size(14.dp))
+                                                Icon(
+                                                    androidx.compose.material.icons.Icons.Default.Warning, 
+                                                    contentDescription = "Warning", 
+                                                    tint = LumiCoral, 
+                                                    modifier = Modifier.size(14.dp)
+                                                )
                                             }
                                         }
                                         Text(
@@ -376,36 +385,74 @@ fun LlmSettingsSection(
                                                 modifier = Modifier.padding(top = 4.dp)
                                             )
                                         }
+                                    }
+
+                                    if (isDownloading) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            CircularProgressIndicator(
+                                                progress = { progress?.progress ?: 0f },
+                                                modifier = Modifier.size(24.dp),
+                                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                                strokeWidth = 2.dp
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            IconButton(
+                                                onClick = { onCancelModelDownload(modelSpec.id) },
+                                                modifier = Modifier.size(28.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Close, 
+                                                    contentDescription = "Cancel", 
+                                                    tint = LumiCoral, 
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
                                         }
                                     } else if (isDownloaded) {
-                                        if (!isActive) {
-                                            Button(
-                                                onClick = { onSetActiveLocalModel(modelSpec.id) },
-                                                colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
-                                                shape = RoundedCornerShape(MaterialTheme.spacing.small),
-                                                modifier = Modifier.height(MaterialTheme.spacing.extraLarge)
-                                            ) {
-                                                Text(stringResource(id = R.string.text_set_active), color = ObsidianDark, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            if (!isActive) {
+                                                Button(
+                                                    onClick = { onSetActiveLocalModel(modelSpec.id) },
+                                                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
+                                                    shape = RoundedCornerShape(MaterialTheme.spacing.small),
+                                                    modifier = Modifier.height(MaterialTheme.spacing.extraLarge)
+                                                ) {
+                                                    Text(stringResource(id = R.string.text_set_active), color = ObsidianDark, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                                }
+                                                Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                                             }
-                                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                                        }
 
-                                        IconButton(
-                                            onClick = { onDeleteLocalModel(modelSpec.id) },
-                                            modifier = Modifier.size(MaterialTheme.spacing.extraLarge)
-                                        ) {
-                                            Icon(Icons.Default.Delete, contentDescription = stringResource(id = R.string.desc_delete_model_weights), tint = TextTertiary, modifier = Modifier.size(MaterialTheme.spacing.medium))
+                                            IconButton(
+                                                onClick = { onDeleteLocalModel(modelSpec.id) },
+                                                modifier = Modifier.size(MaterialTheme.spacing.extraLarge)
+                                            ) {
+                                                Icon(Icons.Default.Delete, contentDescription = stringResource(id = R.string.desc_delete_model_weights), tint = TextTertiary, modifier = Modifier.size(MaterialTheme.spacing.medium))
+                                            }
                                         }
                                     } else {
                                         Button(
                                             onClick = { onDownloadLocalModel(modelSpec.id) },
-                                            colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
+                                            enabled = modelSpec.isDeviceCompatible,
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                                                disabledContainerColor = SurfaceDarkVariant
+                                            ),
                                             shape = RoundedCornerShape(MaterialTheme.spacing.small),
                                             modifier = Modifier.height(MaterialTheme.spacing.extraLarge)
                                         ) {
-                                            Icon(Icons.Default.Download, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(14.dp))
+                                            Icon(
+                                                Icons.Default.Download, 
+                                                contentDescription = null, 
+                                                tint = if (modelSpec.isDeviceCompatible) ObsidianDark else TextTertiary, 
+                                                modifier = Modifier.size(14.dp)
+                                            )
                                             Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
-                                            Text("Download (${modelSpec.sizeDisplay})", color = ObsidianDark, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text(
+                                                "Download (${modelSpec.sizeDisplay})", 
+                                                color = if (modelSpec.isDeviceCompatible) ObsidianDark else TextTertiary, 
+                                                fontSize = 11.sp, 
+                                                fontWeight = FontWeight.Bold
+                                            )
                                         }
                                     }
                                 }

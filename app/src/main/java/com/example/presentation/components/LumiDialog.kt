@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.core.theme.*
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 /**
  * Standardized Lumi Frosted Glassmorphic Dialog.
@@ -48,10 +50,10 @@ fun LumiDialog(
             color = SurfaceGlass,
             shape = RoundedCornerShape(22.dp),
             border = BorderStroke(1.2.dp, accentColor.copy(alpha = 0.45f)),
-            shadowElevation = 24.dp,
+            shadowElevation = MaterialTheme.spacing.large,
             modifier = modifier
                 .fillMaxWidth(0.92f)
-                .padding(vertical = 16.dp)
+                .padding(vertical = MaterialTheme.spacing.medium)
         ) {
             Column(
                 modifier = Modifier
@@ -99,7 +101,7 @@ fun LumiDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
                 // Body Content Slot
                 Column(
@@ -126,7 +128,7 @@ fun LumiDialog(
                                 style = MaterialTheme.typography.labelLarge
                             )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                     }
 
                     Button(

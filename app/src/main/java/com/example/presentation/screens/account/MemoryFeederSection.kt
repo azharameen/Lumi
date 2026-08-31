@@ -136,6 +136,8 @@ import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import com.example.core.theme.TextTertiary
 import com.example.presentation.viewmodel.LumiViewModel
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun MemoryFeederSection(
@@ -152,17 +154,17 @@ fun MemoryFeederSection(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
+            .padding(horizontal = MaterialTheme.spacing.medium),
+        contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 90.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -189,8 +191,8 @@ fun MemoryFeederSection(
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                             modifier = Modifier.testTag("btn_add_fact")
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.Default.Add, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(MaterialTheme.spacing.medium))
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                             Text(stringResource(id = R.string.text_add_fact), color = ObsidianDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
@@ -224,17 +226,17 @@ fun MemoryFeederSection(
             item {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = SurfaceDarkVariant),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
+                            .padding(MaterialTheme.spacing.large),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(Icons.Default.Lightbulb, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(36.dp))
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
                         Text(stringResource(id = R.string.text_no_memory_facts_in_this_catego), color = TextPrimary, fontWeight = FontWeight.Medium)
                         Text(stringResource(id = R.string.text_tap_add_fact_above_to_teach_lu), color = TextSecondary, fontSize = 12.sp)
                     }
@@ -265,7 +267,7 @@ fun MemoryFeederSection(
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
 
                         Column(modifier = Modifier.weight(1f)) {
                             Surface(
@@ -297,7 +299,7 @@ fun MemoryFeederSection(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = stringResource(id = R.string.desc_delete_fact),
                                 tint = TextTertiary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(MaterialTheme.spacing.medium)
                             )
                         }
                     }

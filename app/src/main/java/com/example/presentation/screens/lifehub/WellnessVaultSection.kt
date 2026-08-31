@@ -113,6 +113,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun WellnessVaultSection(
@@ -131,9 +133,9 @@ fun WellnessVaultSection(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = MaterialTheme.spacing.medium),
+        contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
     ) {
         // Coherence Breathing Banner
         item {
@@ -147,7 +149,7 @@ fun WellnessVaultSection(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
+                        .padding(MaterialTheme.spacing.medium),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
@@ -160,7 +162,7 @@ fun WellnessVaultSection(
                             imageVector = Icons.Default.Air,
                             contentDescription = null,
                             tint = LumiGreen,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(MaterialTheme.spacing.large)
                         )
                     }
                     Spacer(modifier = Modifier.width(14.dp))
@@ -231,7 +233,7 @@ fun WellnessVaultSection(
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
 
                     // Energy Slider
                     Text(
@@ -355,7 +357,7 @@ fun WellnessVaultSection(
                                 contentDescription = null,
                                 tint = if (uiState.isMemoryVaultUnlocked) LumiGreen else androidx.compose.material3.MaterialTheme.colorScheme.primary
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                             Text(
                                 text = stringResource(R.string.text_biometric_memory_vault),
                                 color = TextPrimary,
@@ -371,7 +373,7 @@ fun WellnessVaultSection(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
 
                     if (!uiState.isMemoryVaultUnlocked) {
                         Text(
@@ -390,7 +392,7 @@ fun WellnessVaultSection(
                                 .testTag("btn_unlock_vault")
                         ) {
                             Icon(imageVector = Icons.Default.LockOpen, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                             Text(text = stringResource(R.string.text_unlock_with_biometrics), fontWeight = FontWeight.Bold)
                         }
                     } else {
@@ -401,7 +403,7 @@ fun WellnessVaultSection(
                                 fontSize = 12.sp
                             )
                         } else {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
                                 memories.forEach { mem ->
                                     Card(
                                         colors = CardDefaults.cardColors(containerColor = SurfaceDarkVariant),
@@ -425,7 +427,7 @@ fun WellnessVaultSection(
                                                     fontSize = 10.sp
                                                 )
                                             }
-                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                                             Text(
                                                 text = mem.memoryText,
                                                 color = TextPrimary,

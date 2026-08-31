@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.navigation.NavDestination
 import com.example.core.theme.*
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 /**
  * Floating Holographic Glassmorphic Bottom Navigation Dock.
@@ -61,10 +63,10 @@ fun LumiNavigationBar(
                 )
             )
         ),
-        shadowElevation = 16.dp,
+        shadowElevation = MaterialTheme.spacing.medium,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .padding(horizontal = MaterialTheme.spacing.medium, vertical = 10.dp)
             .height(68.dp)
     ) {
         Row(
@@ -139,7 +141,7 @@ private fun LumiNavigationItem(
                 if (isSelected) {
                     Box(
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(MaterialTheme.spacing.extraLarge)
                             .background(
                                 Brush.radialGradient(
                                     listOf(activeColor.copy(alpha = 0.35f), Color.Transparent)
@@ -193,7 +195,7 @@ private fun LumiNavigationItem(
             // Active Underline Indicator
             Box(
                 modifier = Modifier
-                    .width(16.dp)
+                    .width(MaterialTheme.spacing.medium)
                     .height(animatedIndicatorHeight)
                     .clip(CircleShape)
                     .background(if (isSelected) activeColor else Color.Transparent)

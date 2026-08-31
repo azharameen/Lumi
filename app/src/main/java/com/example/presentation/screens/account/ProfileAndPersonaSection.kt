@@ -136,6 +136,8 @@ import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import com.example.core.theme.TextTertiary
 import com.example.presentation.viewmodel.LumiViewModel
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun ProfileAndPersonaSection(
@@ -146,18 +148,18 @@ fun ProfileAndPersonaSection(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = MaterialTheme.spacing.medium),
+        contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 90.dp),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
     ) {
         // Identity Overview Card
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -169,8 +171,8 @@ fun ProfileAndPersonaSection(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
-                        IconButton(onClick = onEditClicked, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Default.Edit, contentDescription = stringResource(id = R.string.desc_edit), tint = LumiMint, modifier = Modifier.size(16.dp))
+                        IconButton(onClick = onEditClicked, modifier = Modifier.size(MaterialTheme.spacing.large)) {
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(id = R.string.desc_edit), tint = LumiMint, modifier = Modifier.size(MaterialTheme.spacing.medium))
                         }
                     }
 
@@ -188,10 +190,10 @@ fun ProfileAndPersonaSection(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Text(
                         text = stringResource(R.string.text_daily_rhythm_target_metrics),
                         color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
@@ -255,10 +257,10 @@ fun ProfileAndPersonaSection(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Text(
                         text = stringResource(R.string.text_lumi_companion_persona_tone),
                         color = LumiPink,
@@ -269,7 +271,7 @@ fun ProfileAndPersonaSection(
                         text = stringResource(R.string.text_controls_how_lumi_talks_reasons_and),
                         color = TextSecondary,
                         fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                        modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall, bottom = 12.dp)
                     )
 
                     LumiPersonaTone.values().forEach { tone ->
@@ -280,7 +282,7 @@ fun ProfileAndPersonaSection(
                             border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, tone.accentColor) else null,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp)
+                                .padding(vertical = MaterialTheme.spacing.extraSmall)
                                 .clickable { onUpdateProfile(userProfile.copy(personaTone = tone)) }
                         ) {
                             Row(

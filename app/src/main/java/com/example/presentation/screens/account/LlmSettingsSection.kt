@@ -125,6 +125,8 @@ import com.example.domain.account.UserFactItem
 import com.example.domain.account.UserProfileData
 import com.example.domain.connectors.ConnectorManager
 import com.example.core.theme.*
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 
 @Composable
@@ -159,21 +161,21 @@ fun LlmSettingsSection(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = MaterialTheme.spacing.medium),
+        contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 90.dp),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
     ) {
         // Active Engine Router
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Psychology, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                         Text(
                             text = stringResource(R.string.text_active_llm_intelligence_engine),
                             color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
@@ -192,7 +194,7 @@ fun LlmSettingsSection(
                             border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary) else null,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 4.dp)
+                                .padding(vertical = MaterialTheme.spacing.extraSmall)
                                 .clickable { onUpdateProfile(userProfile.copy(geminiModelChoice = modelId)) }
                         ) {
                             Row(
@@ -227,10 +229,10 @@ fun LlmSettingsSection(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -238,7 +240,7 @@ fun LlmSettingsSection(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Download, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                             Text(
                                 text = stringResource(R.string.text_ondevice_local_llm_hub),
                                 color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
@@ -248,7 +250,7 @@ fun LlmSettingsSection(
                         }
                         Surface(
                             color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(MaterialTheme.spacing.small)
                         ) {
                             Text(
                                 text = stringResource(R.string.text_100_offline_private),
@@ -264,7 +266,7 @@ fun LlmSettingsSection(
                         text = stringResource(R.string.text_download_genuine_gguflitert_neural_weights_to),
                         color = TextSecondary,
                         fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                        modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall, bottom = 12.dp)
                     )
 
                     // Hardware Accelerator selection
@@ -277,20 +279,20 @@ fun LlmSettingsSection(
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
                     ) {
                         HardwareAccelerator.values().forEach { acc ->
                             val isAccSelected = selectedAccelerator == acc
                             Surface(
                                 color = if (isAccSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else SurfaceDarkVariant,
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(MaterialTheme.spacing.small),
                                 border = if (isAccSelected) androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary) else null,
                                 modifier = Modifier
                                     .weight(1f)
                                     .clickable { onSetHardwareAccelerator(acc) }
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(8.dp),
+                                    modifier = Modifier.padding(MaterialTheme.spacing.small),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
@@ -344,14 +346,14 @@ fun LlmSettingsSection(
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Surface(
                                                 color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                                shape = RoundedCornerShape(4.dp)
+                                                shape = RoundedCornerShape(MaterialTheme.spacing.extraSmall)
                                             ) {
                                                 Text(
                                                     text = modelSpec.quantization,
                                                     color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                                     fontSize = 9.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                    modifier = Modifier.padding(horizontal = MaterialTheme.spacing.extraSmall, vertical = 1.dp)
                                                 )
                                             }
                                         }
@@ -388,7 +390,7 @@ fun LlmSettingsSection(
 
                                 // Download Progress if active
                                 if (isDownloading && progress != null) {
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                                     LinearProgressIndicator(
                                         progress = { progress.progress },
                                         modifier = Modifier
@@ -397,7 +399,7 @@ fun LlmSettingsSection(
                                         color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                         trackColor = ObsidianDark
                                     )
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween
@@ -415,7 +417,7 @@ fun LlmSettingsSection(
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
 
                                 // Action Buttons
                                 Row(
@@ -427,8 +429,8 @@ fun LlmSettingsSection(
                                         OutlinedButton(
                                             onClick = { onCancelModelDownload(modelSpec.id) },
                                             colors = ButtonDefaults.outlinedButtonColors(contentColor = LumiCoral),
-                                            shape = RoundedCornerShape(8.dp),
-                                            modifier = Modifier.height(32.dp)
+                                            shape = RoundedCornerShape(MaterialTheme.spacing.small),
+                                            modifier = Modifier.height(MaterialTheme.spacing.extraLarge)
                                         ) {
                                             Text(stringResource(id = R.string.text_cancel), fontSize = 11.sp)
                                         }
@@ -437,29 +439,29 @@ fun LlmSettingsSection(
                                             Button(
                                                 onClick = { onSetActiveLocalModel(modelSpec.id) },
                                                 colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
-                                                shape = RoundedCornerShape(8.dp),
-                                                modifier = Modifier.height(32.dp)
+                                                shape = RoundedCornerShape(MaterialTheme.spacing.small),
+                                                modifier = Modifier.height(MaterialTheme.spacing.extraLarge)
                                             ) {
                                                 Text(stringResource(id = R.string.text_set_active), color = ObsidianDark, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                             }
-                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                                         }
 
                                         IconButton(
                                             onClick = { onDeleteLocalModel(modelSpec.id) },
-                                            modifier = Modifier.size(32.dp)
+                                            modifier = Modifier.size(MaterialTheme.spacing.extraLarge)
                                         ) {
-                                            Icon(Icons.Default.Delete, contentDescription = stringResource(id = R.string.desc_delete_model_weights), tint = TextTertiary, modifier = Modifier.size(16.dp))
+                                            Icon(Icons.Default.Delete, contentDescription = stringResource(id = R.string.desc_delete_model_weights), tint = TextTertiary, modifier = Modifier.size(MaterialTheme.spacing.medium))
                                         }
                                     } else {
                                         Button(
                                             onClick = { onDownloadLocalModel(modelSpec.id) },
                                             colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
-                                            shape = RoundedCornerShape(8.dp),
-                                            modifier = Modifier.height(32.dp)
+                                            shape = RoundedCornerShape(MaterialTheme.spacing.small),
+                                            modifier = Modifier.height(MaterialTheme.spacing.extraLarge)
                                         ) {
                                             Icon(Icons.Default.Download, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(14.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                                             Text("Download (${modelSpec.sizeDisplay})", color = ObsidianDark, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
@@ -475,10 +477,10 @@ fun LlmSettingsSection(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -528,10 +530,10 @@ fun LlmSettingsSection(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Text(
                         text = stringResource(R.string.text_custom_ai_system_instructions),
                         color = LumiGold,
@@ -542,7 +544,7 @@ fun LlmSettingsSection(
                         text = stringResource(R.string.text_specify_persistent_system_rules_eg_format),
                         color = TextSecondary,
                         fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
+                        modifier = Modifier.padding(top = 2.dp, bottom = MaterialTheme.spacing.small)
                     )
 
                     OutlinedTextField(
@@ -562,7 +564,7 @@ fun LlmSettingsSection(
                         textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
 
                     Button(
                         onClick = {
@@ -573,8 +575,8 @@ fun LlmSettingsSection(
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.align(Alignment.End)
                     ) {
-                        Icon(Icons.Default.Save, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.Default.Save, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(MaterialTheme.spacing.medium))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                         Text(stringResource(id = R.string.text_save_instructions), color = ObsidianDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -585,10 +587,10 @@ fun LlmSettingsSection(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Text(
                         text = stringResource(R.string.text_ai_autonomy_capabilities),
                         color = LumiGreen,
@@ -637,10 +639,10 @@ fun LlmSettingsSection(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -660,7 +662,7 @@ fun LlmSettingsSection(
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
 
                         Button(
                             onClick = { onRunGemmaBenchmark() },
@@ -668,8 +670,8 @@ fun LlmSettingsSection(
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.testTag("btn_run_benchmark")
                         ) {
-                            Icon(Icons.Default.Speed, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.Default.Speed, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(MaterialTheme.spacing.medium))
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                             Text(stringResource(id = R.string.text_run_test), color = ObsidianDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
@@ -678,7 +680,7 @@ fun LlmSettingsSection(
                         Spacer(modifier = Modifier.height(10.dp))
                         Surface(
                             color = SurfaceDarkVariant,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(MaterialTheme.spacing.small),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(

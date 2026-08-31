@@ -32,6 +32,8 @@ import com.example.core.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun ScheduleSection(
@@ -47,8 +49,8 @@ fun ScheduleSection(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
+                .padding(horizontal = MaterialTheme.spacing.medium),
+            contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // Proactive AI Briefing Card
@@ -96,7 +98,7 @@ fun ScheduleSection(
                                 imageVector = Icons.Default.AutoAwesome,
                                 contentDescription = null,
                                 tint = LumiCyan,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(MaterialTheme.spacing.medium)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
@@ -152,14 +154,14 @@ fun ScheduleSection(
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                             Box(
                                 modifier = Modifier
                                     .size(10.dp)
                                     .clip(CircleShape)
                                     .background(eventColor)
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                             Box(
                                 modifier = Modifier
                                     .width(2.dp)
@@ -188,7 +190,7 @@ fun ScheduleSection(
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Icon(
                                             imageVector = Icons.Default.Schedule,
@@ -196,7 +198,7 @@ fun ScheduleSection(
                                             tint = TextSecondary,
                                             modifier = Modifier.size(13.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                                         Text(
                                             text = "$startTimeStr - $endTimeStr",
                                             color = TextSecondary,
@@ -224,7 +226,7 @@ fun ScheduleSection(
 
                                 IconButton(
                                     onClick = { onAction(com.example.presentation.viewmodel.LumiUiAction.DeleteCalendarEvent(event.id)) },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(MaterialTheme.spacing.extraLarge)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
@@ -245,10 +247,10 @@ fun ScheduleSection(
             onClick = { showAddEventDialog = true },
             containerColor = LumiCyan,
             contentColor = ObsidianDark,
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(MaterialTheme.spacing.medium),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = 24.dp, end = 20.dp)
+                .padding(bottom = MaterialTheme.spacing.large, end = 20.dp)
                 .testTag("btn_add_event")
         ) {
             Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(id = R.string.desc_add_event))

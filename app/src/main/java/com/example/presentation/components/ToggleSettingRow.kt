@@ -131,6 +131,8 @@ import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import com.example.core.theme.TextTertiary
 import com.example.presentation.viewmodel.LumiViewModel
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun ToggleSettingRow(
@@ -143,7 +145,7 @@ fun ToggleSettingRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = MaterialTheme.spacing.small),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

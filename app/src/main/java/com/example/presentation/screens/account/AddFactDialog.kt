@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presentation.components.LumiDialog
 import com.example.core.theme.*
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun AddFactDialog(
@@ -50,7 +52,7 @@ fun AddFactDialog(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             // Category selector
             Text(stringResource(id = R.string.text_category), color = TextSecondary, style = MaterialTheme.typography.labelSmall)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
                 items(categories) { cat ->
                     val isSelected = category == cat
                     Surface(
@@ -97,7 +99,7 @@ fun AddFactDialog(
                     tint = if (isPinned) LumiGold else TextSecondary,
                     modifier = Modifier.size(18.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                 Text(stringResource(id = R.string.text_pin_as_high_priority_core_cont), color = TextPrimary, fontSize = 12.sp)
             }
         }

@@ -67,6 +67,8 @@ import com.example.core.theme.SurfaceHighlight
 import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import com.example.core.theme.TextTertiary
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun DailyBriefingCard(
@@ -107,7 +109,7 @@ fun DailyBriefingCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(MaterialTheme.spacing.medium)
         ) {
             // Top Header: Title, Type badge, and Actions
             Row(
@@ -186,7 +188,7 @@ fun DailyBriefingCard(
                     ) {
                         if (isGenerating) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(MaterialTheme.spacing.medium),
                                 color = accentColor,
                                 strokeWidth = 2.dp
                             )
@@ -239,7 +241,7 @@ fun DailyBriefingCard(
                                         .clip(CircleShape)
                                         .background(accentColor)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                                 Text(
                                     text = item,
                                     color = TextPrimary,
@@ -256,7 +258,7 @@ fun DailyBriefingCard(
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier
-                                    .padding(top = 4.dp)
+                                    .padding(top = MaterialTheme.spacing.extraSmall)
                                     .clickable { isExpanded = !isExpanded }
                             )
                         }
@@ -264,14 +266,14 @@ fun DailyBriefingCard(
                 }
 
                 // Motivational quote box
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
                 Text(
                     text = briefing.motivationalQuote,
                     color = TextTertiary,
                     fontStyle = FontStyle.Italic,
                     fontSize = 11.sp,
                     lineHeight = 15.sp,
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    modifier = Modifier.padding(horizontal = MaterialTheme.spacing.extraSmall)
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -297,9 +299,9 @@ fun DailyBriefingCard(
                             else -> Icons.Default.AutoAwesome
                         },
                         contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(MaterialTheme.spacing.medium)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                     Text(
                         text = briefing.recommendedAction,
                         fontSize = 12.sp,

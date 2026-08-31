@@ -78,6 +78,7 @@ import com.example.data.local.entity.GoalPlanEntity
 import com.example.core.theme.*
 import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
+import com.example.core.theme.spacing
 
 
 @Composable
@@ -99,8 +100,8 @@ fun AutonomousGoalsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
+                .padding(horizontal = MaterialTheme.spacing.medium),
+            contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // Hero Header Card
@@ -180,9 +181,9 @@ fun AutonomousGoalsScreen(
                                     imageVector = Icons.Default.AutoAwesome,
                                     contentDescription = null,
                                     tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(MaterialTheme.spacing.medium)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                                 Text(
                                     text = stringResource(R.string.text_decompose_new_big_objective),
                                     color = Color.White,
@@ -199,7 +200,7 @@ fun AutonomousGoalsScreen(
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                         colors = CardDefaults.cardColors(containerColor = SurfaceDarkVariant.copy(alpha = 0.5f))
                     ) {
                         Column(
@@ -289,7 +290,7 @@ private fun GoalPlanItemCard(
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceDark)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -306,7 +307,7 @@ private fun GoalPlanItemCard(
                             "Learning" -> LumiGold.copy(alpha = 0.2f)
                             else -> androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                         },
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(MaterialTheme.spacing.small)
                     ) {
                         Text(
                             text = goal.category,
@@ -318,14 +319,14 @@ private fun GoalPlanItemCard(
                             },
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = 3.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                     if (isAllDone) {
                         Surface(
                             color = LumiGreen.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(MaterialTheme.spacing.small)
                         ) {
                             Text(
                                 text = stringResource(R.string.text_completed),
@@ -346,12 +347,12 @@ private fun GoalPlanItemCard(
                         imageVector = Icons.Default.Delete,
                         contentDescription = stringResource(id = R.string.desc_delete_goal),
                         tint = TextSecondary.copy(alpha = 0.6f),
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(MaterialTheme.spacing.medium)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
             Text(
                 text = goal.title,
                 color = TextPrimary,
@@ -359,7 +360,7 @@ private fun GoalPlanItemCard(
                 fontWeight = FontWeight.Bold
             )
             if (goal.description.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                 Text(
                     text = goal.description,
                     color = TextSecondary,
@@ -406,7 +407,7 @@ private fun GoalPlanItemCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { isExpanded = !isExpanded }
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = MaterialTheme.spacing.extraSmall),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -422,8 +423,8 @@ private fun GoalPlanItemCard(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .padding(top = MaterialTheme.spacing.small),
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
                 ) {
                     milestones.forEach { milestone ->
                         MilestoneItemRow(
@@ -469,7 +470,7 @@ private fun MilestoneItemRow(
                 )
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -490,7 +491,7 @@ private fun MilestoneItemRow(
                 )
 
                 if (milestone.executionOutput.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                     Text(
                         text = "⚡ ${milestone.executionOutput}",
                         color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
@@ -516,8 +517,8 @@ private fun MilestoneItemRow(
                             else -> androidx.compose.material3.MaterialTheme.colorScheme.primary
                         }
                     ),
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(MaterialTheme.spacing.small),
+                    contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.small, vertical = MaterialTheme.spacing.extraSmall),
                     modifier = Modifier.height(30.dp)
                 ) {
                     Icon(
@@ -532,7 +533,7 @@ private fun MilestoneItemRow(
                         tint = Color.Black,
                         modifier = Modifier.size(12.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                     Text(
                         text = stringResource(R.string.text_autorun),
                         color = Color.Black,
@@ -628,7 +629,7 @@ private fun CreateGoalDecomposeDialog(
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            modifier = Modifier.padding(vertical = 8.dp)
+                            modifier = Modifier.padding(vertical = MaterialTheme.spacing.small)
                         )
                     }
                 }

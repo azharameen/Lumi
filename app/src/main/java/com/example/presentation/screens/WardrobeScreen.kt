@@ -80,6 +80,7 @@ import com.example.core.theme.TextSecondary
 import com.example.presentation.viewmodel.PetViewModel
 import com.example.presentation.viewmodel.WellnessViewModel
 import kotlinx.coroutines.launch
+import com.example.core.theme.spacing
 
 /**
  * Customization Studio & Evolution Wardrobe Screen.
@@ -119,9 +120,9 @@ fun WardrobeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(ObsidianDark)
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = MaterialTheme.spacing.medium),
+            contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 100.dp),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
         ) {
             // Header with Coins and Gems Counter
             item(key = "header") {
@@ -141,7 +142,7 @@ fun WardrobeScreen(
                                 tint = TextPrimary
                             )
                         }
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                         Column {
                             Text(
                                 text = stringResource(R.string.text_lumi_wardrobe_shop),
@@ -169,10 +170,10 @@ fun WardrobeScreen(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = MaterialTheme.spacing.extraSmall)
                             ) {
                                 Text(text = "🪙", fontSize = 12.sp)
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                                 Text(
                                     text = "${petStatus.coins}",
                                     color = LumiGold,
@@ -189,10 +190,10 @@ fun WardrobeScreen(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = MaterialTheme.spacing.extraSmall)
                             ) {
                                 Text(text = "💎", fontSize = 12.sp)
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                                 Text(
                                     text = "${petStatus.gems}",
                                     color = LumiCyanLight,
@@ -209,7 +210,7 @@ fun WardrobeScreen(
             item(key = "pet_showcase") {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(MaterialTheme.spacing.large),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -238,7 +239,7 @@ fun WardrobeScreen(
                             Spacer(modifier = Modifier.width(6.dp))
                             IconButton(
                                 onClick = { showRenameDialog = true },
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(MaterialTheme.spacing.large)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
@@ -249,22 +250,22 @@ fun WardrobeScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Surface(
                                 color = LumiGold.copy(alpha = 0.2f),
-                                shape = RoundedCornerShape(8.dp)
+                                shape = RoundedCornerShape(MaterialTheme.spacing.small)
                             ) {
                                 Text(
                                     text = "Level ${petStatus.level}",
                                     color = LumiGold,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = 3.dp)
                                 )
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                             Text(
                                 text = "${petStatus.exp} / ${petStatus.expToNextLevel} XP to Level ${petStatus.level + 1}",
                                 color = TextSecondary,
@@ -272,7 +273,7 @@ fun WardrobeScreen(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
 
                         val progress = remember(petStatus.exp, petStatus.expToNextLevel) {
                             if (petStatus.expToNextLevel > 0) {
@@ -284,7 +285,7 @@ fun WardrobeScreen(
                             progress = { progress },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(8.dp)
+                                .height(MaterialTheme.spacing.small)
                                 .clip(CircleShape),
                             color = MaterialTheme.colorScheme.primary,
                             trackColor = SurfaceHighlight
@@ -345,7 +346,7 @@ fun WardrobeScreen(
                             imageVector = Icons.Default.ShoppingBag,
                             contentDescription = null,
                             tint = LumiGold,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(MaterialTheme.spacing.medium)
                         )
                     }
                     Spacer(modifier = Modifier.height(10.dp))
@@ -400,7 +401,7 @@ fun WardrobeScreen(
                                         fontWeight = FontWeight.Bold,
                                         maxLines = 1
                                     )
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                                     when {
                                         isEquipped -> {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -500,7 +501,7 @@ fun WardrobeScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(text = shape.iconEmoji, fontSize = 24.sp)
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                                     Text(
                                         text = shape.displayName,
                                         color = if (isSelected) MaterialTheme.colorScheme.primary else TextPrimary,
@@ -547,7 +548,7 @@ fun WardrobeScreen(
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = MaterialTheme.spacing.small)
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -562,7 +563,7 @@ fun WardrobeScreen(
                                                 CircleShape
                                             )
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                                     Text(
                                         text = skin.displayName,
                                         color = if (isSelected) Color(skin.primaryHex) else TextPrimary,
@@ -590,7 +591,7 @@ fun WardrobeScreen(
                 item(key = "memory_empty") {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -638,7 +639,7 @@ fun WardrobeScreen(
                                     fontSize = 10.sp
                                 )
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                             Text(
                                 text = mem.memoryText,
                                 color = TextPrimary,

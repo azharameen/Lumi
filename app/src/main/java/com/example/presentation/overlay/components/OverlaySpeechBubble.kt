@@ -33,6 +33,8 @@ import com.example.core.theme.LumiGold
 import com.example.core.theme.LumiPink
 import com.example.core.theme.ObsidianDark
 import com.example.core.theme.TextPrimary
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 /**
  * Floating speech/listening bubble rendered directly above the compact Lumi overlay pet.
@@ -79,10 +81,10 @@ fun OverlaySpeechBubble(
         modifier = modifier
     ) {
         Surface(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(MaterialTheme.spacing.medium),
             color = ObsidianDark.copy(alpha = 0.94f),
             border = BorderStroke(1.2.dp, bubbleBorderColor),
-            shadowElevation = 8.dp,
+            shadowElevation = MaterialTheme.spacing.small,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 6.dp)

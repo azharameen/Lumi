@@ -131,6 +131,8 @@ import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import com.example.core.theme.TextTertiary
 import com.example.presentation.viewmodel.LumiViewModel
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun MetricBadge(title: String, value: String, icon: ImageVector, color: Color, modifier: Modifier = Modifier) {
@@ -144,7 +146,7 @@ fun MetricBadge(title: String, value: String, icon: ImageVector, color: Color, m
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
             Text(text = title, color = TextSecondary, fontSize = 10.sp)
             Text(text = value, color = color, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }

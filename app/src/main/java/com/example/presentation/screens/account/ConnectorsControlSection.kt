@@ -135,6 +135,8 @@ import com.example.core.theme.SurfaceHighlight
 import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import com.example.core.theme.TextTertiary
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 
 @Composable
@@ -161,8 +163,8 @@ fun ConnectorsControlSection(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
+            .padding(horizontal = MaterialTheme.spacing.medium),
+        contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 90.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
@@ -272,7 +274,7 @@ fun ConnectorsControlSection(
             onDismissRequest = { showGithubDialog = false },
             title = { Text(stringResource(id = R.string.text_configure_github_token), color = androidx.compose.material3.MaterialTheme.colorScheme.primary) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
                     OutlinedTextField(
                         value = userText,
                         onValueChange = { userText = it },
@@ -325,7 +327,7 @@ fun ConnectorsControlSection(
             onDismissRequest = { showSlackDialog = false },
             title = { Text(stringResource(id = R.string.text_configure_slack_webhook), color = LumiGold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
                     OutlinedTextField(
                         value = channelText,
                         onValueChange = { channelText = it },

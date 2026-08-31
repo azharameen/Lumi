@@ -136,6 +136,8 @@ import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import com.example.core.theme.TextTertiary
 import com.example.presentation.viewmodel.LumiViewModel
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun PrivacyAndVaultSection(
@@ -154,18 +156,18 @@ fun PrivacyAndVaultSection(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = MaterialTheme.spacing.medium),
+        contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 90.dp),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
     ) {
         // Floating Overlay Settings
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Text(
                         text = stringResource(R.string.text_floating_companion_overlay),
                         color = LumiPink,
@@ -181,7 +183,7 @@ fun PrivacyAndVaultSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Default.Layers, contentDescription = null, tint = LumiPink, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.Layers, contentDescription = null, tint = LumiPink, modifier = Modifier.size(MaterialTheme.spacing.large))
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(stringResource(id = R.string.text_lumi_floating_pet), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -208,10 +210,10 @@ fun PrivacyAndVaultSection(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Text(
                         text = stringResource(R.string.text_security_biometric_access),
                         color = LumiMint,
@@ -227,7 +229,7 @@ fun PrivacyAndVaultSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                            Icon(Icons.Default.Fingerprint, contentDescription = null, tint = LumiMint, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.Fingerprint, contentDescription = null, tint = LumiMint, modifier = Modifier.size(MaterialTheme.spacing.large))
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(stringResource(id = R.string.text_biometric_lock_for_memory_vaul), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -254,10 +256,10 @@ fun PrivacyAndVaultSection(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Text(
                         text = stringResource(R.string.text_ondevice_storage_statistics),
                         color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
@@ -273,7 +275,7 @@ fun PrivacyAndVaultSection(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
                     ) {
                         DbStatPill(label = "Tasks", count = taskCount, color = LumiYellow, modifier = Modifier.weight(1f))
                         DbStatPill(label = "Events", count = eventCount, color = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
@@ -288,10 +290,10 @@ fun PrivacyAndVaultSection(
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                     Text(
                         text = stringResource(R.string.text_data_portability_backup),
                         color = LumiGold,
@@ -309,12 +311,12 @@ fun PrivacyAndVaultSection(
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.Storage, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(Icons.Default.Storage, contentDescription = null, modifier = Modifier.size(MaterialTheme.spacing.medium))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                         Text(stringResource(id = R.string.text_export_data_vault_json), fontWeight = FontWeight.Bold)
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
 
                     Button(
                         onClick = onResetClicked,
@@ -322,8 +324,8 @@ fun PrivacyAndVaultSection(
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = LumiPink, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(Icons.Default.DeleteSweep, contentDescription = null, tint = LumiPink, modifier = Modifier.size(MaterialTheme.spacing.medium))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                         Text(stringResource(id = R.string.text_clear_chat_logs_analytics), color = LumiPink, fontWeight = FontWeight.Bold)
                     }
                 }

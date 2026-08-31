@@ -56,6 +56,8 @@ import com.example.core.theme.SurfaceDark
 import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import kotlinx.coroutines.delay
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun BreathingExerciseModal(
@@ -100,9 +102,9 @@ fun BreathingExerciseModal(
         Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(MaterialTheme.spacing.medium),
             color = ObsidianDark,
-            shape = RoundedCornerShape(24.dp)
+            shape = RoundedCornerShape(MaterialTheme.spacing.large)
         ) {
             Column(
                 modifier = Modifier
@@ -202,7 +204,7 @@ fun BreathingExerciseModal(
                         fontWeight = FontWeight.Medium,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                     Button(
                         onClick = onDismiss,
                         colors = ButtonDefaults.buttonColors(containerColor = SurfaceDark, contentColor = TextPrimary),

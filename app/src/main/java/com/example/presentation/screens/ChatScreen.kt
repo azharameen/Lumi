@@ -68,6 +68,7 @@ import com.example.core.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.core.theme.spacing
 
 @Composable
 fun ChatScreen(
@@ -117,7 +118,7 @@ fun ChatScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = MaterialTheme.spacing.medium, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -194,7 +195,7 @@ fun ChatScreen(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = MaterialTheme.spacing.medium),
             contentPadding = PaddingValues(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -233,7 +234,7 @@ fun ChatScreen(
                 .fillMaxWidth()
                 .background(SurfaceDark.copy(alpha = 0.6f))
                 .padding(horizontal = 12.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
         ) {
             items(quickStarters) { prompt ->
                 Surface(
@@ -262,7 +263,7 @@ fun ChatScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = MaterialTheme.spacing.small),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Camera Vision
@@ -293,7 +294,7 @@ fun ChatScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
 
                 OutlinedTextField(
                     value = uiState.inputText,
@@ -351,35 +352,35 @@ fun ChatMessageBubble(message: ChatMessageEntity) {
             val isGemmaOnDevice = message.content.contains("[Gemma On-Device]")
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 5.dp, start = 4.dp)
+                modifier = Modifier.padding(bottom = 5.dp, start = MaterialTheme.spacing.extraSmall)
             ) {
                 Text(text = stringResource(R.string.text_lumi), color = androidx.compose.material3.MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.width(6.dp))
                 message.petEmotion.let { emo ->
                     Surface(
                         color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
-                        shape = RoundedCornerShape(4.dp)
+                        shape = RoundedCornerShape(MaterialTheme.spacing.extraSmall)
                     ) {
                         Text(
                             text = emo,
                             color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             fontSize = 9.sp,
                             fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.extraSmall, vertical = 1.dp)
                         )
                     }
                 }
                 Spacer(modifier = Modifier.width(6.dp))
                 Surface(
                     color = if (isGemmaOnDevice) LumiGreen.copy(alpha = 0.15f) else androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(4.dp)
+                    shape = RoundedCornerShape(MaterialTheme.spacing.extraSmall)
                 ) {
                     Text(
                         text = if (isGemmaOnDevice) "⚡ Gemma 2B (Local)" else "☁️ Gemini 2.5 Flash",
                         color = if (isGemmaOnDevice) LumiGreen else androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.extraSmall, vertical = 1.dp)
                     )
                 }
             }
@@ -390,8 +391,8 @@ fun ChatMessageBubble(message: ChatMessageEntity) {
             shape = RoundedCornerShape(
                 topStart = 18.dp,
                 topEnd = 18.dp,
-                bottomStart = if (isUser) 18.dp else 4.dp,
-                bottomEnd = if (isUser) 4.dp else 18.dp
+                bottomStart = if (isUser) 18.dp else MaterialTheme.spacing.extraSmall,
+                bottomEnd = if (isUser) MaterialTheme.spacing.extraSmall else 18.dp
             ),
             border = if (isUser) null else BorderStroke(1.dp, SurfaceHighlight.copy(alpha = 0.5f)),
             shadowElevation = 2.dp,
@@ -401,12 +402,12 @@ fun ChatMessageBubble(message: ChatMessageEntity) {
                 if (message.imageBase64OrUri != null) {
                     Row(
                         modifier = Modifier
-                            .background(ObsidianDark.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                            .background(ObsidianDark.copy(alpha = 0.6f), RoundedCornerShape(MaterialTheme.spacing.small))
+                            .padding(horizontal = MaterialTheme.spacing.small, vertical = MaterialTheme.spacing.extraSmall),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(imageVector = Icons.Default.CameraAlt, contentDescription = null, tint = if (isUser) ObsidianDark else androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                         Text(text = stringResource(R.string.text_captured_image_shared), color = if (isUser) ObsidianDark else TextPrimary, fontSize = 11.sp)
                     }
                     Spacer(modifier = Modifier.height(6.dp))
@@ -423,13 +424,13 @@ fun ChatMessageBubble(message: ChatMessageEntity) {
 
                 // Tool Execution Report Badge
                 if (message.toolUsedName != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
                     Card(
                         colors = CardDefaults.cardColors(containerColor = ObsidianDark.copy(alpha = 0.7f)),
-                        shape = RoundedCornerShape(8.dp)
+                        shape = RoundedCornerShape(MaterialTheme.spacing.small)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
@@ -455,7 +456,7 @@ fun ChatMessageBubble(message: ChatMessageEntity) {
             text = timeFormat.format(Date(message.timestamp)),
             color = TextTertiary,
             fontSize = 9.sp,
-            modifier = Modifier.padding(top = 3.dp, start = 4.dp, end = 4.dp)
+            modifier = Modifier.padding(top = 3.dp, start = MaterialTheme.spacing.extraSmall, end = MaterialTheme.spacing.extraSmall)
         )
     }
 }

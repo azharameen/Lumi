@@ -22,6 +22,8 @@ import com.example.core.theme.LumiCyan
 import com.example.core.theme.LumiPink
 import com.example.core.theme.LumiViolet
 import kotlin.math.sin
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun VoiceWaveformVisualizer(
@@ -50,7 +52,7 @@ fun VoiceWaveformVisualizer(
             .height(36.dp)
     ) {
         val barCount = 18
-        val barWidth = 4.dp.toPx()
+        val barWidth = MaterialTheme.spacing.extraSmall.toPx()
         val spacing = (size.width - (barCount * barWidth)) / (barCount - 1)
         val cy = size.height / 2
 

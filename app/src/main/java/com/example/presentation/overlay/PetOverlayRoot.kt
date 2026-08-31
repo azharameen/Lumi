@@ -58,6 +58,8 @@ import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.random.Random
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 /**
  * Clean & Reactive Voice-First Pet Overlay Root.
@@ -217,7 +219,7 @@ fun PetOverlayRoot(
     Box(
         modifier = Modifier
             .width(180.dp)
-            .padding(horizontal = 4.dp),
+            .padding(horizontal = MaterialTheme.spacing.extraSmall),
         contentAlignment = Alignment.BottomCenter
     ) {
         Column(

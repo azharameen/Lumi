@@ -73,6 +73,8 @@ import com.example.core.theme.TextSecondary
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -89,9 +91,9 @@ fun CameraVisionDialog(
         Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(MaterialTheme.spacing.medium),
             color = ObsidianDark,
-            shape = RoundedCornerShape(24.dp)
+            shape = RoundedCornerShape(MaterialTheme.spacing.large)
         ) {
             if (cameraPermissionState.status.isGranted) {
                 CameraPreviewContent(
@@ -116,7 +118,7 @@ private fun CameraPermissionRequestView(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(MaterialTheme.spacing.large),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -133,14 +135,14 @@ private fun CameraPermissionRequestView(
                 modifier = Modifier.size(36.dp)
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
         Text(
             text = stringResource(R.string.text_let_lumi_see_your_world),
             color = TextPrimary,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
         Text(
             text = stringResource(R.string.text_lumi_uses_camera_vision_to_examine),
             color = TextSecondary,
@@ -148,7 +150,7 @@ private fun CameraPermissionRequestView(
             lineHeight = 20.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
         Button(
             onClick = onRequest,
             colors = ButtonDefaults.buttonColors(containerColor = LumiCyan, contentColor = ObsidianDark),
@@ -156,7 +158,7 @@ private fun CameraPermissionRequestView(
         ) {
             Text(stringResource(id = R.string.text_grant_camera_access), fontWeight = FontWeight.Bold)
         }
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
         Button(
             onClick = onDismiss,
             colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = TextSecondary)
@@ -214,7 +216,7 @@ private fun CameraPreviewContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(MaterialTheme.spacing.medium)
                 .align(Alignment.TopCenter),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -231,7 +233,7 @@ private fun CameraPreviewContent(
                         imageVector = Icons.Default.AutoAwesome,
                         contentDescription = null,
                         tint = LumiCyan,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(MaterialTheme.spacing.medium)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(stringResource(id = R.string.text_lumi_multimodal_vision), color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
@@ -283,7 +285,7 @@ private fun CameraPreviewContent(
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
                 .background(ObsidianDark.copy(alpha = 0.85f))
-                .padding(16.dp),
+                .padding(MaterialTheme.spacing.medium),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Preset prompt selector
@@ -293,7 +295,7 @@ private fun CameraPreviewContent(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -308,7 +310,7 @@ private fun CameraPreviewContent(
                     }
                     Surface(
                         color = if (isSelected) LumiCyan.copy(alpha = 0.25f) else SurfaceDark,
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(MaterialTheme.spacing.small),
                         modifier = Modifier
                             .clickable { selectedPromptPreset = prompt }
                             .padding(2.dp)
@@ -324,7 +326,7 @@ private fun CameraPreviewContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
             // Capture button
             Box(
@@ -356,7 +358,7 @@ private fun CameraPreviewContent(
                     imageVector = Icons.Default.CameraAlt,
                     contentDescription = stringResource(id = R.string.desc_capture),
                     tint = ObsidianDark,
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(MaterialTheme.spacing.extraLarge)
                 )
             }
         }

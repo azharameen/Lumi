@@ -131,6 +131,8 @@ import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import com.example.core.theme.TextTertiary
 import com.example.presentation.viewmodel.LumiViewModel
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun ProfileFieldRow(label: String, value: String, icon: ImageVector) {
@@ -140,7 +142,7 @@ fun ProfileFieldRow(label: String, value: String, icon: ImageVector) {
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(imageVector = icon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+        Icon(imageVector = icon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(MaterialTheme.spacing.medium))
         Spacer(modifier = Modifier.width(10.dp))
         Text(text = "$label:", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.width(130.dp))
         Text(text = value, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)

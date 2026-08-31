@@ -131,6 +131,8 @@ import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import com.example.core.theme.TextTertiary
 import com.example.presentation.viewmodel.LumiViewModel
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun RoutineBadge(label: String, time: String, color: Color, modifier: Modifier = Modifier) {
@@ -143,8 +145,8 @@ fun RoutineBadge(label: String, time: String, color: Color, modifier: Modifier =
             modifier = Modifier.padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(imageVector = Icons.Default.Schedule, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(8.dp))
+            Icon(imageVector = Icons.Default.Schedule, contentDescription = null, tint = color, modifier = Modifier.size(MaterialTheme.spacing.medium))
+            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
             Column {
                 Text(text = label, color = TextSecondary, fontSize = 10.sp)
                 Text(text = time, color = color, fontSize = 13.sp, fontWeight = FontWeight.Bold)

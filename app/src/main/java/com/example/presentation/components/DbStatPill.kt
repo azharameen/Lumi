@@ -131,6 +131,8 @@ import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import com.example.core.theme.TextTertiary
 import com.example.presentation.viewmodel.LumiViewModel
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun DbStatPill(label: String, count: Int, color: Color, modifier: Modifier = Modifier) {
@@ -140,7 +142,7 @@ fun DbStatPill(label: String, count: Int, color: Color, modifier: Modifier = Mod
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+            modifier = Modifier.padding(vertical = MaterialTheme.spacing.small, horizontal = MaterialTheme.spacing.extraSmall),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(text = "$count", color = color, fontSize = 15.sp, fontWeight = FontWeight.Bold)

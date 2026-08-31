@@ -134,6 +134,8 @@ import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import com.example.core.theme.TextTertiary
 import com.example.presentation.viewmodel.LumiViewModel
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun ConnectorCard(
@@ -148,7 +150,7 @@ fun ConnectorCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(MaterialTheme.spacing.medium),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -180,7 +182,7 @@ fun ConnectorCard(
             }
 
             if (onConfigure != null && isConnected) {
-                IconButton(onClick = onConfigure, modifier = Modifier.size(32.dp)) {
+                IconButton(onClick = onConfigure, modifier = Modifier.size(MaterialTheme.spacing.extraLarge)) {
                     Icon(Icons.Default.Tune, contentDescription = stringResource(id = R.string.desc_configure), tint = accentColor, modifier = Modifier.size(18.dp))
                 }
             }

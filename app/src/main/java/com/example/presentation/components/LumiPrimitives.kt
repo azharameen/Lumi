@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.theme.*
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 /**
  * Standard Lumi Glassmorphic Card Surface.
@@ -41,7 +43,7 @@ fun LumiCard(
     borderBrush: Brush? = null,
     borderWidth: Dp = 1.dp,
     shape: RoundedCornerShape = RoundedCornerShape(18.dp),
-    shadowElevation: Dp = 4.dp,
+    shadowElevation: Dp = MaterialTheme.spacing.extraSmall,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -61,7 +63,7 @@ fun LumiCard(
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(MaterialTheme.spacing.medium),
             content = content
         )
     }
@@ -158,7 +160,7 @@ fun LumiBadge(
     textColor: Color = accentColor,
     isPill: Boolean = false
 ) {
-    val shape = if (isPill) CircleShape else RoundedCornerShape(8.dp)
+    val shape = if (isPill) CircleShape else RoundedCornerShape(MaterialTheme.spacing.small)
     Surface(
         color = accentColor.copy(alpha = 0.18f),
         shape = shape,
@@ -166,7 +168,7 @@ fun LumiBadge(
         modifier = modifier
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.5.dp),
+            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = 3.5.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -177,7 +179,7 @@ fun LumiBadge(
                     tint = accentColor,
                     modifier = Modifier.size(12.dp)
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
             }
             Text(
                 text = text,
@@ -235,7 +237,7 @@ fun LumiStatCard(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
 
         Text(
             text = value,
@@ -317,18 +319,18 @@ fun LumiEmptyState(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
 
             Text(
                 text = description,
                 style = MaterialTheme.typography.bodySmall,
                 color = TextSecondary,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium)
             )
 
             if (actionButtonText != null && onActionClick != null) {
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                 LumiGradientButton(
                     text = actionButtonText,
                     onClick = onActionClick,
@@ -360,7 +362,7 @@ fun LumiGradientButton(
             containerColor = accentColor,
             disabledContainerColor = SurfaceHighlight
         ),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        contentPadding = PaddingValues(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.small),
         modifier = modifier
     ) {
         Row(
@@ -372,7 +374,7 @@ fun LumiGradientButton(
                     imageVector = leadingIcon,
                     contentDescription = null,
                     tint = ObsidianDark,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(MaterialTheme.spacing.medium)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
             }
@@ -395,7 +397,7 @@ fun LumiProgressBar(
     modifier: Modifier = Modifier,
     barColor: Color = MaterialTheme.colorScheme.primary,
     trackColor: Color = SurfaceHighlight,
-    height: Dp = 8.dp
+    height: Dp = MaterialTheme.spacing.small
 ) {
     val clampedProgress = progress.coerceIn(0f, 1f)
     Box(

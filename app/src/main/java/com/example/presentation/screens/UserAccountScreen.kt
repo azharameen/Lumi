@@ -141,6 +141,8 @@ import com.example.core.theme.SurfaceHighlight
 import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import com.example.core.theme.TextTertiary
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 
 data class AiModelInfo(
@@ -206,7 +208,7 @@ fun UserAccountScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .padding(horizontal = MaterialTheme.spacing.medium, vertical = 12.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -301,7 +303,7 @@ fun UserAccountScreen(
                             shape = RoundedCornerShape(10.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = 3.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
@@ -310,7 +312,7 @@ fun UserAccountScreen(
                                     tint = LumiMint,
                                     modifier = Modifier.size(12.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                                 Text(
                                     text = stringResource(R.string.text_lumi_synchronized),
                                     color = LumiMint,
@@ -375,7 +377,7 @@ fun UserAccountScreen(
                                 },
                                 contentDescription = title,
                                 tint = if (isSelected) tabColor else TextSecondary,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(MaterialTheme.spacing.medium)
                             )
                         },
                         modifier = Modifier.testTag("account_tab_$index")

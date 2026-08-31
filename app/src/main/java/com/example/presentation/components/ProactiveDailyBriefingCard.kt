@@ -49,6 +49,8 @@ import com.example.core.theme.SurfaceDark
 import com.example.core.theme.SurfaceDarkVariant
 import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 
 @Composable
@@ -78,7 +80,7 @@ fun ProactiveDailyBriefingCard(
                         )
                     )
                 )
-                .padding(16.dp)
+                .padding(MaterialTheme.spacing.medium)
         ) {
             Column {
                 Row(
@@ -124,7 +126,7 @@ fun ProactiveDailyBriefingCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(
                             onClick = { onSpeakBriefing() },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(MaterialTheme.spacing.extraLarge)
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.VolumeUp,
@@ -136,7 +138,7 @@ fun ProactiveDailyBriefingCard(
 
                         IconButton(
                             onClick = { isExpanded = !isExpanded },
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(MaterialTheme.spacing.extraLarge)
                         ) {
                             Icon(
                                 imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -148,7 +150,7 @@ fun ProactiveDailyBriefingCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
                 Text(
                     text = dailyBriefing.focusGoal,
                     color = TextPrimary.copy(alpha = 0.9f),
@@ -172,7 +174,7 @@ fun ProactiveDailyBriefingCard(
                         dailyBriefing.highlights.forEach { item ->
                             Surface(
                                 color = SurfaceDarkVariant.copy(alpha = 0.6f),
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(MaterialTheme.spacing.small),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Text(
@@ -184,10 +186,10 @@ fun ProactiveDailyBriefingCard(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                         Surface(
                             color = LumiViolet.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(MaterialTheme.spacing.small),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {

@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.local.entity.TaskEntity
 import com.example.core.theme.*
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun TasksSection(
@@ -49,8 +51,8 @@ fun TasksSection(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
+                .padding(horizontal = MaterialTheme.spacing.medium),
+            contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             // Task Progress Summary Card
@@ -96,7 +98,7 @@ fun TasksSection(
             // Category Filter Chips
             item {
                 LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(categories) { category ->
@@ -111,7 +113,7 @@ fun TasksSection(
                                 color = if (isSelected) ObsidianDark else TextSecondary,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = MaterialTheme.spacing.small)
                             )
                         }
                     }
@@ -169,20 +171,20 @@ fun TasksSection(
                                     fontWeight = if (task.isCompleted) FontWeight.Normal else FontWeight.Bold,
                                     textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None
                                 )
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     LumiBadge(
                                         text = task.priority.uppercase(),
                                         accentColor = priorityColor
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                                     Text(
                                         text = task.category,
                                         color = TextSecondary,
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                     if (task.estimatedMinutes > 0) {
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                                         Icon(
                                             imageVector = Icons.Default.Timer,
                                             contentDescription = null,
@@ -201,7 +203,7 @@ fun TasksSection(
 
                             IconButton(
                                 onClick = { onAction(com.example.presentation.viewmodel.LumiUiAction.DeleteTask(task)) },
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(MaterialTheme.spacing.extraLarge)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
@@ -220,10 +222,10 @@ fun TasksSection(
             onClick = { showAddTaskDialog = true },
             containerColor = LumiGold,
             contentColor = ObsidianDark,
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(MaterialTheme.spacing.medium),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = 24.dp, end = 20.dp)
+                .padding(bottom = MaterialTheme.spacing.large, end = 20.dp)
                 .testTag("btn_add_task")
         ) {
             Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(id = R.string.desc_add_task))

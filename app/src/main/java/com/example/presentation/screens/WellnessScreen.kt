@@ -85,6 +85,8 @@ import com.example.presentation.viewmodel.LumiViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun WellnessScreen(
@@ -112,9 +114,9 @@ fun WellnessScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(ObsidianDark)
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 90.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = MaterialTheme.spacing.medium),
+        contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 90.dp),
+        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
     ) {
         // Top Header
         item {
@@ -220,7 +222,7 @@ fun WellnessScreen(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
 
                 // Energy Level Slider
                 Text(
@@ -263,16 +265,16 @@ fun WellnessScreen(
                     Row {
                         IconButton(
                             onClick = { if (hydrationCups > 0) hydrationCups-- },
-                            modifier = Modifier.size(32.dp).background(SurfaceHighlight, CircleShape)
+                            modifier = Modifier.size(MaterialTheme.spacing.extraLarge).background(SurfaceHighlight, CircleShape)
                         ) {
                             Text(stringResource(id = R.string.text_), color = TextPrimary, fontWeight = FontWeight.Bold)
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                         IconButton(
                             onClick = { hydrationCups++ },
-                            modifier = Modifier.size(32.dp).background(androidx.compose.material3.MaterialTheme.colorScheme.primary, CircleShape)
+                            modifier = Modifier.size(MaterialTheme.spacing.extraLarge).background(androidx.compose.material3.MaterialTheme.colorScheme.primary, CircleShape)
                         ) {
-                            Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(id = R.string.desc_add_cup), tint = ObsidianDark, modifier = Modifier.size(16.dp))
+                            Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(id = R.string.desc_add_cup), tint = ObsidianDark, modifier = Modifier.size(MaterialTheme.spacing.medium))
                         }
                     }
 
@@ -315,7 +317,7 @@ fun WellnessScreen(
                             isSubmittedToday = true
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = LumiPink, contentColor = ObsidianDark),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(46.dp)
@@ -351,7 +353,7 @@ fun WellnessScreen(
                                 tint = if (uiState.isMemoryVaultUnlocked) LumiGreen else LumiGold,
                                 modifier = Modifier.size(20.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                             Text(
                                 text = stringResource(R.string.text_biometric_memory_vault),
                                 color = TextPrimary,
@@ -365,7 +367,7 @@ fun WellnessScreen(
                                 onClick = { appViewModel.lockMemoryVault() },
                                 colors = ButtonDefaults.buttonColors(containerColor = SurfaceHighlight, contentColor = TextSecondary),
                                 shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = MaterialTheme.spacing.extraSmall),
                                 modifier = Modifier.height(30.dp)
                             ) {
                                 Text(stringResource(id = R.string.text_lock), fontSize = 11.sp)
@@ -373,7 +375,7 @@ fun WellnessScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
 
                     if (!uiState.isMemoryVaultUnlocked) {
                         Text(
@@ -392,7 +394,7 @@ fun WellnessScreen(
                                 .testTag("unlock_biometric_vault_btn")
                         ) {
                             Icon(imageVector = Icons.Default.Fingerprint, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                             Text(stringResource(id = R.string.text_unlock_with_fingerprint_pin), fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
 
@@ -423,7 +425,7 @@ fun WellnessScreen(
                                     shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
+                                        .padding(vertical = MaterialTheme.spacing.extraSmall)
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(10.dp),
@@ -435,7 +437,7 @@ fun WellnessScreen(
                                             tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(18.dp)
                                         )
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                                         Column {
                                             Text(
                                                 text = memory.category.uppercase(),
@@ -486,7 +488,7 @@ fun WellnessScreen(
                 if (log != null) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = SurfaceDarkVariant),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -504,21 +506,21 @@ fun WellnessScreen(
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                                 Text(
                                     text = "Mood ${log.moodScore}/10 • Energy ${log.energyLevel}/10",
                                     color = TextSecondary,
                                     fontSize = 11.sp
                                 )
                             }
-                            Spacer(modifier = Modifier.height(4.dp))
+                            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                             Text(
                                 text = "💧 ${log.hydrationCups} cups water • ${dateFormat.format(Date(log.timestamp))}",
                                 color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 fontSize = 11.sp
                             )
                             if (!log.gratitudeNote.isNullOrBlank()) {
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                                 Text(
                                     text = "\"${log.gratitudeNote}\"",
                                     color = TextPrimary.copy(alpha = 0.85f),
@@ -533,7 +535,7 @@ fun WellnessScreen(
                                 .size(34.dp)
                                 .background(androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), CircleShape)
                         ) {
-                            Icon(imageVector = Icons.Default.WaterDrop, contentDescription = stringResource(id = R.string.desc_add_water), tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                            Icon(imageVector = Icons.Default.WaterDrop, contentDescription = stringResource(id = R.string.desc_add_water), tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(MaterialTheme.spacing.medium))
                         }
                     }
                 }

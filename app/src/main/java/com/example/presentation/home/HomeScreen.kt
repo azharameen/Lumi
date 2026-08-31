@@ -65,6 +65,8 @@ import com.example.core.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 /**
  * Gamified Agentic AI Command Center.
@@ -181,7 +183,7 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 2.dp),
+                .padding(horizontal = MaterialTheme.spacing.medium, vertical = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -208,7 +210,7 @@ fun HomeScreen(
                 onClick = onNavigateToChat
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
 
             // ==========================================
             // 3. CENTER: LIVING AI COMPANION WITH CARE FAB (LEFT) & STUDIO/QUESTS (RIGHT)
@@ -272,7 +274,7 @@ fun HomeScreen(
                     },
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(start = 2.dp, top = 16.dp)
+                        .padding(start = 2.dp, top = MaterialTheme.spacing.medium)
                 )
 
                 // RIGHT SIDE OF PET: Studio & Quest Buttons
@@ -282,7 +284,7 @@ fun HomeScreen(
                     onShowQuests = { showQuestsBottomSheet = true },
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(end = 2.dp, top = 16.dp)
+                        .padding(end = 2.dp, top = MaterialTheme.spacing.medium)
                 )
 
                 // Floating Reward Pop-up animation
@@ -296,7 +298,7 @@ fun HomeScreen(
                         Surface(
                             color = petPrimary.copy(alpha = 0.92f),
                             shape = RoundedCornerShape(12.dp),
-                            shadowElevation = 8.dp
+                            shadowElevation = MaterialTheme.spacing.small
                         ) {
                             Text(
                                 text = text,
@@ -310,7 +312,7 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
 
             // ==========================================
             // 4. ACTION BUTTONS BELOW PET: MIC (LEFT) | CHAT (CENTER) | CAMERA (RIGHT)
@@ -339,9 +341,9 @@ fun HomeScreen(
                 // Life Hub Button
                 Surface(
                     color = SurfaceDark.copy(alpha = 0.88f),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                     border = BorderStroke(1.2.dp, LumiGold.copy(alpha = 0.6f)),
-                    shadowElevation = 4.dp,
+                    shadowElevation = MaterialTheme.spacing.extraSmall,
                     modifier = Modifier
                         .weight(1f)
                         .clickable { onNavigateToLifeHub(0) }
@@ -370,9 +372,9 @@ fun HomeScreen(
                 // Wellness Button
                 Surface(
                     color = SurfaceDark.copy(alpha = 0.88f),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                     border = BorderStroke(1.2.dp, LumiPink.copy(alpha = 0.6f)),
-                    shadowElevation = 4.dp,
+                    shadowElevation = MaterialTheme.spacing.extraSmall,
                     modifier = Modifier
                         .weight(1f)
                         .clickable { onNavigateToWellness() }
@@ -399,7 +401,7 @@ fun HomeScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
         }
 
         // ==========================================
@@ -424,8 +426,8 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.MilitaryTech, contentDescription = null, tint = LumiGold, modifier = Modifier.size(24.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(Icons.Default.MilitaryTech, contentDescription = null, tint = LumiGold, modifier = Modifier.size(MaterialTheme.spacing.large))
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                             Text(stringResource(id = R.string.text_active_quests_bounties), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = TextPrimary)
                         }
                         Surface(
@@ -437,26 +439,26 @@ fun HomeScreen(
                                 color = LumiCyan,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.extraSmall)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
                     val pending = tasks.filter { !it.isCompleted }
                     if (pending.isEmpty()) {
                         Surface(
                             color = SurfaceDarkVariant.copy(alpha = 0.6f),
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp)
+                            shape = RoundedCornerShape(MaterialTheme.spacing.medium),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.large)
                         ) {
                             Column(
-                                modifier = Modifier.padding(24.dp),
+                                modifier = Modifier.padding(MaterialTheme.spacing.large),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Icon(Icons.Default.CheckCircle, contentDescription = null, tint = LumiGreen, modifier = Modifier.size(48.dp))
-                                Spacer(modifier = Modifier.height(8.dp))
+                                Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
                                 Text(stringResource(id = R.string.text_all_quests_cleared), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                                 Text(stringResource(id = R.string.text_your_companion_is_thrilled_che), color = TextSecondary, fontSize = 13.sp, textAlign = TextAlign.Center)
                             }
@@ -478,7 +480,7 @@ fun HomeScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
                     Button(
                         onClick = {
@@ -491,11 +493,11 @@ fun HomeScreen(
                         border = BorderStroke(1.dp, petPrimary.copy(alpha = 0.4f))
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, tint = petPrimary, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                         Text(stringResource(id = R.string.text_create_new_quest_in_life_hub), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
                 }
             }
         }

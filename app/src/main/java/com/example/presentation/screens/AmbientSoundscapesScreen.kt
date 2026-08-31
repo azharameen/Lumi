@@ -77,6 +77,8 @@ import com.example.core.theme.SurfaceDarkVariant
 import com.example.core.theme.SurfaceHighlight
 import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 
 @Composable
@@ -106,9 +108,9 @@ fun AmbientSoundscapesScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(top = 16.dp, bottom = 96.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = MaterialTheme.spacing.medium),
+            contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
         ) {
             // Hero Focus Room Card
             item {
@@ -146,7 +148,7 @@ fun AmbientSoundscapesScreen(
                                         tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(20.dp)
                                     )
-                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                                     Text(
                                         text = stringResource(R.string.text_ambient_focus_room),
                                         color = TextPrimary,
@@ -156,14 +158,14 @@ fun AmbientSoundscapesScreen(
                                 }
                                 Surface(
                                     color = if (soundState.isPlaying) LumiGreen.copy(alpha = 0.2f) else SurfaceHighlight,
-                                    shape = RoundedCornerShape(8.dp)
+                                    shape = RoundedCornerShape(MaterialTheme.spacing.small)
                                 ) {
                                     Text(
                                         text = if (soundState.isPlaying) "PLAYING" else "IDLE",
                                         color = if (soundState.isPlaying) LumiGreen else TextSecondary,
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = 3.dp)
                                     )
                                 }
                             }
@@ -201,7 +203,7 @@ fun AmbientSoundscapesScreen(
                                 modifier = Modifier.padding(horizontal = 12.dp)
                             )
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
 
                             // Timer Display if active
                             if (soundState.isTimerActive) {
@@ -219,18 +221,18 @@ fun AmbientSoundscapesScreen(
                                         fontSize = 28.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                                     LinearProgressIndicator(
                                         progress = { timerProgress },
                                         color = LumiGold,
                                         trackColor = SurfaceHighlight,
                                         modifier = Modifier
                                             .fillMaxWidth(0.6f)
-                                            .height(4.dp)
+                                            .height(MaterialTheme.spacing.extraSmall)
                                             .clip(RoundedCornerShape(2.dp))
                                     )
                                 }
-                                Spacer(modifier = Modifier.height(16.dp))
+                                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                             }
 
                             // Play / Pause Main Controls
@@ -276,9 +278,9 @@ fun AmbientSoundscapesScreen(
                                             imageVector = Icons.Default.Stop,
                                             contentDescription = null,
                                             tint = TextPrimary,
-                                            modifier = Modifier.size(16.dp)
+                                            modifier = Modifier.size(MaterialTheme.spacing.medium)
                                         )
-                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                                         Text(stringResource(id = R.string.text_stop_timer), color = TextPrimary)
                                     }
                                 }
@@ -292,10 +294,10 @@ fun AmbientSoundscapesScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                     colors = CardDefaults.cardColors(containerColor = SurfaceDark)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 imageVector = Icons.Default.Timer,
@@ -303,7 +305,7 @@ fun AmbientSoundscapesScreen(
                                 tint = LumiGold,
                                 modifier = Modifier.size(18.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                             Text(
                                 text = stringResource(R.string.text_focus_session_timers),
                                 color = TextPrimary,
@@ -314,7 +316,7 @@ fun AmbientSoundscapesScreen(
                         Spacer(modifier = Modifier.height(10.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
                         ) {
                             listOf(
                                 Triple(15, "15 min", "Quick Reset"),
@@ -358,10 +360,10 @@ fun AmbientSoundscapesScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(MaterialTheme.spacing.medium),
                     colors = CardDefaults.cardColors(containerColor = SurfaceDark)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -374,7 +376,7 @@ fun AmbientSoundscapesScreen(
                                     tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(18.dp)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                                 Text(
                                     text = stringResource(R.string.text_soundscape_volume),
                                     color = TextPrimary,
@@ -409,7 +411,7 @@ fun AmbientSoundscapesScreen(
                     color = TextPrimary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall)
                 )
             }
 

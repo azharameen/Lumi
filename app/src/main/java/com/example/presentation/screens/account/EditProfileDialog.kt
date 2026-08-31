@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import com.example.domain.account.UserProfileData
 import com.example.presentation.components.LumiDialog
 import com.example.core.theme.*
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun EditProfileDialog(
@@ -124,7 +126,7 @@ fun EditProfileDialog(
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
                 ) {
                     OutlinedTextField(
                         value = wakeTime,

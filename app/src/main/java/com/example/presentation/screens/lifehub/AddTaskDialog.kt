@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presentation.components.LumiDialog
 import com.example.core.theme.*
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun AddTaskDialog(
@@ -63,7 +65,7 @@ fun AddTaskDialog(
             )
 
             Text(text = stringResource(R.string.text_category_2), color = TextSecondary, style = MaterialTheme.typography.labelSmall)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
                 items(categories) { cat ->
                     val isSelected = category == cat
                     Surface(
@@ -83,7 +85,7 @@ fun AddTaskDialog(
             }
 
             Text(text = stringResource(R.string.text_priority_level), color = TextSecondary, style = MaterialTheme.typography.labelSmall)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
                 priorities.forEach { prio ->
                     val isSelected = priority == prio
                     val prioColor = when (prio) {

@@ -116,6 +116,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 /**
  * Life Hub Screen: Unifies Schedule & Agenda, Task Management, and Mind & Wellness into a powerful,
@@ -159,7 +161,7 @@ fun LifeHubScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                            .padding(horizontal = MaterialTheme.spacing.medium, vertical = MaterialTheme.spacing.extraSmall),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -183,7 +185,7 @@ fun LifeHubScreen(
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.extraSmall),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
@@ -192,7 +194,7 @@ fun LifeHubScreen(
                                     tint = LumiGold,
                                     modifier = Modifier.size(14.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                                 Text(
                                     text = stringResource(R.string.text_lumi_sync),
                                     color = LumiGold,

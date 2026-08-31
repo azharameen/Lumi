@@ -33,6 +33,8 @@ import com.example.core.theme.*
 import com.example.presentation.viewmodel.LumiViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun OnboardingScreen(
@@ -99,7 +101,7 @@ fun WelcomeStep(onNext: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(MaterialTheme.spacing.large),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -150,7 +152,7 @@ fun WelcomeStep(onNext: () -> Unit) {
             style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
             color = TextSecondary,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium)
         )
         
         Spacer(modifier = Modifier.weight(1f))
@@ -161,11 +163,11 @@ fun WelcomeStep(onNext: () -> Unit) {
                 .fillMaxWidth()
                 .height(54.dp),
             colors = ButtonDefaults.buttonColors(containerColor = LumiCyan),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(MaterialTheme.spacing.medium)
         ) {
             Text(stringResource(id = R.string.text_begin_journey), fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
         }
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraLarge))
     }
 }
 
@@ -178,9 +180,9 @@ fun PersonaStep(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .padding(MaterialTheme.spacing.large)
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
         Text(
             text = stringResource(R.string.text_choose_a_persona),
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
@@ -193,7 +195,7 @@ fun PersonaStep(
             color = TextSecondary
         )
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
         
         Column(
             verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -204,14 +206,14 @@ fun PersonaStep(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(MaterialTheme.spacing.medium))
                         .clickable { onSelect(persona) },
                     color = if (isSelected) persona.accentColor.copy(alpha = 0.15f) else SurfaceDarkVariant.copy(alpha = 0.6f),
                     border = if (isSelected) BorderStroke(1.5.dp, persona.accentColor) else BorderStroke(1.dp, SurfaceHighlight.copy(alpha = 0.4f)),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(MaterialTheme.spacing.medium)
                 ) {
                     Row(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.padding(MaterialTheme.spacing.medium),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
@@ -251,11 +253,11 @@ fun PersonaStep(
                 .fillMaxWidth()
                 .height(54.dp),
             colors = ButtonDefaults.buttonColors(containerColor = currentPersona.accentColor),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(MaterialTheme.spacing.medium)
         ) {
             Text(stringResource(id = R.string.text_continue), fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
         }
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraLarge))
     }
 }
 
@@ -271,9 +273,9 @@ fun NameAndGoalStep(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .padding(MaterialTheme.spacing.large)
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
         Text(
             text = stringResource(R.string.text_final_touches),
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
@@ -329,14 +331,14 @@ fun NameAndGoalStep(
                 .fillMaxWidth()
                 .height(54.dp),
             colors = ButtonDefaults.buttonColors(containerColor = LumiCyan),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(MaterialTheme.spacing.medium)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(id = R.string.text_complete_setup), fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                 Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = ObsidianDark)
             }
         }
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraLarge))
     }
 }

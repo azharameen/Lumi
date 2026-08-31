@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.presentation.components.LumiDialog
 import com.example.core.theme.*
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 
 @Composable
 fun AddEventDialog(
@@ -89,14 +91,14 @@ fun AddEventDialog(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = { if (startOffsetHours > 0) startOffsetHours-- },
-                        modifier = Modifier.size(32.dp).background(SurfaceHighlight, CircleShape)
+                        modifier = Modifier.size(MaterialTheme.spacing.extraLarge).background(SurfaceHighlight, CircleShape)
                     ) {
                         Text(text = "−", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                     IconButton(
                         onClick = { startOffsetHours++ },
-                        modifier = Modifier.size(32.dp).background(LumiCyan, CircleShape)
+                        modifier = Modifier.size(MaterialTheme.spacing.extraLarge).background(LumiCyan, CircleShape)
                     ) {
                         Text(text = "+", color = ObsidianDark, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
@@ -126,7 +128,7 @@ fun AddEventDialog(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = null,
                                 tint = ObsidianDark,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(MaterialTheme.spacing.medium)
                             )
                         }
                     }

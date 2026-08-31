@@ -63,6 +63,8 @@ import com.example.core.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+import androidx.compose.material3.MaterialTheme
+import com.example.core.theme.spacing
 // =========================================================================
 // SUB-COMPONENTS
 // =========================================================================
@@ -131,7 +133,7 @@ fun SeamlessRpgPlayerHud(
                 )
             )
             .clickable { onNavigateToAccount() }
-            .padding(horizontal = 16.dp, vertical = 14.dp)
+            .padding(horizontal = MaterialTheme.spacing.medium, vertical = 14.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -175,7 +177,7 @@ fun SeamlessRpgPlayerHud(
                 }
 
                 // Level Badge overlapping at bottom right
-                Box(modifier = Modifier.align(Alignment.BottomEnd).offset(x = 6.dp, y = 4.dp)) {
+                Box(modifier = Modifier.align(Alignment.BottomEnd).offset(x = 6.dp, y = MaterialTheme.spacing.extraSmall)) {
                     SeamlessHexagonLevelBadge(level = petStatus.level)
                 }
             }
@@ -206,7 +208,7 @@ fun SeamlessRpgPlayerHud(
                     // Currencies
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
                     ) {
                         // Coins
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -251,7 +253,7 @@ fun SeamlessRpgPlayerHud(
                         labelColor = LumiCyan,
                         fillRatio = xpRatio,
                         gradient = xpGradient,
-                        height = 8.dp,
+                        height = MaterialTheme.spacing.small,
                         modifier = Modifier.weight(1f)
                     )
                     
@@ -264,7 +266,7 @@ fun SeamlessRpgPlayerHud(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(4.dp)
+                                .size(MaterialTheme.spacing.extraSmall)
                                 .clip(CircleShape)
                                 .background(beaconColor)
                         )
@@ -414,9 +416,9 @@ fun MinimalPetSpeechCard(
                     imageVector = Icons.Default.AutoAwesome,
                     contentDescription = null,
                     tint = petPrimary,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(MaterialTheme.spacing.medium)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                 Text(
                     text = speechText,
                     color = TextPrimary,
@@ -474,7 +476,7 @@ fun PetCareFixedAnchorFab(
             color = if (isExpanded) petPrimary else SurfaceDark.copy(alpha = 0.9f),
             shape = CircleShape,
             border = BorderStroke(1.5.dp, petPrimary),
-            shadowElevation = 8.dp,
+            shadowElevation = MaterialTheme.spacing.small,
             modifier = Modifier
                 .size(42.dp)
                 .clickable { onToggleExpand() }
@@ -519,7 +521,7 @@ fun PetMiniActionButton(emoji: String, onClick: () -> Unit, tooltip: String) {
         color = SurfaceDark.copy(alpha = 0.92f),
         shape = CircleShape,
         border = BorderStroke(1.dp, SurfaceHighlight),
-        shadowElevation = 4.dp,
+        shadowElevation = MaterialTheme.spacing.extraSmall,
         modifier = Modifier
             .size(34.dp)
             .clickable { onClick() }
@@ -595,7 +597,7 @@ fun PetRightSideActionButtons(
                     color = LumiYellow,
                     shape = CircleShape,
                     modifier = Modifier
-                        .size(16.dp)
+                        .size(MaterialTheme.spacing.medium)
                         .align(Alignment.TopEnd)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -689,14 +691,14 @@ fun PetBottomControlsRow(
                         imageVector = Icons.Default.Close,
                         contentDescription = stringResource(id = R.string.desc_cancel_voice_mode),
                         tint = Color.White,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(MaterialTheme.spacing.large)
                     )
                 } else {
                     Icon(
                         imageVector = Icons.Default.Mic,
                         contentDescription = stringResource(id = R.string.desc_voice_input),
                         tint = petPrimary,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(MaterialTheme.spacing.large)
                     )
                 }
             }
@@ -756,7 +758,7 @@ fun QuestItemRow(task: TaskEntity, onToggle: (Boolean) -> Unit) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.small),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
@@ -766,10 +768,10 @@ fun QuestItemRow(task: TaskEntity, onToggle: (Boolean) -> Unit) {
                     checkedColor = LumiGreen,
                     uncheckedColor = TextSecondary
                 ),
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(MaterialTheme.spacing.large)
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(

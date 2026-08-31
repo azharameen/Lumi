@@ -137,4 +137,11 @@ class OnDeviceGemmaEngine(
             )
         }
     }
+
+    suspend fun benchmarkOnDeviceGemma(): Pair<String, Long> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+        if (llmInference == null) throw OnDeviceInferenceException.InferenceExecutionError("Not initialized")
+        val start = System.currentTimeMillis()
+        val response = llmInference?.generateResponse("Test") ?: "Failed"
+        Pair(response, System.currentTimeMillis() - start)
+    }
 }

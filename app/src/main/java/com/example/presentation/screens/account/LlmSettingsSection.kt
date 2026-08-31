@@ -132,6 +132,8 @@ import com.example.core.theme.spacing
 @Composable
 fun LlmSettingsSection(
     userProfile: UserProfileData,
+    aiRoutingMode: com.example.data.remote.AiRoutingMode,
+    onSetAiRoutingMode: (com.example.data.remote.AiRoutingMode) -> Unit,
     benchmarkStatus: String?,
     localModelCatalog: List<LocalLlmModelSpec>,
     modelDownloadStates: Map<String, com.example.data.remote.ModelDownloadProgress>,
@@ -709,5 +711,6 @@ fun LlmSettingsSection(
         }
     }
 }
+
 
 

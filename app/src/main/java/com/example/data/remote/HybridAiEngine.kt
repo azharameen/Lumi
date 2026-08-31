@@ -2,11 +2,12 @@ package com.example.data.remote
 
 import android.content.Context
 import android.graphics.Bitmap
+import com.example.data.local.LumiDatabase
 import com.example.data.local.dao.AiExecutionLogDao
 import com.example.data.local.entity.AiExecutionLogEntity
+import com.example.domain.agent.hitl.HitlApprovalManager
 import com.example.domain.ai.AiEngineProvider
 import com.example.domain.ai.AiModelRegistry
-import com.example.domain.ai.AiTaskCategory
 import com.example.domain.ai.SmartAiRouter
 import com.example.domain.model.PetEmotion
 import com.example.domain.tools.AgentToolDispatcher
@@ -19,9 +20,11 @@ import kotlin.math.ceil
 class HybridAiEngine(
     private val toolDispatcher: AgentToolDispatcher,
     private val aiAnalyticsDao: AiExecutionLogDao,
+    private val database: LumiDatabase,
     private val context: Context? = null
 ) {
-    private val geminiEngine = GeminiAgentEngine(toolDispatcher)
+    val hitlApprovalManager = HitlApprovalManager(database, toolDispatcher)
+    private val geminiEngine = GeminiAgentEngine(toolDispatcher, database, hitlApprovalManager)
     private val downloadManager = context?.let { ModelDownloadManager.getInstance(it) }
     val onDeviceGemmaEngine = OnDeviceGemmaEngine(toolDispatcher, downloadManager, context)
 
@@ -78,7 +81,7 @@ class HybridAiEngine(
                 // Execute On-Device via Gemma Engine
                 executionResult = onDeviceGemmaEngine.executeOnDeviceTurn(userMessage, recentHistory)
             } else {
-                // Execute Cloud via Gemini Engine
+                // Execute Cloud via Gemini Engine (State Machine DAG)
                 executionResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment)
             }
         } catch (e: Exception) {
@@ -190,4 +193,3 @@ class HybridAiEngine(
         return ceil(text.length / 3.8).toInt().coerceAtLeast(1)
     }
 }
-

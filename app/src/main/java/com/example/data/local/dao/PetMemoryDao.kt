@@ -13,6 +13,9 @@ interface PetMemoryDao {
     @Query("SELECT * FROM pet_memories ORDER BY isPinned DESC, timestamp DESC")
     fun getAllMemories(): Flow<List<PetMemoryEntity>>
 
+    @Query("SELECT * FROM pet_memories ORDER BY timestamp DESC")
+    suspend fun getAllMemoriesDirect(): List<PetMemoryEntity>
+
     @Query("SELECT * FROM pet_memories ORDER BY timestamp DESC LIMIT 10")
     suspend fun getRecentMemoriesDirect(): List<PetMemoryEntity>
 

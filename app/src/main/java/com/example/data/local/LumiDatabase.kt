@@ -4,23 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.data.local.dao.AiExecutionLogDao
-import com.example.data.local.dao.CalendarEventDao
-import com.example.data.local.dao.ChatMessageDao
-import com.example.data.local.dao.GoalPlanDao
-import com.example.data.local.dao.PetEvolutionDao
-import com.example.data.local.dao.PetMemoryDao
-import com.example.data.local.dao.TaskDao
-import com.example.data.local.dao.WellnessLogDao
-import com.example.data.local.entity.AiExecutionLogEntity
-import com.example.data.local.entity.CalendarEventEntity
-import com.example.data.local.entity.ChatMessageEntity
-import com.example.data.local.entity.GoalMilestoneEntity
-import com.example.data.local.entity.GoalPlanEntity
-import com.example.data.local.entity.PetEvolutionEntity
-import com.example.data.local.entity.PetMemoryEntity
-import com.example.data.local.entity.TaskEntity
-import com.example.data.local.entity.WellnessLogEntity
+import com.example.data.local.dao.*
+import com.example.data.local.entity.*
 
 @Database(
     entities = [
@@ -32,9 +17,11 @@ import com.example.data.local.entity.WellnessLogEntity
         ChatMessageEntity::class,
         AiExecutionLogEntity::class,
         GoalPlanEntity::class,
-        GoalMilestoneEntity::class
+        GoalMilestoneEntity::class,
+        FactKnowledgeEntity::class,
+        AgentCheckpointEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class LumiDatabase : RoomDatabase() {
@@ -46,6 +33,8 @@ abstract class LumiDatabase : RoomDatabase() {
     abstract fun chatMessageDao(): ChatMessageDao
     abstract fun aiExecutionLogDao(): AiExecutionLogDao
     abstract fun goalPlanDao(): GoalPlanDao
+    abstract fun factKnowledgeDao(): FactKnowledgeDao
+    abstract fun agentCheckpointDao(): AgentCheckpointDao
 
     companion object {
         @Volatile

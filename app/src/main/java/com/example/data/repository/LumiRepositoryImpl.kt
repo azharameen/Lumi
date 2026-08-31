@@ -38,7 +38,7 @@ class LumiRepositoryImpl private constructor(
     private val connectorManager = com.example.domain.connectors.ConnectorManager(context)
     private val integrationService = com.example.domain.connectors.IntegrationService(connectorManager)
     private val toolDispatcher = AgentToolDispatcher(database, integrationService, healthConnectManager)
-    private val hybridAiEngine = HybridAiEngine(toolDispatcher, database.aiExecutionLogDao(), context)
+    private val hybridAiEngine = HybridAiEngine(toolDispatcher, database.aiExecutionLogDao(), database, context)
     private val autonomousGoalPlanner = com.example.domain.planner.AutonomousGoalPlanner(context, database, toolDispatcher, integrationService)
     private val autonomousBriefingEngine = com.example.domain.briefing.AutonomousBriefingEngine(context)
     private val soundscapeEngine = com.example.data.device.ProceduralSoundscapeEngine.getInstance(context)
@@ -531,6 +531,32 @@ class LumiRepositoryImpl private constructor(
 
     override fun stopFocusTimerWithSoundscape() {
         soundscapeEngine.stopFocusTimer()
+    }
+
+    override val pendingHitlActions: kotlinx.coroutines.flow.Flow<List<com.example.domain.agent.hitl.HitlPendingAction>>
+        get() = hybridAiEngine.hitlApprovalManager.pendingActions
+
+    override suspend fun resolveHitlAction(stateId: String, approved: Boolean): String? {
+        val resultState = hybridAiEngine.hitlApprovalManager.resolveAction(stateId, approved)
+        if (resultState != null) {
+            val responseText = resultState.finalResponseText ?: resultState.executedToolReports.lastOrNull()?.description ?: "Action completed."
+            _currentEmotion.value = resultState.inferredEmotion
+            _speechBubbleText.value = responseText
+
+            val toolName = resultState.executedToolReports.firstOrNull()?.toolName
+            val toolDesc = resultState.executedToolReports.firstOrNull()?.description
+
+            val aiEntity = ChatMessageEntity(
+                sender = "LUMI",
+                content = responseText,
+                petEmotion = resultState.inferredEmotion.name,
+                toolUsedName = toolName,
+                toolResultJson = toolDesc
+            )
+            database.chatMessageDao().insertMessage(aiEntity)
+            return responseText
+        }
+        return null
     }
 
     companion object {

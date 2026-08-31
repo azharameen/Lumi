@@ -7,6 +7,7 @@ import com.example.data.local.entity.PetEvolutionEntity
 import com.example.data.local.entity.PetMemoryEntity
 import com.example.data.local.entity.TaskEntity
 import com.example.data.local.entity.WellnessLogEntity
+import com.example.domain.agent.hitl.HitlPendingAction
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
 import kotlinx.coroutines.flow.Flow
@@ -41,6 +42,10 @@ interface LumiRepository {
     val isOverlayActive: Flow<Boolean>
     fun setOverlayActive(active: Boolean)
     suspend fun setSpeechBubbleText(text: String?)
+
+    // Human-In-The-Loop (HITL) Actions
+    val pendingHitlActions: Flow<List<HitlPendingAction>>
+    suspend fun resolveHitlAction(stateId: String, approved: Boolean): String?
 
     // AI Analytics & On-Device Gemma Management
     val aiExecutionLogs: Flow<List<com.example.data.local.entity.AiExecutionLogEntity>>

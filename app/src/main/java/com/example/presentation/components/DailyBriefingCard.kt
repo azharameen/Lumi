@@ -320,7 +320,7 @@ fun DailyBriefingCard(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Synthesizing proactive daily intelligence...",
+                        text = stringResource(R.string.text_synthesizing_proactive_daily_intelligence),
                         color = TextSecondary,
                         fontSize = 12.sp
                     )

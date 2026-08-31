@@ -1,4 +1,7 @@
 package com.example.presentation.components
+import com.example.R
+
+import androidx.compose.ui.res.stringResource
 
 import android.content.Intent
 import android.net.Uri
@@ -47,7 +50,7 @@ fun OverlayPermissionDialog(
     ) {
         Column {
             Text(
-                text = "Allow Lumi to float over other apps! You can drag your companion anywhere, tap for quick assistance, or dock to the edge at any time.",
+                text = stringResource(R.string.text_allow_lumi_to_float_over_other),
                 color = TextSecondary,
                 fontSize = 13.sp,
                 lineHeight = 19.sp

@@ -1,4 +1,7 @@
 package com.example.presentation.screens
+import com.example.R
+
+import androidx.compose.ui.res.stringResource
 
 import com.example.presentation.screens.lifehub.*
 import com.example.presentation.components.*
@@ -27,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -128,7 +132,8 @@ fun LifeHubScreen(
     goalPlans: List<com.example.data.local.entity.GoalPlanEntity>,
     getMilestonesForGoal: (Long) -> kotlinx.coroutines.flow.Flow<List<com.example.data.local.entity.GoalMilestoneEntity>>,
     soundState: com.example.data.device.SoundscapeState,
-    onAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit
+    onAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit,
+    onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
     
@@ -158,12 +163,21 @@ fun LifeHubScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Productivity Hub",
-                            color = TextPrimary,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = onNavigateBack) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowBack,
+                                    contentDescription = stringResource(R.string.desc_back),
+                                    tint = TextPrimary
+                                )
+                            }
+                            Text(
+                                text = stringResource(R.string.text_productivity_hub),
+                                color = TextPrimary,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                         Surface(
                             color = LumiGold.copy(alpha = 0.15f),
                             shape = RoundedCornerShape(12.dp)
@@ -180,7 +194,7 @@ fun LifeHubScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Lumi Sync",
+                                    text = stringResource(R.string.text_lumi_sync),
                                     color = LumiGold,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold

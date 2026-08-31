@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -81,6 +82,7 @@ fun ChatScreen(
     onStartVoiceListening: () -> Unit,
     onStopVoiceListening: () -> Unit,
     onToggleVoiceOutput: () -> Unit,
+    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -120,6 +122,13 @@ fun ChatScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = stringResource(R.string.desc_back),
+                            tint = TextPrimary
+                        )
+                    }
                     Box(
                         modifier = Modifier
                             .size(40.dp)
@@ -144,7 +153,7 @@ fun ChatScreen(
                     Spacer(modifier = Modifier.width(10.dp))
                     Column {
                         Text(
-                            text = "Lumi Neural Companion",
+                            text = stringResource(R.string.text_lumi_neural_companion),
                             style = MaterialTheme.typography.titleMedium,
                             color = TextPrimary,
                             fontWeight = FontWeight.Bold
@@ -344,7 +353,7 @@ fun ChatMessageBubble(message: ChatMessageEntity) {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 5.dp, start = 4.dp)
             ) {
-                Text(text = "Lumi", color = androidx.compose.material3.MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(text = stringResource(R.string.text_lumi), color = androidx.compose.material3.MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.width(6.dp))
                 message.petEmotion.let { emo ->
                     Surface(
@@ -398,7 +407,7 @@ fun ChatMessageBubble(message: ChatMessageEntity) {
                     ) {
                         Icon(imageVector = Icons.Default.CameraAlt, contentDescription = null, tint = if (isUser) ObsidianDark else androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = "Captured Image Shared", color = if (isUser) ObsidianDark else TextPrimary, fontSize = 11.sp)
+                        Text(text = stringResource(R.string.text_captured_image_shared), color = if (isUser) ObsidianDark else TextPrimary, fontSize = 11.sp)
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                 }

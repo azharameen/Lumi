@@ -164,7 +164,7 @@ fun ProactiveDailyBriefingCard(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = "Recommended Focus Actions",
+                            text = stringResource(R.string.text_recommended_focus_actions),
                             color = LumiMint,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold

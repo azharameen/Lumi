@@ -164,7 +164,7 @@ fun ProfileAndPersonaSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "User Identity & Goals",
+                            text = stringResource(R.string.text_user_identity_goals),
                             color = LumiMint,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
@@ -193,7 +193,7 @@ fun ProfileAndPersonaSection(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Daily Rhythm & Target Metrics",
+                        text = stringResource(R.string.text_daily_rhythm_target_metrics),
                         color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
@@ -260,13 +260,13 @@ fun ProfileAndPersonaSection(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Lumi Companion Persona Tone",
+                        text = stringResource(R.string.text_lumi_companion_persona_tone),
                         color = LumiPink,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Controls how Lumi talks, reasons, and motivates you in chat and notifications.",
+                        text = stringResource(R.string.text_controls_how_lumi_talks_reasons_and),
                         color = TextSecondary,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)

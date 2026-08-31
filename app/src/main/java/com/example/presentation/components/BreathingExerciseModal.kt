@@ -6,9 +6,10 @@ import com.example.R
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import com.example.core.theme.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,7 +119,7 @@ fun BreathingExerciseModal(
                 ) {
                     Column {
                         Text(
-                            text = "Mindful Coherence",
+                            text = stringResource(R.string.text_mindful_coherence),
                             color = TextPrimary,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
@@ -163,7 +164,7 @@ fun BreathingExerciseModal(
                         // Inner vibrant sphere
                         drawCircle(
                             brush = Brush.radialGradient(
-                                colors = listOf(Color(0xFF80FFDB), LumiViolet, LumiPink),
+                                colors = listOf(LumiCyanBright, LumiViolet, LumiPink),
                                 center = Offset(cx - radius * 0.3f, cy - radius * 0.3f),
                                 radius = radius * 1.2f
                             ),

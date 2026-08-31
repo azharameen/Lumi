@@ -165,7 +165,7 @@ fun HomeScreen(
                 Brush.radialGradient(
                     colors = listOf(
                         petPrimary.copy(alpha = neonGlowAlpha),
-                        Color(0xFF0F111E),
+                        SpaceDark,
                         ObsidianDark
                     ),
                     center = Offset(540f, 500f),

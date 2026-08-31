@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Favorite
@@ -89,7 +90,8 @@ import java.util.Locale
 fun WellnessScreen(
     viewModel: com.example.presentation.viewmodel.WellnessViewModel,
     appViewModel: com.example.presentation.viewmodel.LumiViewModel,
-    onNavigateToChat: () -> Unit
+    onNavigateToChat: () -> Unit,
+    onNavigateBack: () -> Unit
 ) {
     val logs = viewModel.pagedWellnessLogs.collectAsLazyPagingItems()
     val memories by viewModel.allMemories.collectAsStateWithLifecycle()
@@ -121,19 +123,28 @@ fun WellnessScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = "Holistic Wellness",
-                        style = androidx.compose.material3.MaterialTheme.typography.headlineLarge,
-                        color = TextPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Mindfulness, hydration & energy balance",
-                        color = LumiPink,
-                        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                        fontSize = 12.5.sp
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = stringResource(R.string.desc_back),
+                            tint = TextPrimary
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = stringResource(R.string.text_holistic_wellness),
+                            style = androidx.compose.material3.MaterialTheme.typography.headlineLarge,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = stringResource(R.string.text_mindfulness_hydration_energy_balance),
+                            color = LumiPink,
+                            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                            fontSize = 12.5.sp
+                        )
+                    }
                 }
 
                 IconButton(
@@ -176,7 +187,7 @@ fun WellnessScreen(
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Daily Wellness Check-In",
+                            text = stringResource(R.string.text_daily_wellness_checkin),
                             style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
                             color = TextPrimary,
                             fontWeight = FontWeight.Bold
@@ -342,7 +353,7 @@ fun WellnessScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Biometric Memory Vault",
+                                text = stringResource(R.string.text_biometric_memory_vault),
                                 color = TextPrimary,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
@@ -366,7 +377,7 @@ fun WellnessScreen(
 
                     if (!uiState.isMemoryVaultUnlocked) {
                         Text(
-                            text = "Lumi's long-term memory bank and confidential thoughts are secured with Android Biometrics.",
+                            text = stringResource(R.string.text_lumis_longterm_memory_bank_and_confidential),
                             color = TextSecondary,
                             fontSize = 12.sp
                         )
@@ -401,7 +412,7 @@ fun WellnessScreen(
 
                         if (memories.isEmpty()) {
                             Text(
-                                text = "Lumi hasn't learned memories yet. Chat with Lumi about your favorite hobbies, routines, and goals!",
+                                text = stringResource(R.string.text_lumi_hasnt_learned_memories_yet_chat),
                                 color = TextSecondary,
                                 fontSize = 12.sp
                             )
@@ -450,7 +461,7 @@ fun WellnessScreen(
         // Wellness Log History
         item {
             Text(
-                text = "Recent Wellness Logs",
+                text = stringResource(R.string.text_recent_wellness_logs),
                 color = TextPrimary,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
@@ -460,7 +471,7 @@ fun WellnessScreen(
         if (logs.itemCount == 0) {
             item {
                 Text(
-                    text = "No previous logs. Complete your first check-in above!",
+                    text = stringResource(R.string.text_no_previous_logs_complete_your_first),
                     color = TextSecondary,
                     fontSize = 12.sp
                 )

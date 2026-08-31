@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 val LumiCyan = Color(0xFF00F0FF)
 val LumiCyanGlow = Color(0x3300F0FF)
 val LumiCyanDark = Color(0xFF00B4D8)
+val LumiCyanBright = Color(0xFF80FFDB)
 
 val LumiViolet = Color(0xFF9D65FF)
 val LumiVioletGlow = Color(0x339D65FF)
@@ -20,25 +21,35 @@ val LumiPinkDark = Color(0xFFE0407A)
 
 val LumiGold = Color(0xFFFFD166)
 val LumiGoldGlow = Color(0x33FFD166)
+val LumiGoldBright = Color(0xFFFFB703)
 val LumiYellow = Color(0xFFFFD166)
 
 val LumiMint = Color(0xFF06D6A0)
 val LumiMintGlow = Color(0x3306D6A0)
+val LumiMintBright = Color(0xFF00E676)
 val LumiGreen = Color(0xFF06D6A0)
 
 val LumiCoral = Color(0xFFFF5964)
 val LumiCoralGlow = Color(0x33FF5964)
+val LumiCoralDark = Color(0xFFE63946)
+
+val LumiCyanLight = Color(0xFF90E0EF)
+val LumiCyanTranslucent = Color(0x3300B4D8)
 
 // =========================================================================
 // DARK LUXURY ETHEREAL CANVAS & GLASS SURFACES
 // =========================================================================
 val ObsidianDark = Color(0xFF0C0A17)
+val SpaceDark = Color(0xFF0F111E)
 val SlateDark = Color(0xFF141124)
 val SurfaceDark = Color(0xFF1D1833)
 val SurfaceDarkVariant = Color(0xFF272145)
 val SurfaceHighlight = Color(0xFF352D5C)
 val SurfaceGlass = Color(0xE61A162E)
 val SurfaceGlassLight = Color(0xCC251F42)
+
+val AvatarBronzeLight = Color(0xFFB5704D)
+val AvatarBronzeDark = Color(0xFF8D5B4C)
 
 // =========================================================================
 // TEXT & LABELS

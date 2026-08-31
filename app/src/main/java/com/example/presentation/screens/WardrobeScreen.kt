@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.example.core.theme.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
@@ -143,13 +144,13 @@ fun WardrobeScreen(
                         Spacer(modifier = Modifier.width(4.dp))
                         Column {
                             Text(
-                                text = "Lumi Wardrobe & Shop",
+                                text = stringResource(R.string.text_lumi_wardrobe_shop),
                                 color = TextPrimary,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "RPG Customization & Accessories",
+                                text = stringResource(R.string.text_rpg_customization_accessories),
                                 color = MaterialTheme.colorScheme.primary,
                                 fontSize = 12.sp
                             )
@@ -182,9 +183,9 @@ fun WardrobeScreen(
                         }
 
                         Surface(
-                            color = Color(0xFF00B4D8).copy(alpha = 0.2f),
+                            color = LumiCyanDark.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(10.dp),
-                            border = BorderStroke(1.dp, Color(0xFF00B4D8).copy(alpha = 0.5f))
+                            border = BorderStroke(1.dp, LumiCyanDark.copy(alpha = 0.5f))
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -194,7 +195,7 @@ fun WardrobeScreen(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "${petStatus.gems}",
-                                    color = Color(0xFF90E0EF),
+                                    color = LumiCyanLight,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -241,7 +242,7 @@ fun WardrobeScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
-                                    contentDescription = "Rename Lumi",
+                                    contentDescription = stringResource(R.string.desc_rename_lumi),
                                     tint = TextSecondary,
                                     modifier = Modifier.size(14.dp)
                                 )
@@ -334,7 +335,7 @@ fun WardrobeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "WEARABLE ACCESSORIES SHOP",
+                            text = stringResource(R.string.text_wearable_accessories_shop),
                             color = LumiGold,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
@@ -411,7 +412,7 @@ fun WardrobeScreen(
                                                 )
                                                 Spacer(modifier = Modifier.width(2.dp))
                                                 Text(
-                                                    text = "Equipped",
+                                                    text = stringResource(R.string.text_equipped),
                                                     color = LumiGold,
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold
@@ -420,7 +421,7 @@ fun WardrobeScreen(
                                         }
                                         isUnlocked -> {
                                             Text(
-                                                text = "Equip",
+                                                text = stringResource(R.string.text_equip),
                                                 color = MaterialTheme.colorScheme.primary,
                                                 fontSize = 10.sp,
                                                 fontWeight = FontWeight.SemiBold
@@ -448,7 +449,7 @@ fun WardrobeScreen(
                                                 if (acc.gemCost > 0) {
                                                     Text(
                                                         text = "${acc.gemCost}💎",
-                                                        color = Color(0xFF90E0EF),
+                                                        color = LumiCyanLight,
                                                         fontSize = 10.sp,
                                                         fontWeight = FontWeight.Bold
                                                     )
@@ -470,7 +471,7 @@ fun WardrobeScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "3D MORPHING SHAPE",
+                        text = stringResource(R.string.text_3d_morphing_shape),
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
@@ -520,7 +521,7 @@ fun WardrobeScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "CLAY SKIN PALETTES",
+                        text = stringResource(R.string.text_clay_skin_palettes),
                         color = LumiPink,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
@@ -578,7 +579,7 @@ fun WardrobeScreen(
             // Long Term Memory Vault
             item(key = "memory_header") {
                 Text(
-                    text = "Lumi's Long-Term Memory Vault",
+                    text = stringResource(R.string.text_lumis_longterm_memory_vault),
                     color = TextPrimary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
@@ -603,7 +604,7 @@ fun WardrobeScreen(
                             )
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Lumi remembers your daily habits, preferred meeting times, and productivity rhythms automatically as you chat and interact.",
+                                text = stringResource(R.string.text_lumi_remembers_your_daily_habits_preferred),
                                 color = TextSecondary,
                                 fontSize = 12.sp
                             )

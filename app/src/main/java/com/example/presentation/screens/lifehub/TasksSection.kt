@@ -66,7 +66,7 @@ fun TasksSection(
                     ) {
                         Column {
                             Text(
-                                text = "Daily Action Goals",
+                                text = stringResource(R.string.text_daily_action_goals),
                                 style = MaterialTheme.typography.titleLarge,
                                 color = TextPrimary,
                                 fontWeight = FontWeight.Bold

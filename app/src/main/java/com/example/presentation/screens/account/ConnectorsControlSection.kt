@@ -167,13 +167,13 @@ fun ConnectorsControlSection(
     ) {
         item {
             Text(
-                text = "Connected Ecosystem & Tools",
+                text = stringResource(R.string.text_connected_ecosystem_tools),
                 color = LumiGold,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Connect Lumi to your digital workspace to autonomously sync events, tasks, notifications, and code.",
+                text = stringResource(R.string.text_connect_lumi_to_your_digital_workspace),
                 color = TextSecondary,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(top = 2.dp)

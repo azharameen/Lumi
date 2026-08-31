@@ -135,14 +135,14 @@ private fun CameraPermissionRequestView(
         }
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Let Lumi See Your World",
+            text = stringResource(R.string.text_let_lumi_see_your_world),
             color = TextPrimary,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Lumi uses camera vision to examine your workspace, review notes, analyze meal nutrition, or look at your surroundings for tailored insights.",
+            text = stringResource(R.string.text_lumi_uses_camera_vision_to_examine),
             color = TextSecondary,
             fontSize = 14.sp,
             lineHeight = 20.sp,
@@ -288,7 +288,7 @@ private fun CameraPreviewContent(
         ) {
             // Preset prompt selector
             Text(
-                text = "What should Lumi analyze?",
+                text = stringResource(R.string.text_what_should_lumi_analyze),
                 color = TextSecondary,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium

@@ -147,13 +147,13 @@ fun AutonomousGoalsScreen(
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Column {
                                         Text(
-                                            text = "Autonomous Goal Swarms",
+                                            text = stringResource(R.string.text_autonomous_goal_swarms),
                                             color = TextPrimary,
                                             fontSize = 17.sp,
                                             fontWeight = FontWeight.Bold
                                         )
                                         Text(
-                                            text = "Multi-step AI planner & tool executor",
+                                            text = stringResource(R.string.text_multistep_ai_planner_tool_executor),
                                             color = TextSecondary,
                                             fontSize = 12.sp
                                         )
@@ -163,7 +163,7 @@ fun AutonomousGoalsScreen(
 
                             Spacer(modifier = Modifier.height(14.dp))
                             Text(
-                                text = "Define any objective. Lumi’s agent swarm decomposes it into structured milestones and executes calendar blocks, Google Docs drafts, tasks, and Slack updates autonomously.",
+                                text = stringResource(R.string.text_define_any_objective_lumis_agent_swarm),
                                 color = TextPrimary.copy(alpha = 0.9f),
                                 fontSize = 13.sp,
                                 lineHeight = 18.sp
@@ -184,7 +184,7 @@ fun AutonomousGoalsScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Decompose New Big Objective",
+                                    text = stringResource(R.string.text_decompose_new_big_objective),
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 14.sp
@@ -216,14 +216,14 @@ fun AutonomousGoalsScreen(
                             )
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
-                                text = "No active goal swarms yet",
+                                text = stringResource(R.string.text_no_active_goal_swarms_yet),
                                 color = TextPrimary,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Try planning 'Launch mobile product', 'Run 10k race', or 'Master Kotlin Coroutines'.",
+                                text = stringResource(R.string.text_try_planning_launch_mobile_product_run),
                                 color = TextSecondary,
                                 fontSize = 13.sp,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -328,7 +328,7 @@ private fun GoalPlanItemCard(
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                text = "COMPLETED",
+                                text = stringResource(R.string.text_completed),
                                 color = LumiGreen,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
@@ -534,7 +534,7 @@ private fun MilestoneItemRow(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Auto-Run",
+                        text = stringResource(R.string.text_autorun),
                         color = Color.Black,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold
@@ -604,7 +604,7 @@ private fun CreateGoalDecomposeDialog(
             )
 
             Text(
-                text = "Category Domain",
+                text = stringResource(R.string.text_category_domain),
                 color = TextSecondary,
                 style = MaterialTheme.typography.labelSmall
             )

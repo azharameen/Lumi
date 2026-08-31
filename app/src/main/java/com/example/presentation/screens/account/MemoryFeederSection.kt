@@ -170,13 +170,13 @@ fun MemoryFeederSection(
                     ) {
                         Column {
                             Text(
-                                text = "Personal Context Feeder",
+                                text = stringResource(R.string.text_personal_context_feeder),
                                 color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Facts, preferences & rules fed directly into Lumi's LLM context window.",
+                                text = stringResource(R.string.text_facts_preferences_rules_fed_directly_into),
                                 color = TextSecondary,
                                 fontSize = 12.sp
                             )

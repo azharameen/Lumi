@@ -98,285 +98,251 @@ fun SeamlessRpgPlayerHud(
 
     val hpFillRatio = (batteryStatus.levelPercent / 100f).coerceIn(0f, 1f)
     val energyGradient = when {
-        batteryStatus.levelPercent >= 60 -> listOf(Color(0xFF00E676), Color(0xFF00F5D4))
-        batteryStatus.levelPercent >= 20 -> listOf(Color(0xFFFFB703), Color(0xFFFFD166))
-        else -> listOf(Color(0xFFE63946), Color(0xFFFF4D6D))
+        batteryStatus.levelPercent >= 60 -> listOf(LumiMint, LumiMintBright)
+        batteryStatus.levelPercent >= 20 -> listOf(LumiYellow, LumiGoldBright)
+        else -> listOf(LumiCoral, LumiCoralDark)
     }
 
     val xpRatio = (petStatus.exp.toFloat() / petStatus.expToNextLevel.coerceAtLeast(1)).coerceIn(0f, 1f)
+    val xpGradient = listOf(LumiCyanDark, LumiCyan)
 
     val beaconColor = when {
-        !networkStatus.isConnected || networkStatus.type == NetworkType.OFFLINE -> Color(0xFFEF4444)
-        networkStatus.type == NetworkType.CELLULAR -> Color(0xFFF59E0B)
-        else -> Color(0xFF00E676)
+        !networkStatus.isConnected || networkStatus.type == NetworkType.OFFLINE -> LumiCoral
+        networkStatus.type == NetworkType.CELLULAR -> LumiYellow
+        else -> LumiMint
     }
 
     val netLabel = when (networkStatus.type) {
-        NetworkType.WIFI -> "WiFi"
-        NetworkType.CELLULAR -> "Cellular"
-        NetworkType.ETHERNET -> "Ethernet"
-        NetworkType.OFFLINE -> "Offline"
+        NetworkType.WIFI -> "WIFI"
+        NetworkType.CELLULAR -> "CELL"
+        NetworkType.ETHERNET -> "ETH"
+        NetworkType.OFFLINE -> "OFFLINE"
     }
 
-    val placeName = locationContext.approximatePlace.ifBlank { "Unknown" }
+    val placeName = locationContext.approximatePlace.ifBlank { "Unknown" }.uppercase()
 
-    Surface(
-        color = SurfaceDark.copy(alpha = 0.92f),
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(1.dp, SurfaceHighlight.copy(alpha = 0.5f)),
+    // No enclosing Surface card. Use a Box that fills width with a subtle gradient top-down for readability.
+    Box(
         modifier = Modifier
             .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(ObsidianDark.copy(alpha = 0.6f), Color.Transparent)
+                )
+            )
             .clickable { onNavigateToAccount() }
+            .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left: User Avatar with status dot
+            // LEFT: Avatar with overlapping Level Badge
             Box(
-                modifier = Modifier.size(46.dp),
-                contentAlignment = Alignment.Center
+                modifier = Modifier.padding(end = 12.dp)
             ) {
+                // Outer Tech Ring
                 Box(
                     modifier = Modifier
-                        .size(46.dp)
+                        .size(54.dp)
                         .clip(CircleShape)
-                        .background(
-                            Brush.linearGradient(
-                                listOf(Color(0xFFB5704D), Color(0xFF8D5B4C))
-                            )
-                        )
-                        .border(2.dp, Color(0xFFD4A373).copy(alpha = 0.8f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = initials,
-                        color = Color.White,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Black,
-                        letterSpacing = 0.5.sp
-                    )
-                }
-
-                // Connectivity Dot
-                Box(
-                    modifier = Modifier
-                        .size(11.dp)
-                        .align(Alignment.BottomStart)
+                        .background(Brush.sweepGradient(listOf(LumiCyan, LumiPink, LumiCyan)))
+                        .padding(2.dp)
                         .clip(CircleShape)
                         .background(ObsidianDark)
-                        .padding(1.5.dp)
-                        .clip(CircleShape)
-                        .background(beaconColor)
-                )
+                        .padding(2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(AvatarBronzeLight, AvatarBronzeDark)
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = initials,
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 1.sp
+                        )
+                    }
+                }
+
+                // Level Badge overlapping at bottom right
+                Box(modifier = Modifier.align(Alignment.BottomEnd).offset(x = 6.dp, y = 4.dp)) {
+                    SeamlessHexagonLevelBadge(level = petStatus.level)
+                }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Right: User Info + Vitality & XP Bars
+            // RIGHT: Info & Bars
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                // Top Row: Name + Level Badge + Location & WiFi
+                // Top Row: Name + Resources + Telemetry
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Name
+                    Text(
+                        text = displayName,
+                        color = TextPrimary,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 0.5.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    // Currencies
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = displayName,
-                            color = TextPrimary,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        SeamlessHexagonLevelBadge(level = petStatus.level)
-
-                        // RPG Coins Pill
-                        Surface(
-                            color = LumiGold.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(0.5.dp, LumiGold.copy(alpha = 0.4f))
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                            ) {
-                                Text(text = "🪙", fontSize = 8.sp)
-                                Spacer(modifier = Modifier.width(2.dp))
-                                Text(
-                                    text = "${petStatus.coins}",
-                                    color = LumiGold,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                        // RPG Gems Pill
-                        Surface(
-                            color = Color(0xFF00B4D8).copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(6.dp),
-                            border = BorderStroke(0.5.dp, Color(0xFF00B4D8).copy(alpha = 0.4f))
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                            ) {
-                                Text(text = "💎", fontSize = 8.sp)
-                                Spacer(modifier = Modifier.width(2.dp))
-                                Text(
-                                    text = "${petStatus.gems}",
-                                    color = Color(0xFF90E0EF),
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
-
-                    // Location & Network info pill
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = null,
-                                tint = LumiGold,
-                                modifier = Modifier.size(11.dp)
-                            )
+                        // Coins
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "🪙", fontSize = 10.sp)
+                            Spacer(modifier = Modifier.width(2.dp))
                             Text(
-                                text = placeName,
-                                color = TextSecondary,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Medium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                text = "${petStatus.coins}",
+                                color = LumiGold,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .clip(CircleShape)
-                                    .background(beaconColor)
-                            )
+                        // Gems
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "💎", fontSize = 10.sp)
+                            Spacer(modifier = Modifier.width(2.dp))
                             Text(
-                                text = netLabel,
-                                color = TextSecondary,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Medium
+                                text = "${petStatus.gems}",
+                                color = LumiCyanLight,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
                 }
 
-                // HP Bar (Vitality / Battery)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "HP",
-                        color = TextSecondary,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.width(20.dp)
+                // HP Bar
+                SciFiProgressBar(
+                    label = "HP",
+                    labelColor = Color.White.copy(alpha = 0.7f),
+                    fillRatio = hpFillRatio,
+                    gradient = energyGradient,
+                    height = 10.dp,
+                    trailingText = "${batteryStatus.levelPercent}%",
+                    trailingTextColor = Color.White.copy(alpha = 0.9f)
+                )
+
+                // XP Bar & Telemetry
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    SciFiProgressBar(
+                        label = "XP",
+                        labelColor = LumiCyan,
+                        fillRatio = xpRatio,
+                        gradient = xpGradient,
+                        height = 8.dp,
+                        modifier = Modifier.weight(1f)
                     )
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(8.dp)
-                            .clip(CircleShape)
-                            .background(SurfaceHighlight.copy(alpha = 0.6f))
+                    
+                    Spacer(modifier = Modifier.width(6.dp))
+                    // Small Tech Telemetry replacing exact XP numbers to save space and look cooler
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.End,
+                        modifier = Modifier.width(60.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth(hpFillRatio)
-                                .fillMaxHeight()
+                                .size(4.dp)
                                 .clip(CircleShape)
-                                .background(Brush.horizontalGradient(energyGradient))
+                                .background(beaconColor)
                         )
-                    }
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        if (batteryStatus.isCharging) {
-                            Icon(
-                                imageVector = Icons.Default.Bolt,
-                                contentDescription = stringResource(id = R.string.desc_charging),
-                                tint = LumiGold,
-                                modifier = Modifier.size(11.dp)
-                            )
-                        }
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = "${batteryStatus.levelPercent}%",
-                            color = TextPrimary,
-                            fontSize = 10.sp,
+                            text = netLabel,
+                            color = beaconColor,
+                            fontSize = 8.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
+            }
+        }
+    }
+}
 
-                // XP Bar
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "XP",
-                        color = LumiCyan,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.width(20.dp)
-                    )
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(6.dp)
-                            .clip(CircleShape)
-                            .background(SurfaceHighlight.copy(alpha = 0.6f))
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(xpRatio)
-                                .fillMaxHeight()
-                                .clip(CircleShape)
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(Color(0xFF0096C7), LumiCyan)
-                                    )
-                                )
-                        )
+@Composable
+fun SciFiProgressBar(
+    label: String,
+    labelColor: Color,
+    fillRatio: Float,
+    gradient: List<Color>,
+    height: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier,
+    trailingText: String? = null,
+    trailingTextColor: Color = Color.Unspecified
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+        Text(
+            text = label,
+            color = labelColor,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Black,
+            modifier = Modifier.width(20.dp)
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(height)
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val skew = size.height * 0.5f
+                val w = size.width
+                val h = size.height
+                
+                val bgPath = Path().apply {
+                    moveTo(skew, 0f)
+                    lineTo(w, 0f)
+                    lineTo(w - skew, h)
+                    lineTo(0f, h)
+                    close()
+                }
+                drawPath(bgPath, color = Color.White.copy(alpha = 0.1f))
+                
+                val fillW = (w * fillRatio).coerceAtLeast(0f)
+                if (fillW > 0) {
+                    val fgPath = Path().apply {
+                        moveTo(skew, 0f)
+                        lineTo(maxOf(skew, fillW), 0f)
+                        lineTo(maxOf(0f, fillW - skew), h)
+                        lineTo(0f, h)
+                        close()
                     }
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "${petStatus.exp}/${petStatus.expToNextLevel}",
-                        color = LumiCyan,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    drawPath(fgPath, brush = Brush.horizontalGradient(gradient))
                 }
             }
+        }
+        if (trailingText != null) {
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = trailingText,
+                color = trailingTextColor,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.width(30.dp),
+                textAlign = TextAlign.End
+            )
         }
     }
 }
@@ -844,7 +810,7 @@ fun QuestItemRow(task: TaskEntity, onToggle: (Boolean) -> Unit) {
                 shape = RoundedCornerShape(6.dp)
             ) {
                 Text(
-                    text = "+50 XP",
+                    text = stringResource(R.string.text_50_xp),
                     color = LumiGold,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -857,8 +823,19 @@ fun QuestItemRow(task: TaskEntity, onToggle: (Boolean) -> Unit) {
 
 @Composable
 fun CyberAmbientStarsBackground(primaryColor: Color) {
+    val infiniteTransition = rememberInfiniteTransition(label = "stars")
+    val offsetY by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(20000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "offset"
+    )
+
     val stars = remember {
-        List(24) {
+        List(30) {
             Triple(Random.nextFloat(), Random.nextFloat(), Random.nextFloat() * 2f + 1f)
         }
     }
@@ -866,9 +843,9 @@ fun CyberAmbientStarsBackground(primaryColor: Color) {
     Canvas(modifier = Modifier.fillMaxSize()) {
         stars.forEach { (nx, ny, starRadius) ->
             val x = nx * size.width
-            val y = ny * size.height
+            val y = ((ny + offsetY) % 1f) * size.height
             drawCircle(
-                color = primaryColor.copy(alpha = 0.22f),
+                color = primaryColor.copy(alpha = 0.4f),
                 radius = starRadius.dp.toPx(),
                 center = Offset(x, y)
             )

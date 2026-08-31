@@ -62,7 +62,7 @@ fun AddTaskDialog(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Text(text = "Category", color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+            Text(text = stringResource(R.string.text_category_2), color = TextSecondary, style = MaterialTheme.typography.labelSmall)
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(categories) { cat ->
                     val isSelected = category == cat
@@ -82,7 +82,7 @@ fun AddTaskDialog(
                 }
             }
 
-            Text(text = "Priority Level", color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+            Text(text = stringResource(R.string.text_priority_level), color = TextSecondary, style = MaterialTheme.typography.labelSmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 priorities.forEach { prio ->
                     val isSelected = priority == prio

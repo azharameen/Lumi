@@ -175,7 +175,7 @@ fun LlmSettingsSection(
                         Icon(Icons.Default.Psychology, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Active LLM Intelligence Engine",
+                            text = stringResource(R.string.text_active_llm_intelligence_engine),
                             color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
@@ -240,7 +240,7 @@ fun LlmSettingsSection(
                             Icon(Icons.Default.Download, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "On-Device Local LLM Hub",
+                                text = stringResource(R.string.text_ondevice_local_llm_hub),
                                 color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
@@ -251,7 +251,7 @@ fun LlmSettingsSection(
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Text(
-                                text = "100% Offline & Private",
+                                text = stringResource(R.string.text_100_offline_private),
                                 color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
@@ -261,7 +261,7 @@ fun LlmSettingsSection(
                     }
 
                     Text(
-                        text = "Download genuine GGUF/LiteRT neural weights to execute agentic reasoning, memory synthesis, and offline chat directly on your mobile GPU/NPU without cloud servers.",
+                        text = stringResource(R.string.text_download_genuine_gguflitert_neural_weights_to),
                         color = TextSecondary,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
@@ -269,7 +269,7 @@ fun LlmSettingsSection(
 
                     // Hardware Accelerator selection
                     Text(
-                        text = "Neural Hardware Acceleration:",
+                        text = stringResource(R.string.text_neural_hardware_acceleration),
                         color = TextPrimary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
@@ -369,7 +369,7 @@ fun LlmSettingsSection(
                                             shape = RoundedCornerShape(6.dp)
                                         ) {
                                             Text(
-                                                text = "ACTIVE",
+                                                text = stringResource(R.string.text_active),
                                                 color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                                 fontSize = 10.sp,
                                                 fontWeight = FontWeight.Bold,
@@ -485,7 +485,7 @@ fun LlmSettingsSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Creativity & Temperature",
+                            text = stringResource(R.string.text_creativity_temperature),
                             color = LumiGold,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
@@ -533,13 +533,13 @@ fun LlmSettingsSection(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Custom AI System Instructions",
+                        text = stringResource(R.string.text_custom_ai_system_instructions),
                         color = LumiGold,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Specify persistent system rules (e.g. format output as bullet points, prioritize concise answers).",
+                        text = stringResource(R.string.text_specify_persistent_system_rules_eg_format),
                         color = TextSecondary,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
@@ -590,7 +590,7 @@ fun LlmSettingsSection(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "AI Autonomy & Capabilities",
+                        text = stringResource(R.string.text_ai_autonomy_capabilities),
                         color = LumiGreen,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
@@ -648,13 +648,13 @@ fun LlmSettingsSection(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "On-Device Neural Benchmark",
+                                text = stringResource(R.string.text_ondevice_neural_benchmark),
                                 color = LumiPink,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Measure real CPU/GPU inference latency and token throughput.",
+                                text = stringResource(R.string.text_measure_real_cpugpu_inference_latency_and),
                                 color = TextSecondary,
                                 fontSize = 12.sp
                             )

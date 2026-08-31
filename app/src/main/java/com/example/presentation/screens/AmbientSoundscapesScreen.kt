@@ -148,7 +148,7 @@ fun AmbientSoundscapesScreen(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "Ambient Focus Room",
+                                        text = stringResource(R.string.text_ambient_focus_room),
                                         color = TextPrimary,
                                         fontSize = 17.sp,
                                         fontWeight = FontWeight.Bold
@@ -305,7 +305,7 @@ fun AmbientSoundscapesScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Focus Session Timers",
+                                text = stringResource(R.string.text_focus_session_timers),
                                 color = TextPrimary,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
@@ -376,7 +376,7 @@ fun AmbientSoundscapesScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Soundscape Volume",
+                                    text = stringResource(R.string.text_soundscape_volume),
                                     color = TextPrimary,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold
@@ -405,7 +405,7 @@ fun AmbientSoundscapesScreen(
             // Soundscape Options List
             item {
                 Text(
-                    text = "Select Procedural Soundscape",
+                    text = stringResource(R.string.text_select_procedural_soundscape),
                     color = TextPrimary,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,

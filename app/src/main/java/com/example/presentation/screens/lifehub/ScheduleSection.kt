@@ -100,7 +100,7 @@ fun ScheduleSection(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "AI Plan Day",
+                                text = stringResource(R.string.text_ai_plan_day),
                                 color = LumiCyan,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold

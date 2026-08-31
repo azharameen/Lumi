@@ -103,7 +103,7 @@ fun AddEventDialog(
                 }
             }
 
-            Text(text = "Event Color Accent:", color = TextSecondary, fontSize = 12.sp)
+            Text(text = stringResource(R.string.text_event_color_accent), color = TextSecondary, fontSize = 12.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 colors.forEach { hex ->
                     val isSelected = selectedColor == hex

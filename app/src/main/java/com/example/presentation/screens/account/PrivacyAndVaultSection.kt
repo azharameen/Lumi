@@ -167,7 +167,7 @@ fun PrivacyAndVaultSection(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Floating Companion Overlay",
+                        text = stringResource(R.string.text_floating_companion_overlay),
                         color = LumiPink,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
@@ -213,7 +213,7 @@ fun PrivacyAndVaultSection(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Security & Biometric Access",
+                        text = stringResource(R.string.text_security_biometric_access),
                         color = LumiMint,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
@@ -259,13 +259,13 @@ fun PrivacyAndVaultSection(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "On-Device Storage Statistics",
+                        text = stringResource(R.string.text_ondevice_storage_statistics),
                         color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "All data is securely stored locally in Room SQLite with zero external tracking.",
+                        text = stringResource(R.string.text_all_data_is_securely_stored_locally),
                         color = TextSecondary,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
@@ -293,7 +293,7 @@ fun PrivacyAndVaultSection(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Data Portability & Backup",
+                        text = stringResource(R.string.text_data_portability_backup),
                         color = LumiGold,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold

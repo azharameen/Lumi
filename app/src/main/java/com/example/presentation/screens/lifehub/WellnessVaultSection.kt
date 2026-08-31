@@ -166,13 +166,13 @@ fun WellnessVaultSection(
                     Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "4-7-8 Coherence Breathing",
+                            text = stringResource(R.string.text_478_coherence_breathing),
                             color = TextPrimary,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Calm your vagus nerve with guided tactile pacing",
+                            text = stringResource(R.string.text_calm_your_vagus_nerve_with_guided),
                             color = TextSecondary,
                             fontSize = 12.sp
                         )
@@ -182,7 +182,7 @@ fun WellnessVaultSection(
                         colors = ButtonDefaults.buttonColors(containerColor = LumiGreen),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(text = "Start", color = ObsidianDark, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text(text = stringResource(R.string.text_start), color = ObsidianDark, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
             }
@@ -202,7 +202,7 @@ fun WellnessVaultSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Daily Wellness Check-In",
+                            text = stringResource(R.string.text_daily_wellness_checkin),
                             color = TextPrimary,
                             fontSize = 17.sp,
                             fontWeight = FontWeight.Bold
@@ -357,7 +357,7 @@ fun WellnessVaultSection(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Biometric Memory Vault",
+                                text = stringResource(R.string.text_biometric_memory_vault),
                                 color = TextPrimary,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
@@ -366,7 +366,7 @@ fun WellnessVaultSection(
 
                         if (uiState.isMemoryVaultUnlocked) {
                             TextButton(onClick = { viewModel.lockMemoryVault() }) {
-                                Text(text = "Lock Vault", color = LumiPink, fontSize = 12.sp)
+                                Text(text = stringResource(R.string.text_lock_vault), color = LumiPink, fontSize = 12.sp)
                             }
                         }
                     }
@@ -375,7 +375,7 @@ fun WellnessVaultSection(
 
                     if (!uiState.isMemoryVaultUnlocked) {
                         Text(
-                            text = "Lumi securely stores your habits, preferences, and personal insights. Authenticate with biometrics to unlock.",
+                            text = stringResource(R.string.text_lumi_securely_stores_your_habits_preferences),
                             color = TextSecondary,
                             fontSize = 12.sp,
                             lineHeight = 17.sp
@@ -391,12 +391,12 @@ fun WellnessVaultSection(
                         ) {
                             Icon(imageVector = Icons.Default.LockOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = "Unlock with Biometrics", fontWeight = FontWeight.Bold)
+                            Text(text = stringResource(R.string.text_unlock_with_biometrics), fontWeight = FontWeight.Bold)
                         }
                     } else {
                         if (memories.isEmpty()) {
                             Text(
-                                text = "Vault unlocked. No memories logged yet. As you converse with Lumi, learned preferences will be securely archived here.",
+                                text = stringResource(R.string.text_vault_unlocked_no_memories_logged_yet),
                                 color = TextSecondary,
                                 fontSize = 12.sp
                             )

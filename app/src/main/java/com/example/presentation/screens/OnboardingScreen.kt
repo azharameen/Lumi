@@ -137,7 +137,7 @@ fun WelcomeStep(onNext: () -> Unit) {
         Spacer(modifier = Modifier.height(40.dp))
         
         Text(
-            text = "Welcome to Lumi",
+            text = stringResource(R.string.text_welcome_to_lumi),
             style = MaterialTheme.typography.displayMedium.copy(
                 fontWeight = FontWeight.Bold,
                 letterSpacing = (-0.5).sp
@@ -146,7 +146,7 @@ fun WelcomeStep(onNext: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(14.dp))
         Text(
-            text = "Your private, intelligent, and highly personalized on-device companion. Designed to keep you focused, productive, and grounded.",
+            text = stringResource(R.string.text_your_private_intelligent_and_highly_personalized),
             style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
             color = TextSecondary,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -182,13 +182,13 @@ fun PersonaStep(
     ) {
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Choose a Persona",
+            text = stringResource(R.string.text_choose_a_persona),
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
             color = TextPrimary
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = "How would you like Lumi to communicate with you?",
+            text = stringResource(R.string.text_how_would_you_like_lumi_to),
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary
         )
@@ -275,13 +275,13 @@ fun NameAndGoalStep(
     ) {
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Final Touches",
+            text = stringResource(R.string.text_final_touches),
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
             color = TextPrimary
         )
         Spacer(modifier = Modifier.height(6.dp))
         Text(
-            text = "Tell Lumi a bit about yourself.",
+            text = stringResource(R.string.text_tell_lumi_a_bit_about_yourself),
             style = MaterialTheme.typography.bodyMedium,
             color = TextSecondary
         )

@@ -219,22 +219,7 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
         val petPrimary = androidx.compose.ui.graphics.Color(petStatus.bloubSkinColor.primaryHex)
 
         Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            floatingActionButton = {
-                if (uiState.selectedTab != NavDestination.PetCompanion.tabIndex && !uiState.showWardrobeScreen) {
-                    androidx.compose.material3.FloatingActionButton(
-                        onClick = { viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) },
-                        containerColor = petPrimary,
-                        contentColor = ObsidianDark,
-                        shape = androidx.compose.foundation.shape.CircleShape
-                    ) {
-                        androidx.compose.material3.Icon(
-                            imageVector = Icons.Default.Home,
-                            contentDescription = "Return to Companion Home"
-                        )
-                    }
-                }
-            }
+            modifier = Modifier.fillMaxSize()
         ) { innerPadding ->
             Box(
                 modifier = Modifier
@@ -289,7 +274,8 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                         onShowCamera = { viewModel.setShowCamera(true) },
                         onStartVoiceListening = { chatViewModel.startVoiceListening() },
                         onStopVoiceListening = { chatViewModel.stopVoiceListening() },
-                        onToggleVoiceOutput = { viewModel.toggleVoiceOutput() }
+                        onToggleVoiceOutput = { viewModel.toggleVoiceOutput() },
+                        onNavigateBack = { viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                     )
                     NavDestination.LifeHub.tabIndex -> LifeHubScreen(
                         uiState = uiState,
@@ -301,12 +287,14 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                         goalPlans = lifeHubViewModel.allGoalPlans.collectAsStateWithLifecycle().value,
                         getMilestonesForGoal = { id -> lifeHubViewModel.getMilestonesForGoal(id) },
                         soundState = lifeHubViewModel.soundscapeState.collectAsStateWithLifecycle().value,
-                        onAction = handleLifeHubAction
+                        onAction = handleLifeHubAction,
+                        onNavigateBack = { viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                     )
                     NavDestination.Wellness.tabIndex -> WellnessScreen(
                         viewModel = wellnessViewModel,
                         appViewModel = viewModel,
-                        onNavigateToChat = { viewModel.setSelectedTab(NavDestination.Assistant.tabIndex) }
+                        onNavigateToChat = { viewModel.setSelectedTab(NavDestination.Assistant.tabIndex) },
+                        onNavigateBack = { viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                     )
                     NavDestination.Account.tabIndex -> UserAccountScreen(
                         userProfile = userProfile,
@@ -338,7 +326,8 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
                         onNavigateToChat = { prompt ->
                             viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
                             prompt?.let { viewModel.sendMessage(it) }
-                        }
+                        },
+                        onNavigateBack = { viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                     )
                     else -> HomeScreen(
                         petStatus = petViewModel.petStatus.collectAsStateWithLifecycle().value,

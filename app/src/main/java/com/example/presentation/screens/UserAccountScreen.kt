@@ -37,6 +37,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
@@ -178,6 +179,7 @@ fun UserAccountScreen(
     isOverlayEnabled: Boolean,
     onToggleOverlay: (Boolean) -> Unit,
     onNavigateToChat: ((String?) -> Unit)? = null,
+    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -212,6 +214,13 @@ fun UserAccountScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = onNavigateBack) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowBack,
+                                    contentDescription = stringResource(R.string.desc_back),
+                                    tint = TextPrimary
+                                )
+                            }
                             // Gradient Avatar Ring
                             Box(
                                 modifier = Modifier
@@ -303,7 +312,7 @@ fun UserAccountScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "Lumi Synchronized",
+                                    text = stringResource(R.string.text_lumi_synchronized),
                                     color = LumiMint,
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold

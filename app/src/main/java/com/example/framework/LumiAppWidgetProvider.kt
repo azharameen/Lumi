@@ -34,14 +34,14 @@ class LumiAppWidgetProvider : AppWidgetProvider() {
         if (intent.action == ACTION_WIDGET_QUICK_HYDRATE) {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
             scope.launch {
-                val repo = org.koin.java.KoinJavaComponent.getKoin().get(com.example.domain.repository.LumiRepository::class.java)
+                val repo = org.koin.java.KoinJavaComponent.getKoin().get(com.example.domain.repository.LumiRepository::class)
                 repo.logWellness(8, "Hydrated via Widget", 8, 1, "Quick widget tap")
                 triggerWidgetUpdate(context)
             }
         } else if (intent.action == ACTION_WIDGET_PET) {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
             scope.launch {
-                val repo = org.koin.java.KoinJavaComponent.getKoin().get(com.example.domain.repository.LumiRepository::class.java)
+                val repo = org.koin.java.KoinJavaComponent.getKoin().get(com.example.domain.repository.LumiRepository::class)
                 repo.petTheCharacter()
                 triggerWidgetUpdate(context)
             }
@@ -104,7 +104,7 @@ class LumiAppWidgetProvider : AppWidgetProvider() {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
             scope.launch {
                 try {
-                    val repo = org.koin.java.KoinJavaComponent.getKoin().get(com.example.domain.repository.LumiRepository::class.java)
+                    val repo = org.koin.java.KoinJavaComponent.getKoin().get(com.example.domain.repository.LumiRepository::class)
                     val pet = repo.petStatus.firstOrNull()
                     val tasks = repo.allTasks.firstOrNull()
                     val topTask = tasks?.firstOrNull { !it.isCompleted }?.title ?: "All tasks completed! ✨"
@@ -122,4 +122,5 @@ class LumiAppWidgetProvider : AppWidgetProvider() {
         }
     }
 }
+
 

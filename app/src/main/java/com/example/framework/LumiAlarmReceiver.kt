@@ -153,7 +153,7 @@ class LumiAlarmReceiver : BroadcastReceiver() {
                 // Reschedule upcoming alarms on boot
                 val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
                 scope.launch {
-                    val repository = org.koin.java.KoinJavaComponent.getKoin().get(com.example.domain.repository.LumiRepository::class.java)
+                    val repository = org.koin.java.KoinJavaComponent.getKoin().get(com.example.domain.repository.LumiRepository::class)
                     // Re-schedule alarms
                     LumiAlarmScheduler.scheduleNextWellnessNudge(context)
                     LumiAlarmScheduler.scheduleDailyBriefings(context)
@@ -309,5 +309,6 @@ object LumiAlarmScheduler {
         }
     }
 }
+
 
 

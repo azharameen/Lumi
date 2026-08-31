@@ -1,6 +1,4 @@
 package com.example.presentation.viewmodel
-import com.example.domain.account.UserProfileManager
-import com.example.data.remote.ModelDownloadManager
 
 import android.app.Application
 import androidx.lifecycle.ViewModel
@@ -107,4 +105,5 @@ class LifeHubViewModel(
     
     fun getMilestonesForGoal(goalId: Long) = repository.getMilestonesForGoal(goalId)
 }
+
 

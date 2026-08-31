@@ -33,5 +33,6 @@ val appModule = module {
     viewModel { LifeHubViewModel(get(), get(), get()) }
     viewModel { LumiViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { PetViewModel(get(), get()) }
-    viewModel { WellnessViewModel(get()) }
+    viewModel { WellnessViewModel(get(), get()) }
 }
+

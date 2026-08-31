@@ -77,7 +77,7 @@ class PetOverlayService : Service() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
         // Initialize Shared Singleton Repository
-        repository = (applicationContext as com.example.LumiApplication).container.repository
+        repository = org.koin.java.KoinJavaComponent.getKoin().get(com.example.domain.repository.LumiRepository::class.java)
         repository.setOverlayActive(true)
 
         createNotificationChannel()
@@ -415,4 +415,5 @@ class PetOverlayService : Service() {
         private const val AUTO_HIDE_IDLE_DELAY_MS = 5000L
     }
 }
+
 

@@ -1,6 +1,4 @@
 package com.example.presentation.viewmodel
-import com.example.domain.account.UserProfileManager
-import com.example.data.remote.ModelDownloadManager
 
 import android.app.Application
 import androidx.lifecycle.ViewModel
@@ -17,9 +15,9 @@ import androidx.paging.cachedIn
 import kotlinx.coroutines.launch
 
 class WellnessViewModel(
-    val repository: LumiRepository
+    val repository: LumiRepository,
+    val biometricVault: BiometricVaultManager
 ) : ViewModel() {
-            val biometricVault = BiometricVaultManager(application)
 
     val pagedWellnessLogs = repository.pagedWellnessLogs.cachedIn(viewModelScope)
 
@@ -38,4 +36,5 @@ class WellnessViewModel(
         viewModelScope.launch { repository.incrementHydration(logId) }
     }
 }
+
 

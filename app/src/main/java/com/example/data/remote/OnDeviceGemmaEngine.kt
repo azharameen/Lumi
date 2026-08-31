@@ -1,38 +1,20 @@
 package com.example.data.remote
 
-import com.example.domain.tools.ToolRetriever
-import com.example.domain.tools.ToolRegistry
-import org.json.JSONObject
-
-
 import android.app.ActivityManager
 import android.content.Context
-import android.os.SystemClock
+import com.example.data.local.entity.AiExecutionLogEntity
 import com.example.domain.model.PetEmotion
 import com.example.domain.tools.AgentToolDispatcher
+import com.example.domain.tools.ToolRegistry
+import com.example.domain.tools.ToolRetriever
+import com.example.domain.model.ToolExecutionReport
+import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.File
-import com.google.mediapipe.tasks.genai.llminference.LlmInference
-
-enum class AiRoutingMode {
-    HYBRID_AUTO,         // Smart auto-switching: Gemma for offline/banter/wellness, Gemini for vision/complex
-    STRICT_ON_DEVICE,    // 100% On-Device Gemma (zero cloud data transmission, ultra privacy)
-    CLOUD_TURBO          // Cloud Gemini 2.5 Flash prioritized for maximum reasoning capability
-}
-
-sealed class OnDeviceInferenceException(message: String, cause: Throwable? = null) : IllegalStateException(message, cause) {
-    class ModelNotFound(val modelId: String, message: String) : OnDeviceInferenceException(message)
-    class InsufficientMemory(val requiredBytes: Long, val availableBytes: Long, message: String) : OnDeviceInferenceException(message)
-    class HardwareIncompatible(message: String) : OnDeviceInferenceException(message)
-    class InferenceExecutionError(message: String, cause: Throwable? = null) : OnDeviceInferenceException(message, cause)
-}
+import org.json.JSONObject
 
 data class GemmaModelStatus(
-    val modelName: String = "Local LLM",
-    val isModelLoaded: Boolean = false,
-    val modelSizeBytes: Long = 1_438_400_000L,
-    val quantPrecision: String = "INT4-Q4_K_M (MediaPipe)",
+    val isModelLoaded: Boolean,
     val accelerator: String = "GPU OpenCL / NPU",
     val contextWindowTokens: Int = 2048,
     val generationSpeedTokPerSec: Double = 0.0,
@@ -124,7 +106,7 @@ class OnDeviceGemmaEngine(
                     val paramsStr = tool.parameters.joinToString(" ") { "${it.name}=\"${it.type}\"" }
                     "<tool name=\"${tool.id}\" desc=\"${tool.description}\" $paramsStr/>"
                 }
-                "\nAvailable Tools:\n$toolsXml\nIf needed, reply ONLY with: <tool_call><name>TOOL_NAME</name><args>{\"key\": \"val"}</args></tool_call>\n"
+                "\nAvailable Tools:\n$toolsXml\nIf needed, reply ONLY with: <tool_call><name>TOOL_NAME</name><args>{\"key\": \"val\"}</args></tool_call>\n"
             } else ""
 
             val prompt = if (conversationHistory.isNotBlank()) {
@@ -138,7 +120,7 @@ class OnDeviceGemmaEngine(
                 ?: throw OnDeviceInferenceException.InferenceExecutionError("Local engine returned null.")
 
             var generatedText = rawOutput
-            val toolReports = mutableListOf<AgentToolReport>()
+            val toolReports = mutableListOf<ToolExecutionReport>()
 
             // Stage 3: Parse XML Tool Calls & Local Kotlin Execution
             val toolCallRegex = Regex("<tool_call><name>(.*?)</name><args>(.*?)</args></tool_call>", RegexOption.DOT_MATCHES_ALL)
@@ -162,7 +144,7 @@ class OnDeviceGemmaEngine(
                     val duration = System.currentTimeMillis() - startTime
 
                     toolReports.add(
-                        AgentToolReport(
+                        ToolExecutionReport(
                             toolName = tool.displayName,
                             executionTimeMs = duration,
                             isSuccess = execResult.success,
@@ -171,7 +153,7 @@ class OnDeviceGemmaEngine(
                     )
                     generatedText = "Executed ${tool.displayName}: ${execResult.resultText}"
                 }
-            }returned null.")
+            }
 
             val lowerText = generatedText.lowercase()
             val emotion = when {
@@ -191,11 +173,10 @@ class OnDeviceGemmaEngine(
         }
     }
 
-    suspend fun benchmarkOnDeviceGemma(): Pair<String, Long> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+    suspend fun benchmarkOnDeviceGemma(): Pair<String, Long> = withContext(Dispatchers.Default) {
         if (llmInference == null) throw OnDeviceInferenceException.InferenceExecutionError("Not initialized")
         val start = System.currentTimeMillis()
         val response = llmInference?.generateResponse("Test") ?: "Failed"
         Pair(response, System.currentTimeMillis() - start)
     }
 }
-

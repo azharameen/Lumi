@@ -6,7 +6,6 @@ import com.example.data.local.LumiDatabase
 import com.example.data.local.dao.AiExecutionLogDao
 import com.example.data.local.entity.AiExecutionLogEntity
 import com.example.domain.agent.hitl.HitlApprovalManager
-import com.example.domain.ai.AiEngineProvider
 import com.example.domain.ai.AiModelRegistry
 import com.example.domain.ai.SmartAiRouter
 import com.example.domain.model.PetEmotion
@@ -54,36 +53,34 @@ class HybridAiEngine(
     ): EngineTurnResult = withContext(Dispatchers.IO) {
         val startTime = System.currentTimeMillis()
         val currentRoutingMode = _routingMode.value
-        val isOnline = SmartAiRouter.checkNetworkAvailability(context)
 
-        val decision = SmartAiRouter.routeTask(
-            userPrompt = userMessage,
-            hasImage = (imageAttachment != null),
-            userRoutingMode = currentRoutingMode,
-            isNetworkAvailable = isOnline
+        val decision = SmartAiRouter.routeRequest(
+            userMessage = userMessage,
+            imageAttachment = imageAttachment,
+            userRoutingMode = currentRoutingMode
         )
 
-        val turnResult = if (decision.engineProvider == AiEngineProvider.ON_DEVICE_GEMMA) {
-            val localResult = onDeviceGemmaEngine.executeTurn(userMessage, imageAttachment)
-            if (!localResult.isSuccess && isOnline && currentRoutingMode == AiRoutingMode.HYBRID_AUTO) {
-                // Fallback to Gemini Cloud Turbo
-                val cloudResult = geminiEngine.executeTurn(userMessage, recentHistory, imageAttachment)
-                EngineTurnResult(
-                    responseText = cloudResult.responseText,
-                    inferredEmotion = cloudResult.inferredEmotion,
-                    toolReports = cloudResult.toolReports,
-                    usedEngine = "CLOUD_GEMINI_FALLBACK"
-                )
-            } else {
+        val turnResult = if (decision.isLocalOnDevice) {
+            try {
+                val localResult = onDeviceGemmaEngine.executeOnDeviceTurn(userMessage, recentHistory)
                 EngineTurnResult(
                     responseText = localResult.responseText,
                     inferredEmotion = localResult.inferredEmotion,
                     toolReports = localResult.toolReports,
                     usedEngine = "ON_DEVICE_GEMMA"
                 )
+            } catch (e: Exception) {
+                // Fallback to Cloud Gemini if local model execution fails or fails to load
+                val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment)
+                EngineTurnResult(
+                    responseText = cloudResult.responseText,
+                    inferredEmotion = cloudResult.inferredEmotion,
+                    toolReports = cloudResult.toolReports,
+                    usedEngine = "CLOUD_GEMINI_FALLBACK"
+                )
             }
         } else {
-            val cloudResult = geminiEngine.executeTurn(userMessage, recentHistory, imageAttachment)
+            val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment)
             EngineTurnResult(
                 responseText = cloudResult.responseText,
                 inferredEmotion = cloudResult.inferredEmotion,
@@ -96,7 +93,7 @@ class HybridAiEngine(
         try {
             aiAnalyticsDao.insertLog(
                 AiExecutionLogEntity(
-                    taskCategory = decision.category.name,
+                    taskCategory = decision.taskCategory.name,
                     engineType = turnResult.usedEngine,
                     modelName = if (turnResult.usedEngine.contains("GEMMA")) "gemma-2b-it-int4" else "gemini-2.5-flash",
                     promptPreview = userMessage.take(150),
@@ -109,9 +106,9 @@ class HybridAiEngine(
                     finishTimeMillis = System.currentTimeMillis(),
                     durationMs = duration,
                     isSuccess = true,
-                    isOffline = !isOnline,
+                    isOffline = turnResult.usedEngine.contains("GEMMA"),
                     hardwareTarget = if (turnResult.usedEngine.contains("GEMMA")) "GPU OpenCL / NPU" else "Google Cloud Vertex AI",
-                    routingReason = decision.reasoning
+                    routingReason = decision.routingReason
                 )
             )
         } catch (e: Exception) {

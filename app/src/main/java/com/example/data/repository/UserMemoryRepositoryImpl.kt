@@ -24,7 +24,7 @@ class UserMemoryRepositoryImpl(
     private val briefingEngine: AutonomousBriefingEngine
 ) : UserMemoryRepository {
 
-    override val userProfile: Flow<UserProfileData> = userProfileManager.profileFlow
+    override val userProfile: Flow<UserProfileData> = userProfileManager.userProfile
 
     override val userFacts: Flow<List<UserFact>> = factKnowledgeDao.getAllFacts()
         .map { list -> list.map { it.toDomain() } }
@@ -78,13 +78,13 @@ class UserMemoryRepositoryImpl(
         val petStatus = com.example.domain.model.PetStatus()
         val petEvolution = com.example.data.local.entity.PetEvolutionEntity()
         val briefing = briefingEngine.generateBriefing(
-            briefingType = BriefingType.MORNING,
+            type = BriefingType.MORNING,
             petStatus = petStatus,
             petEvolution = petEvolution,
             tasks = emptyList(),
             events = emptyList(),
             wellnessLogs = emptyList()
         )
-        briefing.summaryText
+        briefing.audioScript
     }
 }

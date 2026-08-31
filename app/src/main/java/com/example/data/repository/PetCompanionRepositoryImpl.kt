@@ -41,7 +41,8 @@ class PetCompanionRepositoryImpl(
     }
 
     override suspend fun triggerSoundscape(soundType: String) {
-        soundscapeEngine?.triggerSoundscape(soundType)
+        val typeEnum = try { com.example.data.device.SoundscapeType.valueOf(soundType) } catch (e: Exception) { com.example.data.device.SoundscapeType.BINAURAL_FOCUS }
+        soundscapeEngine?.startSoundscape(typeEnum)
     }
 
     override suspend fun stopSoundscape() {

@@ -432,7 +432,7 @@ fun UserAccountScreen(
                         userProfile = userProfile,
                         taskCount = tasks.size,
                         eventCount = events.size,
-                        memoryCount = memories.size,
+                        memoryCount = userFacts.size,
                         messageCount = messages.size,
                         onToggleBiometric = { isEnabled ->
                             onUpdateProfile(userProfile.copy(enableBiometricLock = isEnabled))

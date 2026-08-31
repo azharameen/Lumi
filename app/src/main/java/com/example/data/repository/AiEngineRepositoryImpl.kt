@@ -27,7 +27,7 @@ class AiEngineRepositoryImpl(
     }
 
     override fun downloadLocalModel(modelId: String) {
-        hybridAiEngine.downloadManager?.enqueueDownload(modelId)
+        hybridAiEngine.downloadManager?.downloadModel(modelId)
     }
 
     override fun pauseModelDownload(modelId: String) {
@@ -39,7 +39,7 @@ class AiEngineRepositoryImpl(
     }
 
     override fun deleteLocalModel(modelId: String) {
-        hybridAiEngine.downloadManager?.deleteModelArtifact(modelId)
+        hybridAiEngine.downloadManager?.deleteModel(modelId)
     }
 
     override fun setActiveLocalModel(modelId: String) {

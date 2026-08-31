@@ -80,11 +80,11 @@ class LumiRepositoryImpl private constructor(
     }
 
     override suspend fun feedPet(foodName: String) {
-        earnCoinsAndExp(5, 10, 'Fed pet ')
+        earnCoinsAndExp(5, 10, "Fed pet $foodName")
     }
 
     override suspend fun playWithPet() {
-        earnCoinsAndExp(10, 20, 'Played with pet')
+        earnCoinsAndExp(10, 20, "Played with pet")
     }
 
 

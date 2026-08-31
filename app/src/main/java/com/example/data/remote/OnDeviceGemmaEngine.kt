@@ -165,10 +165,11 @@ class OnDeviceGemmaEngine(
 
                     toolReports.add(
                         ToolExecutionReport(
-                            toolName = tool.displayName,
-                            executionTimeMs = duration,
+                            toolName = tool.id,
+                            title = tool.displayName,
+                            description = execResult.resultText,
                             isSuccess = execResult.success,
-                            outputSummary = execResult.resultText
+                            payloadPreview = execResult.resultText.take(100)
                         )
                     )
                     generatedText = "Executed ${tool.displayName}: ${execResult.resultText}"

@@ -75,7 +75,7 @@ class TaskGoalRepositoryImpl(
     }
 
     override suspend fun generateGoalPlan(goalTitle: String): String = withContext(Dispatchers.IO) {
-        val plan = goalPlanner?.generateGoalPlan(goalTitle)
-        plan?.summary ?: "Goal plan generated for $goalTitle"
+        val plan = goalPlanner?.decomposeAndSaveGoal(goalTitle, "General")
+        plan?.title ?: "Goal plan generated for $goalTitle"
     }
 }

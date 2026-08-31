@@ -7,8 +7,11 @@ import com.example.presentation.screens.account.*
 import com.example.presentation.components.*
 import com.example.data.remote.ModelDownloadProgress
 import com.example.data.remote.LocalLlmModelSpec
-import com.example.data.local.entity.PetMemoryEntity
-import com.example.data.local.entity.ChatMessageEntity
+import com.example.domain.model.Task
+import com.example.domain.model.CalendarEvent
+import com.example.domain.model.ChatMessage
+import com.example.domain.model.UserFact
+
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -158,10 +161,9 @@ fun UserAccountScreen(
     userFacts: List<com.example.domain.account.UserFactItem>,
     petStatus: com.example.domain.model.PetStatus,
     benchmarkStatus: String,
-    tasks: List<com.example.data.local.entity.TaskEntity>,
-    events: List<com.example.data.local.entity.CalendarEventEntity>,
-    memories: List<com.example.data.local.entity.PetMemoryEntity>,
-    messages: List<com.example.data.local.entity.ChatMessageEntity>,
+    tasks: List<Task>,
+    events: List<CalendarEvent>,
+    messages: List<ChatMessage>,
     aiRoutingMode: com.example.data.remote.AiRoutingMode,
     onSetAiRoutingMode: (com.example.data.remote.AiRoutingMode) -> Unit,
     localModelCatalog: List<LocalLlmModelSpec>,

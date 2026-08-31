@@ -11,6 +11,7 @@ import com.example.domain.model.ToolExecutionReport
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONObject
 
 data class GemmaModelStatus(
@@ -35,6 +36,17 @@ class OnDeviceGemmaEngine(
 
     private var llmInference: LlmInference? = null
     private var loadedModelPath: String? = null
+
+    private val _selectedAccelerator = kotlinx.coroutines.flow.MutableStateFlow(HardwareAccelerator.GPU_OPENCL)
+    val selectedAccelerator: kotlinx.coroutines.flow.StateFlow<HardwareAccelerator> = _selectedAccelerator.asStateFlow()
+
+    val activeModelId: kotlinx.coroutines.flow.StateFlow<String?> 
+        get() = downloadManager?.activeModelId ?: kotlinx.coroutines.flow.MutableStateFlow(null).asStateFlow()
+
+    fun setHardwareAccelerator(accelerator: HardwareAccelerator) {
+        _selectedAccelerator.value = accelerator
+    }
+
 
     fun checkMemoryAvailability(requiredBytes: Long): Pair<Boolean, Long> {
         if (context == null) return Pair(true, Long.MAX_VALUE)

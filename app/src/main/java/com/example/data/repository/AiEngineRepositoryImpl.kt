@@ -2,7 +2,7 @@ package com.example.data.repository
 
 import android.graphics.Bitmap
 import com.example.data.remote.*
-import com.example.domain.agent.hitl.PendingApprovalAction
+import com.example.domain.agent.hitl.HitlPendingAction
 import com.example.domain.repository.AiEngineRepository
 import com.example.domain.repository.AiTurnResult
 import kotlinx.coroutines.flow.Flow
@@ -16,7 +16,7 @@ class AiEngineRepositoryImpl(
     override val activeLocalModelId: Flow<String?> = hybridAiEngine.onDeviceGemmaEngine.activeModelId
     override val localModelCatalog: List<LocalLlmModelSpec> = hybridAiEngine.downloadManager?.catalog ?: emptyList()
     override val modelDownloadStates: Flow<Map<String, ModelDownloadProgress>> = hybridAiEngine.downloadManager?.downloadStates ?: kotlinx.coroutines.flow.flowOf(emptyMap())
-    override val pendingHitlActions: Flow<List<PendingApprovalAction>> = hybridAiEngine.hitlApprovalManager.pendingActions
+    override val pendingHitlActions: Flow<List<HitlPendingAction>> = hybridAiEngine.hitlApprovalManager.pendingActions
 
     override fun setAiRoutingMode(mode: AiRoutingMode) {
         hybridAiEngine.setRoutingMode(mode)
@@ -47,7 +47,8 @@ class AiEngineRepositoryImpl(
     }
 
     override suspend fun resolveHitlAction(actionId: String, approved: Boolean): Boolean {
-        return hybridAiEngine.hitlApprovalManager.resolveAction(actionId, approved)
+        val state = hybridAiEngine.hitlApprovalManager.resolveAction(actionId, approved)
+        return state != null
     }
 
     override suspend fun executeAiTurn(

@@ -14,6 +14,14 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONObject
 
+
+sealed class OnDeviceInferenceException(message: String, cause: Throwable? = null) : Exception(message, cause) {
+    class HardwareIncompatible(message: String) : OnDeviceInferenceException(message)
+    class ModelNotFound(val modelId: String, message: String) : OnDeviceInferenceException(message)
+    class InsufficientMemory(val requiredBytes: Long, val availableBytes: Long, message: String) : OnDeviceInferenceException(message)
+    class InferenceExecutionError(message: String, cause: Throwable? = null) : OnDeviceInferenceException(message, cause)
+}
+
 data class GemmaModelStatus(
     val isModelLoaded: Boolean,
     val accelerator: String = "GPU OpenCL / NPU",

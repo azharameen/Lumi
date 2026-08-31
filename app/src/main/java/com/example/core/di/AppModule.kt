@@ -16,6 +16,9 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val appModule = module {
+    // Database instance
+    single { LumiDatabase.getDatabase(androidContext()) }
+
     // Infrastructure & System Managers
     single { HealthConnectManager(androidContext()) }
     single { UserProfileManager.getInstance(androidContext()) }
@@ -35,7 +38,7 @@ val appModule = module {
 
     // 1000+ Tools & FTS Engine Singletons
     single { ToolRegistry.getInstance() }
-    single { FastToolIndex(LumiDatabase.getInstance(androidContext()).toolFtsDao(), get()) }
+    single { FastToolIndex(get<LumiDatabase>().toolFtsDao(), get()) }
     single { ToolRetriever(get(), get()) }
 
     // Facade Repository
@@ -43,8 +46,8 @@ val appModule = module {
 
     // Specialized Clean Domain Repositories
     single<PetCompanionRepository> { PetCompanionRepositoryImpl(get(), get()) }
-    single<UserMemoryRepository> { UserMemoryRepositoryImpl(get(), LumiDatabase.getInstance(androidContext()).factKnowledgeDao(), LumiDatabase.getInstance(androidContext()).chatMessageDao(), get()) }
-    single<TaskGoalRepository> { TaskGoalRepositoryImpl(LumiDatabase.getInstance(androidContext()).taskDao(), LumiDatabase.getInstance(androidContext()).calendarEventDao()) }
+    single<UserMemoryRepository> { UserMemoryRepositoryImpl(get(), get<LumiDatabase>().factKnowledgeDao(), get<LumiDatabase>().chatMessageDao(), get()) }
+    single<TaskGoalRepository> { TaskGoalRepositoryImpl(get<LumiDatabase>().taskDao(), get<LumiDatabase>().calendarEventDao()) }
 
     // ViewModels
     viewModel { AiSettingsViewModel(get(), get()) }

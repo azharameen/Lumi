@@ -13,6 +13,15 @@ import com.example.domain.model.PetStatus
 import kotlinx.coroutines.flow.Flow
 
 interface LumiRepository {
+    val currentEmotion: Flow<PetEmotion>
+    val isSpeaking: Flow<Boolean>
+    val isListening: Flow<Boolean>
+    val isThinking: Flow<Boolean>
+    val speechBubbleText: Flow<String?>
+    suspend fun petTheAnimal()
+    suspend fun feedPet(foodName: String)
+    suspend fun playWithPet()
+
     val petEvolution: Flow<PetEvolutionEntity?>
     val petStatus: Flow<PetStatus>
     val allTasks: Flow<List<TaskEntity>>

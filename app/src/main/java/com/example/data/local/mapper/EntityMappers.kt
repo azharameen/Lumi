@@ -11,7 +11,7 @@ import com.example.domain.model.UserFact
 
 fun TaskEntity.toDomain(): Task {
     return Task(
-        id = id,
+        id = id.toString(),
         title = title,
         isCompleted = isCompleted,
         category = category,
@@ -23,7 +23,7 @@ fun TaskEntity.toDomain(): Task {
 
 fun Task.toEntity(): TaskEntity {
     return TaskEntity(
-        id = id,
+        id = id.toLongOrNull() ?: 0L,
         title = title,
         isCompleted = isCompleted,
         category = category,
@@ -35,32 +35,31 @@ fun Task.toEntity(): TaskEntity {
 
 fun ChatMessageEntity.toDomain(): ChatMessage {
     return ChatMessage(
-        id = id,
+        id = id.toString(),
         sender = sender,
-        text = text,
+        text = content,
         timestamp = timestamp,
-        emotion = emotion,
-        isPending = isPending
+        emotion = petEmotion,
+        isPending = false
     )
 }
 
 fun ChatMessage.toEntity(): ChatMessageEntity {
     return ChatMessageEntity(
-        id = id,
+        id = id.toLongOrNull() ?: 0L,
         sender = sender,
-        text = text,
+        content = text,
         timestamp = timestamp,
-        emotion = emotion,
-        isPending = isPending
+        petEmotion = emotion ?: "HAPPY"
     )
 }
 
 fun CalendarEventEntity.toDomain(): CalendarEvent {
     return CalendarEvent(
-        id = id,
+        id = id.toString(),
         title = title,
-        startTime = startTime,
-        endTime = endTime,
+        startTime = startTimeMillis,
+        endTime = endTimeMillis,
         location = location,
         description = description,
         isAllDay = isAllDay
@@ -69,32 +68,31 @@ fun CalendarEventEntity.toDomain(): CalendarEvent {
 
 fun CalendarEvent.toEntity(): CalendarEventEntity {
     return CalendarEventEntity(
-        id = id,
+        id = id.toLongOrNull() ?: 0L,
         title = title,
-        startTime = startTime,
-        endTime = endTime,
-        location = location,
-        description = description,
+        startTimeMillis = startTime,
+        endTimeMillis = endTime,
+        location = location ?: "",
+        description = description ?: "",
         isAllDay = isAllDay
     )
 }
 
 fun FactKnowledgeEntity.toDomain(): UserFact {
     return UserFact(
-        id = id,
-        factKey = factKey,
-        factValue = factValue,
-        isPinned = isPinned,
-        createdAt = createdAt
+        id = id.toString(),
+        factKey = predicate,
+        factValue = objectValue,
+        isPinned = false,
+        createdAt = lastUpdatedMillis
     )
 }
 
 fun UserFact.toEntity(): FactKnowledgeEntity {
     return FactKnowledgeEntity(
-        id = id,
-        factKey = factKey,
-        factValue = factValue,
-        isPinned = isPinned,
-        createdAt = createdAt
+        id = id.toLongOrNull() ?: 0L,
+        predicate = factKey,
+        objectValue = factValue,
+        lastUpdatedMillis = createdAt
     )
 }

@@ -5,10 +5,9 @@ import com.example.data.remote.AiRoutingMode
 import com.example.data.remote.HardwareAccelerator
 import com.example.data.remote.LocalLlmModelSpec
 import com.example.data.remote.ModelDownloadProgress
-import com.example.data.remote.OnDeviceGemmaEngine
-import com.example.domain.agent.hitl.PendingApprovalAction
+import com.example.domain.agent.hitl.HitlPendingAction
 import com.example.domain.model.PetEmotion
-import com.example.domain.tools.ToolExecutionReport
+import com.example.domain.model.ToolExecutionReport
 import kotlinx.coroutines.flow.Flow
 
 data class AiTurnResult(
@@ -23,7 +22,7 @@ interface AiEngineRepository {
     val activeLocalModelId: Flow<String?>
     val localModelCatalog: List<LocalLlmModelSpec>
     val modelDownloadStates: Flow<Map<String, ModelDownloadProgress>>
-    val pendingHitlActions: Flow<List<PendingApprovalAction>>
+    val pendingHitlActions: Flow<List<HitlPendingAction>>
 
     fun setAiRoutingMode(mode: AiRoutingMode)
     fun setHardwareAccelerator(accelerator: HardwareAccelerator)

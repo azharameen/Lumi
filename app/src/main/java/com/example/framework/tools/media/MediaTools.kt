@@ -19,7 +19,7 @@ class MediaPlayPauseTool(private val context: Context) : LumiTool {
     override val description = "Toggles music or video playback in Spotify, YouTube, or background media players"
     override val category = ToolCategory.UTILITY
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {
@@ -42,7 +42,7 @@ class MediaNextTrackTool(private val context: Context) : LumiTool {
     override val description = "Skips to next track in active media player"
     override val category = ToolCategory.UTILITY
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {
@@ -63,7 +63,7 @@ class MediaPreviousTrackTool(private val context: Context) : LumiTool {
     override val description = "Goes to previous track in active media player"
     override val category = ToolCategory.UTILITY
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {

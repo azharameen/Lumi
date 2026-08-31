@@ -63,7 +63,7 @@ class OpenLocationSettingsTool(private val context: Context) : LumiTool {
     override val description = "Launches Android system GPS & Location settings page"
     override val category = ToolCategory.SYSTEM
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {
@@ -84,7 +84,7 @@ class OpenDisplaySettingsTool(private val context: Context) : LumiTool {
     override val description = "Launches Android system Display & Screen settings page"
     override val category = ToolCategory.SYSTEM
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {
@@ -105,7 +105,7 @@ class OpenWifiSettingsTool(private val context: Context) : LumiTool {
     override val description = "Launches Android system Wi-Fi settings page"
     override val category = ToolCategory.SYSTEM
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {
@@ -126,7 +126,7 @@ class OpenBluetoothSettingsTool(private val context: Context) : LumiTool {
     override val description = "Launches Android system Bluetooth settings page"
     override val category = ToolCategory.SYSTEM
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {

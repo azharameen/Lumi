@@ -71,7 +71,7 @@ class DoNotDisturbStatusTool(private val context: Context) : LumiTool {
     override val description = "Checks whether Do Not Disturb (DND) mode is currently active"
     override val category = ToolCategory.SYSTEM
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {

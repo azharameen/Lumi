@@ -69,6 +69,24 @@ class LumiRepositoryImpl private constructor(
     private val _isThinking = MutableStateFlow(false)
     private val _speechBubbleText = MutableStateFlow<String?>("Hi! I'm Lumi, your personal AI friend ✨")
     private val _isOverlayActive = MutableStateFlow(false)
+    override val currentEmotion: Flow<PetEmotion> = _currentEmotion.asStateFlow()
+    override val isSpeaking: Flow<Boolean> = _isSpeaking.asStateFlow()
+    override val isListening: Flow<Boolean> = _isListening.asStateFlow()
+    override val isThinking: Flow<Boolean> = _isThinking.asStateFlow()
+    override val speechBubbleText: Flow<String?> = _speechBubbleText.asStateFlow()
+
+    override suspend fun petTheAnimal() {
+        petTheCharacter()
+    }
+
+    override suspend fun feedPet(foodName: String) {
+        earnCoinsAndExp(5, 10, 'Fed pet ')
+    }
+
+    override suspend fun playWithPet() {
+        earnCoinsAndExp(10, 20, 'Played with pet')
+    }
+
 
     override val isOverlayActive: Flow<Boolean> = _isOverlayActive.asStateFlow()
 

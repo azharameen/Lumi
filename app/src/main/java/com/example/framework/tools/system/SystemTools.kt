@@ -28,7 +28,7 @@ class BatteryTool(private val context: Context) : LumiTool {
     override val description = "Reads battery level, charging status, and power saver state"
     override val category = ToolCategory.SYSTEM
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {
@@ -52,7 +52,7 @@ class StorageInfoTool : LumiTool {
     override val description = "Checks total and available internal storage space"
     override val category = ToolCategory.UTILITY
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {
@@ -74,7 +74,7 @@ class RamUsageTool(private val context: Context) : LumiTool {
     override val description = "Checks total and available physical RAM"
     override val category = ToolCategory.UTILITY
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {
@@ -97,7 +97,7 @@ class SystemInfoTool : LumiTool {
     override val description = "Returns Android model, brand, SDK version, and device name"
     override val category = ToolCategory.UTILITY
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         val model = Build.MODEL
@@ -114,7 +114,7 @@ class DeviceUptimeTool : LumiTool {
     override val description = "Checks how long the device has been running without a reboot"
     override val category = ToolCategory.UTILITY
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         val uptimeMs = SystemClock.elapsedRealtime()
@@ -206,7 +206,7 @@ class NetworkStatusTool(private val context: Context) : LumiTool {
     override val description = "Checks active internet connection type (Wi-Fi, Cellular, or Offline)"
     override val category = ToolCategory.SYSTEM
     override val riskLevel = ToolRiskLevel.LOW
-    override val parameters = emptyList()
+    override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {

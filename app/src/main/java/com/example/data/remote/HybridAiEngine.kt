@@ -1,5 +1,12 @@
 package com.example.data.remote
 
+enum class AiRoutingMode {
+    HYBRID_AUTO,
+    STRICT_ON_DEVICE,
+    CLOUD_TURBO
+}
+
+
 import android.content.Context
 import android.graphics.Bitmap
 import com.example.data.local.LumiDatabase
@@ -27,13 +34,18 @@ class HybridAiEngine(
 ) {
     val hitlApprovalManager = HitlApprovalManager(database, toolDispatcher)
     private val geminiEngine = GeminiAgentEngine(toolDispatcher, database, hitlApprovalManager)
-    private val downloadManager = context?.let { ModelDownloadManager.getInstance(it) }
+    val downloadManager = context?.let { ModelDownloadManager.getInstance(it) }
     val onDeviceGemmaEngine = OnDeviceGemmaEngine(toolDispatcher, downloadManager, context, toolRetriever)
 
     private val _routingMode = MutableStateFlow(AiRoutingMode.HYBRID_AUTO)
     val routingMode = _routingMode.asStateFlow()
 
     fun setRoutingMode(mode: AiRoutingMode) {
+
+    suspend fun clearAiAnalyticsLogs() {
+        aiAnalyticsDao.clearAllLogs()
+    }
+
         _routingMode.value = mode
     }
 

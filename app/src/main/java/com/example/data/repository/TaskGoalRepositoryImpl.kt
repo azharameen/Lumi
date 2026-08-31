@@ -20,49 +20,62 @@ class TaskGoalRepositoryImpl(
     private val goalPlanner: AutonomousGoalPlanner? = null
 ) : TaskGoalRepository {
 
-    override val tasks: Flow<List<Task>> = taskDao.getAllTasksFlow()
+    override val tasks: Flow<List<Task>> = taskDao.getAllTasks()
         .map { list -> list.map { it.toDomain() } }
 
-    override val calendarEvents: Flow<List<CalendarEvent>> = calendarEventDao.getAllEventsFlow()
+    override val calendarEvents: Flow<List<CalendarEvent>> = calendarEventDao.getAllEvents()
         .map { list -> list.map { it.toDomain() } }
 
-    override suspend fun addTask(title: String, category: String, dueDate: Long?) = withContext(Dispatchers.IO) {
-        val task = TaskEntity(
-            title = title,
-            category = category,
-            dueDate = dueDate,
-            createdAt = System.currentTimeMillis()
-        )
-        taskDao.insertTask(task)
-    }
-
-    override suspend fun completeTask(taskId: String) = withContext(Dispatchers.IO) {
-        val task = taskDao.getTaskById(taskId)
-        if (task != null) {
-            taskDao.insertTask(task.copy(isCompleted = true))
+    override suspend fun addTask(title: String, category: String, dueDate: Long?) {
+        withContext(Dispatchers.IO) {
+            val task = TaskEntity(
+                title = title,
+                category = category,
+                dueDate = dueDate,
+                createdAt = System.currentTimeMillis()
+            )
+            taskDao.insertTask(task)
         }
     }
 
-    override suspend fun deleteTask(taskId: String) = withContext(Dispatchers.IO) {
-        taskDao.deleteTaskById(taskId)
+    override suspend fun completeTask(taskId: String) {
+        withContext(Dispatchers.IO) {
+            val idLong = taskId.toLongOrNull() ?: return@withContext
+            taskDao.setTaskCompleted(idLong, true)
+        }
     }
 
-    override suspend fun addCalendarEvent(title: String, startTime: Long, endTime: Long, location: String?) = withContext(Dispatchers.IO) {
-        val event = CalendarEventEntity(
-            title = title,
-            startTime = startTime,
-            endTime = endTime,
-            location = location
-        )
-        calendarEventDao.insertEvent(event)
+    override suspend fun deleteTask(taskId: String) {
+        withContext(Dispatchers.IO) {
+            val idLong = taskId.toLongOrNull() ?: return@withContext
+            val task = taskDao.getTaskById(idLong)
+            if (task != null) {
+                taskDao.deleteTask(task)
+            }
+        }
     }
 
-    override suspend fun deleteCalendarEvent(eventId: String) = withContext(Dispatchers.IO) {
-        calendarEventDao.deleteEventById(eventId)
+    override suspend fun addCalendarEvent(title: String, startTime: Long, endTime: Long, location: String?) {
+        withContext(Dispatchers.IO) {
+            val event = CalendarEventEntity(
+                title = title,
+                startTimeMillis = startTime,
+                endTimeMillis = endTime,
+                location = location ?: ""
+            )
+            calendarEventDao.insertEvent(event)
+        }
+    }
+
+    override suspend fun deleteCalendarEvent(eventId: String) {
+        withContext(Dispatchers.IO) {
+            val idLong = eventId.toLongOrNull() ?: return@withContext
+            calendarEventDao.deleteEventById(idLong)
+        }
     }
 
     override suspend fun generateGoalPlan(goalTitle: String): String = withContext(Dispatchers.IO) {
         val plan = goalPlanner?.generateGoalPlan(goalTitle)
-        plan?.summary ?: "Goal plan created for $goalTitle"
+        plan?.summary ?: "Goal plan generated for $goalTitle"
     }
 }

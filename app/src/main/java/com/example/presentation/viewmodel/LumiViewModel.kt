@@ -1,4 +1,5 @@
 package com.example.presentation.viewmodel
+import com.example.domain.account.UserProfileManager
 
 import android.app.Application
 import android.graphics.Bitmap
@@ -281,5 +282,6 @@ class LumiViewModel(
         zenManager.stopListening()
     }
 }
+
 
 

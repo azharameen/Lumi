@@ -46,13 +46,15 @@ fun VoiceWaveformVisualizer(
         }
     }
 
+    val barWidthDp = MaterialTheme.spacing.extraSmall
+
     Canvas(
         modifier = modifier
             .width(180.dp)
             .height(36.dp)
     ) {
         val barCount = 18
-        val barWidth = MaterialTheme.spacing.extraSmall.toPx()
+        val barWidth = barWidthDp.toPx()
         val spacing = (size.width - (barCount * barWidth)) / (barCount - 1)
         val cy = size.height / 2
 
@@ -79,3 +81,4 @@ fun VoiceWaveformVisualizer(
         }
     }
 }
+

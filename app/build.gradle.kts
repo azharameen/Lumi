@@ -142,5 +142,8 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.tooling)
   "ksp"(libs.androidx.room.compiler)
   "ksp"(libs.moshi.kotlin.codegen)
+  
+  // Koin DI
+  implementation("io.insert-koin:koin-androidx-compose:3.5.3")
   implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
 }

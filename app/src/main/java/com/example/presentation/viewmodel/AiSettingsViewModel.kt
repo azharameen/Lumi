@@ -1,7 +1,9 @@
 package com.example.presentation.viewmodel
+import com.example.domain.account.UserProfileManager
+import com.example.data.remote.ModelDownloadManager
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.remote.ModelDownloadManager
 import com.example.domain.account.UserProfileManager
@@ -10,12 +12,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class AiSettingsViewModel(application: Application) : AndroidViewModel(application) {
-    private val container = (application as com.example.LumiApplication).container
-    private val modelDownloadManager = container.modelDownloadManager
-    private val userProfileManager = container.userProfileManager
-
-    val userProfile = userProfileManager.userProfile
+class AiSettingsViewModel(
+    val modelDownloadManager: ModelDownloadManager,
+    val userProfileManager: UserProfileManager
+) : ViewModel() {
+        private     private     val userProfile = userProfileManager.userProfile
     
     val localModelCatalog = modelDownloadManager.catalog
     val modelDownloadStates = modelDownloadManager.downloadStates
@@ -50,3 +51,4 @@ class AiSettingsViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch { userProfileManager.updateProfile(profile) }
     }
 }
+

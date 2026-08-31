@@ -6,16 +6,22 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 
-import com.example.core.di.AppContainer
-import com.example.core.di.DefaultAppContainer
+import com.example.core.di.appModule
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
+import org.koin.core.context.startKoin
 
 class LumiApplication : Application() {
 
-    lateinit var container: AppContainer
-
     override fun onCreate() {
         super.onCreate()
-        container = DefaultAppContainer(this)
+        
+        startKoin {
+            androidLogger()
+            androidContext(this@LumiApplication)
+            modules(appModule)
+        }
+        
         createNotificationChannels()
     }
 

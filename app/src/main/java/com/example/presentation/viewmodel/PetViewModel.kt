@@ -1,7 +1,9 @@
 package com.example.presentation.viewmodel
+import com.example.domain.account.UserProfileManager
+import com.example.data.remote.ModelDownloadManager
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.repository.LumiRepositoryImpl
 import com.example.domain.model.PetEmotion
@@ -15,12 +17,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class PetViewModel(application: Application) : AndroidViewModel(application) {
-    private val container = (application as com.example.LumiApplication).container
-    val repository: LumiRepository = container.repository
-    val sensorsManager = container.sensorsManager
-
-    val petStatus = repository.petStatus.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PetStatus())
+class PetViewModel(
+    val repository: LumiRepository,
+    val sensorsManager: SensorsManager
+) : ViewModel() {
+                val petStatus = repository.petStatus.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PetStatus())
     val petEvolution = repository.petEvolution.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     init {
@@ -97,3 +98,4 @@ class PetViewModel(application: Application) : AndroidViewModel(application) {
         sensorsManager.stopListening()
     }
 }
+

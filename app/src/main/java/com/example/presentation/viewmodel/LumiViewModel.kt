@@ -1,8 +1,10 @@
 package com.example.presentation.viewmodel
+import com.example.domain.account.UserProfileManager
+import com.example.data.remote.ModelDownloadManager
 
 import android.app.Application
 import android.graphics.Bitmap
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.entity.*
 import com.example.data.repository.LumiRepositoryImpl
@@ -32,28 +34,25 @@ data class LumiUiState(
     val sharedIncomingBanner: String? = null
 )
 
-class LumiViewModel(application: Application) : AndroidViewModel(application) {
-    private val container = (application as com.example.LumiApplication).container
-    val repository: LumiRepository = container.repository
-    val userProfileManager = container.userProfileManager
-    
-    val userProfile = userProfileManager.userProfile
+class LumiViewModel(
+    val repository: LumiRepository,
+    val userProfileManager: UserProfileManager,
+    val voiceEngine: VoiceEngine,
+    val sensorsManager: SensorsManager,
+    val batteryManager: BatteryStatusManager,
+    val locationEngine: ContextLocationEngine,
+    val clipboardAssistant: ClipboardAssistant,
+    val audioReactiveEngine: RealtimeAudioReactiveEngine,
+    val networkEngine: NetworkConnectivityEngine,
+    val headsetManager: AudioHeadsetManager,
+    val zenManager: ZenModeManager,
+    val biometricVault: BiometricVaultManager,
+    val briefingEngine: AutonomousBriefingEngine
+) : ViewModel() {
+                val userProfile = userProfileManager.userProfile
     val userFacts = userProfileManager.userFacts
     
-    val voiceEngine = container.voiceEngine
-    val sensorsManager = container.sensorsManager
-    val batteryManager = container.batteryManager
-    val locationEngine = container.locationEngine
-    val clipboardAssistant = container.clipboardAssistant
-    val audioReactiveEngine = container.audioReactiveEngine
-    val networkEngine = container.networkEngine
-    val headsetManager = container.headsetManager
-    val zenManager = container.zenManager
-    val biometricVault = container.biometricVault
-    val briefingEngine = container.briefingEngine
-    
-
-    private val _uiState = MutableStateFlow(LumiUiState())
+                                                private val _uiState = MutableStateFlow(LumiUiState())
     val uiState: StateFlow<LumiUiState> = _uiState.asStateFlow()
 
     
@@ -284,3 +283,4 @@ class LumiViewModel(application: Application) : AndroidViewModel(application) {
         zenManager.stopListening()
     }
 }
+

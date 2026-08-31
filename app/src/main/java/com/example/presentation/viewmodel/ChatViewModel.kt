@@ -1,8 +1,10 @@
 package com.example.presentation.viewmodel
+import com.example.domain.account.UserProfileManager
+import com.example.data.remote.ModelDownloadManager
 
 import android.app.Application
 import android.graphics.Bitmap
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.entity.ChatMessageEntity
 import com.example.data.repository.LumiRepositoryImpl
@@ -14,12 +16,12 @@ import kotlinx.coroutines.flow.stateIn
 import androidx.paging.cachedIn
 import kotlinx.coroutines.launch
 
-class ChatViewModel(application: Application) : AndroidViewModel(application) {
-    private val container = (application as com.example.LumiApplication).container
-    val repository: LumiRepository = container.repository
-    val voiceEngine = container.voiceEngine
-    private val userProfileManager = container.userProfileManager
-    val userProfile = userProfileManager.userProfile
+class ChatViewModel(
+    val repository: LumiRepository,
+    val voiceEngine: VoiceEngine,
+    val userProfileManager: UserProfileManager
+) : ViewModel() {
+                private     val userProfile = userProfileManager.userProfile
 
     val pagedChatMessages = repository.pagedChatMessages.cachedIn(viewModelScope)
 
@@ -66,3 +68,4 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         voiceEngine.release()
     }
 }
+

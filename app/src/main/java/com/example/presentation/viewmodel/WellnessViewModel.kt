@@ -1,7 +1,9 @@
 package com.example.presentation.viewmodel
+import com.example.domain.account.UserProfileManager
+import com.example.data.remote.ModelDownloadManager
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.entity.PetMemoryEntity
 import com.example.data.local.entity.WellnessLogEntity
@@ -14,10 +16,10 @@ import kotlinx.coroutines.flow.stateIn
 import androidx.paging.cachedIn
 import kotlinx.coroutines.launch
 
-class WellnessViewModel(application: Application) : AndroidViewModel(application) {
-    private val container = (application as com.example.LumiApplication).container
-    val repository: LumiRepository = container.repository
-    val biometricVault = BiometricVaultManager(application)
+class WellnessViewModel(
+    val repository: LumiRepository
+) : ViewModel() {
+            val biometricVault = BiometricVaultManager(application)
 
     val pagedWellnessLogs = repository.pagedWellnessLogs.cachedIn(viewModelScope)
 
@@ -36,3 +38,4 @@ class WellnessViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repository.incrementHydration(logId) }
     }
 }
+

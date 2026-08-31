@@ -12,7 +12,7 @@ import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -58,12 +58,12 @@ import com.example.presentation.viewmodel.AiSettingsViewModel
  */
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: LumiViewModel by viewModels()
-    private val aiSettingsViewModel: AiSettingsViewModel by viewModels()
-    private val chatViewModel: ChatViewModel by viewModels()
-    private val wellnessViewModel: WellnessViewModel by viewModels()
-    private val lifeHubViewModel: LifeHubViewModel by viewModels()
-    private val petViewModel: PetViewModel by viewModels()
+    private val viewModel: LumiViewModel by viewModel()
+    private val aiSettingsViewModel: AiSettingsViewModel by viewModel()
+    private val chatViewModel: ChatViewModel by viewModel()
+    private val wellnessViewModel: WellnessViewModel by viewModel()
+    private val lifeHubViewModel: LifeHubViewModel by viewModel()
+    private val petViewModel: PetViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -410,3 +410,4 @@ fun LumiApp(viewModel: LumiViewModel, aiSettingsViewModel: AiSettingsViewModel, 
     }
 }
 }
+

@@ -28,10 +28,10 @@ val appModule = module {
     single { ModelDownloadManager.getInstance(androidContext()) }
     single { AutonomousBriefingEngine(androidContext()) }
 
-    viewModel { LumiViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { AiSettingsViewModel(get(), get()) }
     viewModel { ChatViewModel(get(), get(), get()) }
     viewModel { LifeHubViewModel(get(), get(), get()) }
-    viewModel { WellnessViewModel(get(), get(), get()) }
-    viewModel { PetViewModel(get(), get(), get(), get()) }
-    viewModel { AiSettingsViewModel(get(), get(), get()) }
+    viewModel { LumiViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { PetViewModel(get(), get()) }
+    viewModel { WellnessViewModel(get()) }
 }

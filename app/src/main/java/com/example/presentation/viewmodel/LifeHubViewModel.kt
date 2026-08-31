@@ -1,7 +1,9 @@
 package com.example.presentation.viewmodel
+import com.example.domain.account.UserProfileManager
+import com.example.data.remote.ModelDownloadManager
 
 import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.entity.*
 import com.example.data.repository.LumiRepositoryImpl
@@ -18,13 +20,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class LifeHubViewModel(application: Application) : AndroidViewModel(application) {
-    private val container = (application as com.example.LumiApplication).container
-    val repository: LumiRepository = container.repository
-    val sensorsManager = container.sensorsManager
-    val briefingEngine = container.briefingEngine
-
-    val allTasks: StateFlow<List<TaskEntity>> = repository.allTasks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+class LifeHubViewModel(
+    val repository: LumiRepository,
+    val sensorsManager: SensorsManager,
+    val briefingEngine: AutonomousBriefingEngine
+) : ViewModel() {
+                    val allTasks: StateFlow<List<TaskEntity>> = repository.allTasks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val allCalendarEvents: StateFlow<List<CalendarEventEntity>> = repository.allCalendarEvents.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val allGoalPlans: StateFlow<List<GoalPlanEntity>> = repository.allGoalPlans.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val soundscapeState = repository.soundscapeState
@@ -106,3 +107,4 @@ class LifeHubViewModel(application: Application) : AndroidViewModel(application)
     
     fun getMilestonesForGoal(goalId: Long) = repository.getMilestonesForGoal(goalId)
 }
+

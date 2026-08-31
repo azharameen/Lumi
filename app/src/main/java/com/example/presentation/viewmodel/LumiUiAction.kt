@@ -1,4 +1,6 @@
 package com.example.presentation.viewmodel
+import com.example.domain.account.UserProfileManager
+import com.example.data.remote.ModelDownloadManager
 
 import com.example.data.local.entity.CalendarEventEntity
 import com.example.data.local.entity.TaskEntity
@@ -34,3 +36,4 @@ sealed interface LumiUiAction {
     data class StartFocusTimer(val minutes: Int) : LumiUiAction
     object StopFocusTimer : LumiUiAction
 }
+

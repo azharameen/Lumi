@@ -1,5 +1,10 @@
 package com.example.data.repository
 
+import com.example.data.tools.FastToolIndex
+import com.example.domain.tools.ToolRetriever
+import com.example.framework.tools.SystemToolSuite
+
+
 import android.content.Context
 import com.example.data.device.HealthConnectManager
 import android.graphics.Bitmap
@@ -19,6 +24,7 @@ import com.example.domain.repository.LumiRepository
 import com.example.domain.tools.AgentToolDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,10 +44,24 @@ class LumiRepositoryImpl private constructor(
     private val connectorManager = com.example.domain.connectors.ConnectorManager(context)
     private val integrationService = com.example.domain.connectors.IntegrationService(connectorManager)
     private val toolDispatcher = AgentToolDispatcher(database, integrationService, healthConnectManager)
-    private val hybridAiEngine = HybridAiEngine(toolDispatcher, database.aiExecutionLogDao(), database, context)
+    private val fastToolIndex = FastToolIndex(database.toolFtsDao())
+    private val toolRetriever = ToolRetriever(fastToolIndex)
+    private val hybridAiEngine = HybridAiEngine(toolDispatcher, database.aiExecutionLogDao(), database, context, toolRetriever)
     private val autonomousGoalPlanner = com.example.domain.planner.AutonomousGoalPlanner(context, database, toolDispatcher, integrationService)
     private val autonomousBriefingEngine = com.example.domain.briefing.AutonomousBriefingEngine(context)
     private val soundscapeEngine = com.example.data.device.ProceduralSoundscapeEngine.getInstance(context)
+
+    init {
+        SystemToolSuite.registerAll(context)
+        scope.launch(Dispatchers.IO) {
+            try {
+                toolRetriever.initializeIndex()
+            } catch (e: Exception) {
+                // Log FTS index failure gracefully
+            }
+        }
+    }
+
 
     private val _currentEmotion = MutableStateFlow(PetEmotion.HAPPY)
     private val _isSpeaking = MutableStateFlow(false)

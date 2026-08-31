@@ -6,6 +6,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.data.local.dao.*
 import com.example.data.local.entity.*
+import com.example.data.local.entity.ToolFtsEntity
+import com.example.data.local.dao.ToolFtsDao
 
 @Database(
     entities = [
@@ -19,9 +21,10 @@ import com.example.data.local.entity.*
         GoalPlanEntity::class,
         GoalMilestoneEntity::class,
         FactKnowledgeEntity::class,
-        AgentCheckpointEntity::class
+        AgentCheckpointEntity::class,
+        ToolFtsEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 abstract class LumiDatabase : RoomDatabase() {
@@ -35,6 +38,7 @@ abstract class LumiDatabase : RoomDatabase() {
     abstract fun goalPlanDao(): GoalPlanDao
     abstract fun factKnowledgeDao(): FactKnowledgeDao
     abstract fun agentCheckpointDao(): AgentCheckpointDao
+    abstract fun toolFtsDao(): ToolFtsDao
 
     companion object {
         @Volatile
@@ -46,7 +50,7 @@ abstract class LumiDatabase : RoomDatabase() {
                     context.applicationContext,
                     LumiDatabase::class.java,
                     "lumi_ai_companion.db"
-                ).fallbackToDestructiveMigration(true).build()
+                ).fallbackToDestructiveMigration(true).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }

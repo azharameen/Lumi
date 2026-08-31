@@ -11,6 +11,7 @@ import com.example.domain.ai.AiModelRegistry
 import com.example.domain.ai.SmartAiRouter
 import com.example.domain.model.PetEmotion
 import com.example.domain.tools.AgentToolDispatcher
+import com.example.domain.tools.ToolRetriever
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,12 +22,13 @@ class HybridAiEngine(
     private val toolDispatcher: AgentToolDispatcher,
     private val aiAnalyticsDao: AiExecutionLogDao,
     private val database: LumiDatabase,
-    private val context: Context? = null
+    private val context: Context? = null,
+    private val toolRetriever: ToolRetriever? = null
 ) {
     val hitlApprovalManager = HitlApprovalManager(database, toolDispatcher)
     private val geminiEngine = GeminiAgentEngine(toolDispatcher, database, hitlApprovalManager)
     private val downloadManager = context?.let { ModelDownloadManager.getInstance(it) }
-    val onDeviceGemmaEngine = OnDeviceGemmaEngine(toolDispatcher, downloadManager, context)
+    val onDeviceGemmaEngine = OnDeviceGemmaEngine(toolDispatcher, downloadManager, context, toolRetriever)
 
     private val _routingMode = MutableStateFlow(AiRoutingMode.HYBRID_AUTO)
     val routingMode = _routingMode.asStateFlow()

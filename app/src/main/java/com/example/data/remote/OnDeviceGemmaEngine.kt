@@ -1,5 +1,10 @@
 package com.example.data.remote
 
+import com.example.domain.tools.ToolRetriever
+import com.example.domain.tools.ToolRegistry
+import org.json.JSONObject
+
+
 import android.app.ActivityManager
 import android.content.Context
 import android.os.SystemClock
@@ -39,7 +44,8 @@ data class GemmaModelStatus(
 class OnDeviceGemmaEngine(
     private val toolDispatcher: AgentToolDispatcher,
     private val downloadManager: ModelDownloadManager? = null,
-    private val context: Context? = null
+    private val context: Context? = null,
+    private val toolRetriever: ToolRetriever? = null
 ) {
     companion object {
         private const val RAM_HEADROOM_SAFETY_MARGIN_BYTES = 350_000_000L
@@ -110,15 +116,62 @@ class OnDeviceGemmaEngine(
             }
 
             val conversationHistory = recentHistory.takeLast(4).joinToString("\n") { "${it.first}: ${it.second}" }
+            
+            // Stage 1: Fast Tool Retrieval (<5ms)
+            val relevantTools = toolRetriever?.getRelevantTools(userMessage, maxTools = 3) ?: emptyList()
+            val toolPromptSection = if (relevantTools.isNotEmpty()) {
+                val toolsXml = relevantTools.joinToString("\n") { tool ->
+                    val paramsStr = tool.parameters.joinToString(" ") { "${it.name}=\"${it.type}\"" }
+                    "<tool name=\"${tool.id}\" desc=\"${tool.description}\" $paramsStr/>"
+                }
+                "\nAvailable Tools:\n$toolsXml\nIf needed, reply ONLY with: <tool_call><name>TOOL_NAME</name><args>{\"key\": \"val"}</args></tool_call>\n"
+            } else ""
+
             val prompt = if (conversationHistory.isNotBlank()) {
-                "Context:\n$conversationHistory\nUser: $userMessage\nAssistant:"
+                "Context:\n$conversationHistory$toolPromptSection\nUser: $userMessage\nAssistant:"
             } else {
-                "User: $userMessage\nAssistant:"
+                "User: $userMessage$toolPromptSection\nAssistant:"
             }
 
-            // Real True Local Inference Execution
-            val generatedText = llmInference?.generateResponse(prompt)
+            // Stage 2: Real True Local Inference Execution
+            val rawOutput = llmInference?.generateResponse(prompt)
                 ?: throw OnDeviceInferenceException.InferenceExecutionError("Local engine returned null.")
+
+            var generatedText = rawOutput
+            val toolReports = mutableListOf<AgentToolReport>()
+
+            // Stage 3: Parse XML Tool Calls & Local Kotlin Execution
+            val toolCallRegex = Regex("<tool_call><name>(.*?)</name><args>(.*?)</args></tool_call>", RegexOption.DOT_MATCHES_ALL)
+            val match = toolCallRegex.find(rawOutput)
+            if (match != null) {
+                val toolId = match.groupValues[1].trim()
+                val argsJsonStr = match.groupValues[2].trim()
+                val tool = ToolRegistry.getInstance().getTool(toolId)
+
+                if (tool != null) {
+                    val paramsMap = mutableMapOf<String, Any?>()
+                    try {
+                        val jsonObj = JSONObject(argsJsonStr)
+                        jsonObj.keys().forEach { key -> paramsMap[key] = jsonObj.get(key) }
+                    } catch (e: Exception) {
+                        // ignore malformed json
+                    }
+
+                    val startTime = System.currentTimeMillis()
+                    val execResult = tool.execute(paramsMap)
+                    val duration = System.currentTimeMillis() - startTime
+
+                    toolReports.add(
+                        AgentToolReport(
+                            toolName = tool.displayName,
+                            executionTimeMs = duration,
+                            isSuccess = execResult.success,
+                            outputSummary = execResult.resultText
+                        )
+                    )
+                    generatedText = "Executed ${tool.displayName}: ${execResult.resultText}"
+                }
+            }returned null.")
 
             val lowerText = generatedText.lowercase()
             val emotion = when {
@@ -129,7 +182,7 @@ class OnDeviceGemmaEngine(
                 else -> PetEmotion.HAPPY
             }
 
-            AgentExecutionResult(generatedText, emotion, emptyList())
+            AgentExecutionResult(generatedText, emotion, toolReports)
         } catch (e: Exception) {
             throw OnDeviceInferenceException.InferenceExecutionError(
                 "True Local inference error on $modelTag: ${e.localizedMessage}",
@@ -145,3 +198,4 @@ class OnDeviceGemmaEngine(
         Pair(response, System.currentTimeMillis() - start)
     }
 }
+

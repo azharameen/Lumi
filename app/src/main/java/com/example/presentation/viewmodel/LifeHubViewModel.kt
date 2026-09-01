@@ -12,25 +12,30 @@ import com.example.domain.briefing.AutonomousBriefingEngine
 import com.example.domain.briefing.BriefingType
 import com.example.domain.briefing.DailyBriefing
 import com.example.data.device.SoundscapeType
+import com.example.domain.usecase.goal.DecomposeGoalUseCase
+import com.example.domain.repository.TaskGoalRepository
 import com.example.domain.repository.LumiRepository
-import com.example.data.device.SensorsManager
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
+import com.example.data.device.*
+import com.example.data.firebase.*
+import com.example.data.local.entity.*
+import com.example.domain.briefing.*
+import com.example.domain.model.*
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import androidx.lifecycle.viewModelScope
 
 class LifeHubViewModel(
-    val repository: LumiRepository,
+    val taskGoalRepository: TaskGoalRepository,
+    val decomposeGoalUseCase: DecomposeGoalUseCase,
+    val repository: LumiRepository, // Still needed for Soundscape for now
     val sensorsManager: SensorsManager,
     val briefingEngine: AutonomousBriefingEngine,
     val remoteConfigManager: LumiRemoteConfigManager? = null,
     val analytics: LumiAnalyticsManager? = null
 ) : ViewModel() {
-    val allTasks: StateFlow<List<TaskEntity>> = repository.allTasks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val allCalendarEvents: StateFlow<List<CalendarEventEntity>> = repository.allCalendarEvents.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val allGoalPlans: StateFlow<List<GoalPlanEntity>> = repository.allGoalPlans.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allTasks: StateFlow<List<TaskEntity>> = taskGoalRepository.allTasks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allCalendarEvents: StateFlow<List<CalendarEventEntity>> = taskGoalRepository.allCalendarEvents.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allGoalPlans: StateFlow<List<GoalPlanEntity>> = taskGoalRepository.allGoalPlans.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val soundscapeState = repository.soundscapeState
 
     val remoteConfig: StateFlow<LumiRemoteConfig> = remoteConfigManager?.config ?: MutableStateFlow(LumiRemoteConfig())
@@ -45,14 +50,14 @@ class LifeHubViewModel(
         viewModelScope.launch {
             sensorsManager.vibrateCelebration()
             analytics?.logGoalMilestone(title, category, isCompleted = false)
-            repository.decomposeGoal(title, description, category, targetDate)
+            decomposeGoalUseCase(title, description, category, targetDate)
         }
     }
 
     fun executeMilestone(milestoneId: Long, goalId: Long) {
         viewModelScope.launch {
             sensorsManager.vibrateTap()
-            repository.executeMilestoneTool(milestoneId, goalId)
+            taskGoalRepository.executeMilestoneTool(milestoneId, goalId)
         }
     }
 
@@ -62,22 +67,22 @@ class LifeHubViewModel(
             if (isCompleted) {
                 analytics?.logGoalMilestone("Milestone #$milestoneId", "Goal", isCompleted = true)
             }
-            repository.toggleMilestone(milestoneId, goalId, isCompleted)
+            taskGoalRepository.toggleMilestone(milestoneId, goalId, isCompleted)
         }
     }
 
-    fun deleteGoal(goalId: Long) { viewModelScope.launch { repository.deleteGoal(goalId) } }
+    fun deleteGoal(goalId: Long) { viewModelScope.launch { taskGoalRepository.deleteGoal(goalId) } }
     
-    fun toggleTask(taskId: Long, isCompleted: Boolean) { viewModelScope.launch { repository.toggleTaskCompleted(taskId, isCompleted) } }
+    fun toggleTask(taskId: Long, isCompleted: Boolean) { viewModelScope.launch { taskGoalRepository.toggleTaskCompleted(taskId, isCompleted) } }
     
-    fun deleteTask(task: TaskEntity) { viewModelScope.launch { repository.deleteTask(task) } }
+    fun deleteTask(task: TaskEntity) { viewModelScope.launch { taskGoalRepository.deleteTask(task) } }
     
     fun addTask(title: String, priority: String, category: String, estimatedMinutes: Int, notes: String) {
-        viewModelScope.launch { repository.addTask(title, priority, category, estimatedMinutes, notes) }
+        viewModelScope.launch { taskGoalRepository.addTask(title, priority, category, estimatedMinutes, notes) }
     }
 
-    fun addCalendarEvent(event: CalendarEventEntity) { viewModelScope.launch { repository.addCalendarEvent(event) } }
-    fun deleteCalendarEvent(id: Long) { viewModelScope.launch { repository.deleteCalendarEvent(id) } }
+    fun addCalendarEvent(event: CalendarEventEntity) { viewModelScope.launch { taskGoalRepository.addCalendarEvent(event) } }
+    fun deleteCalendarEvent(id: Long) { viewModelScope.launch { taskGoalRepository.deleteCalendarEvent(id) } }
 
     fun startSoundscape(type: SoundscapeType) {
         sensorsManager.vibrateTap()
@@ -114,7 +119,7 @@ class LifeHubViewModel(
         }
     }
     
-    fun getMilestonesForGoal(goalId: Long) = repository.getMilestonesForGoal(goalId)
+    fun getMilestonesForGoal(goalId: Long) = taskGoalRepository.getMilestonesForGoal(goalId)
 }
 
 

@@ -3,15 +3,25 @@ package com.example.core.di
 import com.example.data.device.*
 import com.example.data.firebase.*
 import com.example.data.local.LumiDatabase
+import com.example.data.remote.HybridAiEngine
 import com.example.data.remote.ModelDownloadManager
 import com.example.data.repository.*
 import com.example.data.tools.FastToolIndex
 import com.example.domain.account.UserProfileRepository
 import com.example.domain.briefing.AutonomousBriefingEngine
+import com.example.domain.connectors.IntegrationService
+import com.example.domain.planner.AutonomousGoalPlanner
 import com.example.domain.repository.*
+import com.example.domain.tools.AgentToolDispatcher
 import com.example.domain.tools.ToolRegistry
 import com.example.domain.tools.ToolRetriever
+import com.example.domain.usecase.chat.SendMessageUseCase
+import com.example.domain.usecase.goal.DecomposeGoalUseCase
+import com.example.domain.usecase.pet.PetInteractionUseCase
 import com.example.presentation.viewmodel.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
@@ -19,6 +29,10 @@ import org.koin.dsl.module
 val appModule = module {
     // Database instance
     single { LumiDatabase.getDatabase(androidContext()) }
+
+    // Coroutine Scopes
+    single { CoroutineScope(SupervisorJob() + Dispatchers.Main) }
+    single { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
 
     // Firebase Enterprise Infrastructure
     single { LumiCrashlyticsManager() }
@@ -48,22 +62,63 @@ val appModule = module {
     single { ToolRegistry.getInstance() }
     single { FastToolIndex(get<LumiDatabase>().toolFtsDao(), get()) }
     single { ToolRetriever(get(), get()) }
+    
+    // Connectors & Tool Dispatching
+    single { ConnectorRepositoryImpl(androidContext()) }
+    single { IntegrationService(get<ConnectorRepositoryImpl>()) }
+    single { AgentToolDispatcher(get(), get(), getOrNull()) }
 
-    // Facade Repository
-    single<LumiRepository> { LumiRepositoryImpl.getInstance(androidContext(), get()) }
+    // AI Engines
+    single { HybridAiEngine(get(), get<LumiDatabase>().aiExecutionLogDao(), get(), androidContext(), get()) }
+    single { AutonomousGoalPlanner(get(), get(), get()) }
 
     // Specialized Clean Domain Repositories
+    single<PetRepository> { PetRepositoryImpl(get(), get()) }
+    single<ChatRepository> { ChatRepositoryImpl(get(), get(), get()) }
+    single<WellnessRepository> { WellnessRepositoryImpl(get(), get()) }
+    single<TaskGoalRepository> { TaskGoalRepositoryImpl(get(), get(), get()) }
+    single<PetMemoryRepository> { PetMemoryRepositoryImpl(get()) }
+
+    // UseCases
+    single { SendMessageUseCase(get()) }
+    single { PetInteractionUseCase(get()) }
+    single { DecomposeGoalUseCase(get()) }
+
+    // Legacy/Facade Repository (Delegates to new ones)
+    single<LumiRepository> { LumiRepositoryImpl.getInstance(androidContext(), get()) }
+
+    // Other repositories
     single<AuthRepository> { FirebaseAuthRepositoryImpl(androidContext()) }
     single<PetCompanionRepository> { PetCompanionRepositoryImpl(get(), get()) }
     single<UserMemoryRepository> { UserMemoryRepositoryImpl(get(), get<LumiDatabase>().factKnowledgeDao(), get<LumiDatabase>().chatMessageDao(), get()) }
-    single<TaskGoalRepository> { TaskGoalRepositoryImpl(get<LumiDatabase>().taskDao(), get<LumiDatabase>().calendarEventDao()) }
 
     // ViewModels
     viewModel { AuthViewModel(get(), get(), get(), get()) }
     viewModel { AiSettingsViewModel(get(), get()) }
     viewModel { ChatViewModel(get(), get(), get(), get(), get()) }
     viewModel { LifeHubViewModel(get(), get(), get(), get(), get()) }
-    viewModel { LumiViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { 
+        LumiViewModel(
+            petRepository = get(),
+            chatRepository = get(),
+            wellnessRepository = get(),
+            taskGoalRepository = get(),
+            sendMessageUseCase = get(),
+            petInteractionUseCase = get(),
+            userProfileManager = get(),
+            voiceEngine = get(),
+            sensorsManager = get(),
+            batteryManager = get(),
+            locationEngine = get(),
+            clipboardAssistant = get(),
+            audioReactiveEngine = get(),
+            networkEngine = get(),
+            headsetManager = get(),
+            zenManager = get(),
+            biometricVault = get(),
+            briefingEngine = get()
+        ) 
+    }
     viewModel { PetViewModel(get(), get(), get(), get()) }
     viewModel { WellnessViewModel(get(), get(), get()) }
 }

@@ -14,33 +14,36 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import androidx.paging.cachedIn
 import kotlinx.coroutines.launch
+import com.example.domain.repository.WellnessRepository
+import com.example.domain.repository.PetMemoryRepository
 
 class WellnessViewModel(
-    val repository: LumiRepository,
+    val wellnessRepository: WellnessRepository,
+    val memoryRepository: PetMemoryRepository,
     val biometricVault: BiometricVaultManager,
     private val analytics: LumiAnalyticsManager? = null
 ) : ViewModel() {
 
-    val pagedWellnessLogs = repository.pagedWellnessLogs.cachedIn(viewModelScope)
+    val pagedWellnessLogs = wellnessRepository.pagedWellnessLogs.cachedIn(viewModelScope)
 
-    val allWellnessLogs: StateFlow<List<WellnessLogEntity>> = repository.allWellnessLogs.stateIn(
+    val allWellnessLogs: StateFlow<List<WellnessLogEntity>> = wellnessRepository.allWellnessLogs.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
-    val allMemories: StateFlow<List<PetMemoryEntity>> = repository.allMemories.stateIn(
+    val allMemories: StateFlow<List<PetMemoryEntity>> = memoryRepository.allMemories.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
 
     fun logWellness(moodScore: Int, moodLabel: String, energyLevel: Int, hydrationCups: Int, gratitude: String) {
         viewModelScope.launch {
             analytics?.logWellnessSession(exerciseType = "mood_checkin_$moodLabel", durationSeconds = 60)
-            repository.logWellness(moodScore, moodLabel, energyLevel, hydrationCups, gratitude)
+            wellnessRepository.logWellness(moodScore, moodLabel, energyLevel, hydrationCups, gratitude)
         }
     }
 
     fun incrementHydration(logId: Long) {
         viewModelScope.launch {
             analytics?.logWellnessSession(exerciseType = "hydration_increment", durationSeconds = 5)
-            repository.incrementHydration(logId)
+            wellnessRepository.incrementHydration(logId)
         }
     }
 }

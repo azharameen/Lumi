@@ -347,6 +347,7 @@ fun LumiEmptyState(
  */
 @Composable
 fun LumiGradientButton(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -355,7 +356,7 @@ fun LumiGradientButton(
     enabled: Boolean = true
 ) {
     Button(
-        onClick = onClick,
+        onClick = { haptics.performSuccess(); onClick() },
         enabled = enabled,
         shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(

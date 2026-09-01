@@ -83,6 +83,7 @@ import com.example.core.theme.spacing
 
 @Composable
 fun AmbientSoundscapesScreen(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     soundState: com.example.data.device.SoundscapeState,
     onAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit,
                 ) {
@@ -394,6 +395,7 @@ fun AmbientSoundscapesScreen(
                         Slider(
                             value = soundState.volume,
                             onValueChange = { onAction(com.example.presentation.viewmodel.LumiUiAction.SetSoundscapeVolume(it)) },
+                            onValueChangeFinished = { haptics.performSuccess() },
                             colors = SliderDefaults.colors(
                                 thumbColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                 activeTrackColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,

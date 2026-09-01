@@ -1,0 +1,2 @@
+sed -i 's/fun TasksSection(/fun TasksSection(\n    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),/' app/src/main/java/com/example/presentation/screens/lifehub/TasksSection.kt
+sed -i 's/onCheckedChange = { checked ->/onCheckedChange = { checked ->\n                                    if(checked) haptics.performSuccess() else haptics.performTick()/' app/src/main/java/com/example/presentation/screens/lifehub/TasksSection.kt

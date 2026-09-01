@@ -116,6 +116,7 @@ fun HomeScreen(
     onQuickAgentPrompt: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
+    val haptics = com.example.core.utils.rememberLumiHaptics(isEnabled = userProfile.enableHapticFeedback)
     val coroutineScope = rememberCoroutineScope()
 
     val petPrimary = Color(petStatus.bloubSkinColor.primaryHex)
@@ -261,10 +262,12 @@ fun HomeScreen(
                     size = 255.dp,
                     onPetTouched = {
                         onPetTouched()
+                        haptics.performTick()
                         triggerRewardToast("+10 Bond ✨")
                     },
                     onPetPetted = {
                         onPetPetted()
+                        haptics.performSuccess()
                         triggerRewardToast("+25 Bond 💖")
                     },
                     modifier = Modifier
@@ -280,18 +283,22 @@ fun HomeScreen(
                     petPrimary = petPrimary,
                     onFeed = {
                         onFeedPet()
+                        haptics.performHeavyClick()
                         triggerRewardToast("+15 Energy 🍓")
                     },
                     onPet = {
                         onPetPetted()
+                        haptics.performSuccess()
                         triggerRewardToast("+20 Bond 💖")
                     },
                     onDance = {
                         onDancePet()
+                        haptics.performSuccess()
                         triggerRewardToast("Dance Party! 🎵")
                     },
                     onPoke = {
                         onPokePet()
+                        haptics.performTick()
                         triggerRewardToast("Giggle! ⚡")
                     },
                     onSleepToggle = {

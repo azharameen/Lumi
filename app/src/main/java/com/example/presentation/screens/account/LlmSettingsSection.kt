@@ -141,6 +141,7 @@ import com.example.core.theme.spacing
 
 @Composable
 fun LlmSettingsSection(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     userProfile: UserProfileData,
     aiRoutingMode: com.example.data.remote.AiRoutingMode,
     onSetAiRoutingMode: (com.example.data.remote.AiRoutingMode) -> Unit,
@@ -238,8 +239,10 @@ fun LlmSettingsSection(
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                
                                 )
                             }
+
                         }
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
@@ -271,9 +274,8 @@ fun LlmSettingsSection(
                             fontWeight = FontWeight.Bold
                         )
                     }
-
                     Spacer(modifier = Modifier.height(10.dp))
-
+                    
                     cloudModels.forEach { (modelId, label) ->
                         val isSelected = when (modelId) {
                             "hybrid-auto" -> aiRoutingMode == com.example.data.remote.AiRoutingMode.HYBRID_AUTO
@@ -325,388 +327,7 @@ fun LlmSettingsSection(
                 }
             }
         }
-
-        // On-Device Local LLM Model Hub & Downloader
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Download, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                            Text(
-                                text = stringResource(R.string.text_ondevice_local_llm_hub),
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Surface(
-                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(MaterialTheme.spacing.small)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.text_100_offline_private),
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-
-                    Text(
-                        text = stringResource(R.string.text_download_genuine_gguflitert_neural_weights_to),
-                        color = TextSecondary,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall, bottom = 12.dp)
-                    )
-
-                    // Hardware Accelerator selection
-                    Text(
-                        text = stringResource(R.string.text_neural_hardware_acceleration),
-                        color = TextPrimary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
-                    ) {
-                        HardwareAccelerator.entries.forEach { acc ->
-                            val isAccSelected = selectedAccelerator == acc
-                            Surface(
-                                color = if (isAccSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else SurfaceDarkVariant,
-                                shape = RoundedCornerShape(MaterialTheme.spacing.small),
-                                border = if (isAccSelected) androidx.compose.foundation.BorderStroke(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary) else null,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clickable { onSetHardwareAccelerator(acc) }
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(MaterialTheme.spacing.small),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = when (acc) {
-                                            HardwareAccelerator.GPU_OPENCL -> "GPU OpenCL"
-                                            HardwareAccelerator.NPU_NNAPI -> "NPU NNAPI"
-                                            HardwareAccelerator.CPU_MULTITHREAD -> "CPU (4-Core)"
-                                        },
-                                        color = if (isAccSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else TextSecondary,
-                                        fontSize = 11.sp,
-                                        fontWeight = if (isAccSelected) FontWeight.Bold else FontWeight.Normal
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-                    HorizontalDivider(color = SurfaceDarkVariant)
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Model Catalog List
-                    localModelCatalog.forEach { modelSpec ->
-                        val progress = modelDownloadStates[modelSpec.id]
-                        val isDownloaded = progress?.status == ModelDownloadStatus.DOWNLOADED
-                        val isDownloading = progress?.status == ModelDownloadStatus.DOWNLOADING
-                        val isActive = activeLocalModelId == modelSpec.id && isDownloaded
-
-                        Surface(
-                            color = SurfaceDarkVariant.copy(alpha = 0.6f),
-                            shape = RoundedCornerShape(12.dp),
-                            border = if (isActive) androidx.compose.foundation.BorderStroke(1.5.dp, androidx.compose.material3.MaterialTheme.colorScheme.primary) else null,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 6.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = modelSpec.name,
-                                                color = TextPrimary,
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            if (!modelSpec.isDeviceCompatible) {
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                Icon(
-                                                    androidx.compose.material.icons.Icons.Default.Warning, 
-                                                    contentDescription = "Warning", 
-                                                    tint = LumiCoral, 
-                                                    modifier = Modifier.size(14.dp)
-                                                )
-                                            }
-                                        }
-                                        Text(
-                                            text = "${modelSpec.parameterCount} params • ${modelSpec.sizeDisplay}",
-                                            color = TextSecondary,
-                                            fontSize = 11.sp
-                                        )
-                                        if (!modelSpec.isDeviceCompatible) {
-                                            Text(
-                                                text = modelSpec.compatibilityReason,
-                                                color = LumiCoral,
-                                                fontSize = 10.sp,
-                                                modifier = Modifier.padding(top = 4.dp)
-                                            )
-                                        }
-                                    }
-
-                                    if (isDownloading) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            CircularProgressIndicator(
-                                                progress = { progress?.progress ?: 0f },
-                                                modifier = Modifier.size(24.dp),
-                                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                                strokeWidth = 2.dp
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            IconButton(
-                                                onClick = { onCancelModelDownload(modelSpec.id) },
-                                                modifier = Modifier.size(28.dp)
-                                            ) {
-                                                Icon(
-                                                    Icons.Default.Close, 
-                                                    contentDescription = "Cancel", 
-                                                    tint = LumiCoral, 
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                            }
-                                        }
-                                    } else if (isDownloaded) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            if (!isActive) {
-                                                Button(
-                                                    onClick = { onSetActiveLocalModel(modelSpec.id) },
-                                                    colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
-                                                    shape = RoundedCornerShape(MaterialTheme.spacing.small),
-                                                    modifier = Modifier.height(MaterialTheme.spacing.extraLarge)
-                                                ) {
-                                                    Text(stringResource(id = R.string.text_set_active), color = ObsidianDark, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                                }
-                                                Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                                            }
-
-                                            IconButton(
-                                                onClick = { onDeleteLocalModel(modelSpec.id) },
-                                                modifier = Modifier.size(MaterialTheme.spacing.extraLarge)
-                                            ) {
-                                                Icon(Icons.Default.Delete, contentDescription = stringResource(id = R.string.desc_delete_model_weights), tint = TextTertiary, modifier = Modifier.size(MaterialTheme.spacing.medium))
-                                            }
-                                        }
-                                    } else {
-                                        Button(
-                                            onClick = { onDownloadLocalModel(modelSpec.id) },
-                                            enabled = modelSpec.isDeviceCompatible,
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                                disabledContainerColor = SurfaceDarkVariant
-                                            ),
-                                            shape = RoundedCornerShape(MaterialTheme.spacing.small),
-                                            modifier = Modifier.height(MaterialTheme.spacing.extraLarge)
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Download, 
-                                                contentDescription = null, 
-                                                tint = if (modelSpec.isDeviceCompatible) ObsidianDark else TextTertiary, 
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
-                                            Text(
-                                                "Download (${modelSpec.sizeDisplay})", 
-                                                color = if (modelSpec.isDeviceCompatible) ObsidianDark else TextTertiary, 
-                                                fontSize = 11.sp, 
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Temperature Slider & Creativity Card
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.text_creativity_temperature),
-                            color = LumiGold,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = String.format("%.2f", temperature),
-                            color = LumiGold,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Slider(
-                        value = temperature,
-                        onValueChange = {
-                            temperature = it
-                            onUpdateProfile(userProfile.copy(temperature = it))
-                        },
-                        valueRange = 0.0f..1.0f,
-                        colors = SliderDefaults.colors(
-                            thumbColor = LumiGold,
-                            activeTrackColor = LumiGold,
-                            inactiveTrackColor = SurfaceDarkVariant
-                        ),
-                        modifier = Modifier.testTag("slider_temperature")
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(stringResource(id = R.string.text_0_0_precise_deterministic), color = TextTertiary, fontSize = 10.sp)
-                        Text(stringResource(id = R.string.text_1_0_creative_playful), color = TextTertiary, fontSize = 10.sp)
-                    }
-                }
-            }
-        }
-
-        // Custom System Instructions
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
-                    Text(
-                        text = stringResource(R.string.text_custom_ai_system_instructions),
-                        color = LumiGold,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = stringResource(R.string.text_specify_persistent_system_rules_eg_format),
-                        color = TextSecondary,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 2.dp, bottom = MaterialTheme.spacing.small)
-                    )
-
-                    OutlinedTextField(
-                        value = customInstructions,
-                        onValueChange = { customInstructions = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(110.dp)
-                            .testTag("input_system_instructions"),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = LumiGold,
-                            unfocusedBorderColor = SurfaceDarkVariant,
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary
-                        ),
-                        maxLines = 5,
-                        textStyle = androidx.compose.ui.text.TextStyle(fontSize = 13.sp)
-                    )
-
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-
-                    Button(
-                        onClick = {
-                            onUpdateProfile(userProfile.copy(customAiInstructions = customInstructions))
-                            Toast.makeText(context, "System instructions saved", Toast.LENGTH_SHORT).show()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = LumiGold),
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Icon(Icons.Default.Save, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(MaterialTheme.spacing.medium))
-                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
-                        Text(stringResource(id = R.string.text_save_instructions), color = ObsidianDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-        }
-
-        // Feature Toggles (Tool Calling, Proactive Briefing, Speech)
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
-                    Text(
-                        text = stringResource(R.string.text_ai_autonomy_capabilities),
-                        color = LumiGreen,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    ToggleSettingRow(
-                        title = "Autonomous Tool Dispatch",
-                        subtitle = "Allow Lumi to schedule calendar events and create tasks automatically",
-                        isChecked = userProfile.enableToolCalling,
-                        accentColor = LumiGreen,
-                        onCheckedChange = { onUpdateProfile(userProfile.copy(enableToolCalling = it)) }
-                    )
-
-                    ToggleSettingRow(
-                        title = "Proactive Daily Briefings",
-                        subtitle = "Auto-synthesize morning & evening productivity briefings",
-                        isChecked = userProfile.enableProactiveBriefings,
-                        accentColor = LumiGold,
-                        onCheckedChange = { onUpdateProfile(userProfile.copy(enableProactiveBriefings = it)) }
-                    )
-
-                    ToggleSettingRow(
-                        title = "Voice Speech Synthesis (TTS)",
-                        subtitle = "Speak responses automatically during voice dialogue",
-                        isChecked = userProfile.enableSpeechOutput,
-                        accentColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                        onCheckedChange = { onUpdateProfile(userProfile.copy(enableSpeechOutput = it)) }
-                    )
-
-                    ToggleSettingRow(
-                        title = "On-Device Neural Fallback",
-                        subtitle = "Route private notes to local neural engine when offline",
-                        isChecked = userProfile.enableLocalAiFallback,
-                        accentColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                        onCheckedChange = { onUpdateProfile(userProfile.copy(enableLocalAiFallback = it)) }
-                    )
-                }
-            }
-        }
-
+        
         // On-Device Benchmark & Performance Test
         item {
             Card(
@@ -795,7 +416,6 @@ fun LlmSettingsSection(
                                 fontWeight = FontWeight.Bold
                             )
                         }
-
                         Surface(
                             color = LumiCyan.copy(alpha = 0.15f),
                             shape = RoundedCornerShape(8.dp)
@@ -809,9 +429,9 @@ fun LlmSettingsSection(
                             )
                         }
                     }
-
+                    
                     Spacer(modifier = Modifier.height(8.dp))
-
+                    
                     if (rcConfig != null) {
                         Text(
                             text = "Dynamic Temperature: ${rcConfig.aiCreativityTemperature} | Nudge Interval: ${rcConfig.proactiveNudgeIntervalHours}h",

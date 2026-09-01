@@ -1,0 +1,24 @@
+    } else {
+        BackHandler(
+            enabled = uiState.selectedTab != com.example.core.navigation.NavDestination.PetCompanion.tabIndex || 
+                      uiState.showWardrobeScreen || 
+                      uiState.showCameraDialog || 
+                      uiState.showBreathingDialog ||
+                      uiState.showOverlayPermissionDialog ||
+                      uiState.lifeHubSubTab != 0
+        ) {
+            when {
+                uiState.showWardrobeScreen -> viewModel.setShowWardrobeScreen(false)
+                uiState.showCameraDialog -> viewModel.setShowCamera(false)
+                uiState.showBreathingDialog -> viewModel.setShowBreathing(false)
+                uiState.showOverlayPermissionDialog -> viewModel.setShowOverlayPermission(false)
+                uiState.selectedTab == com.example.core.navigation.NavDestination.LifeHub.tabIndex && uiState.lifeHubSubTab != 0 -> {
+                    viewModel.setLifeHubSubTab(0)
+                }
+                uiState.selectedTab != com.example.core.navigation.NavDestination.PetCompanion.tabIndex -> {
+                    viewModel.setSelectedTab(com.example.core.navigation.NavDestination.PetCompanion.tabIndex)
+                }
+            }
+        }
+        
+    val handleLifeHubAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit = { action ->

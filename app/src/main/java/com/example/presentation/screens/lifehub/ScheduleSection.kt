@@ -37,6 +37,7 @@ import com.example.core.theme.spacing
 
 @Composable
 fun ScheduleSection(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     events: List<CalendarEventEntity>,
     onAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit,
     dailyBriefing: com.example.domain.briefing.DailyBriefing?,
@@ -244,7 +245,10 @@ fun ScheduleSection(
 
         // Floating Action Button to Add Event
         FloatingActionButton(
-            onClick = { showAddEventDialog = true },
+            onClick = { 
+                haptics.performSuccess()
+                showAddEventDialog = true 
+            },
             containerColor = LumiCyan,
             contentColor = ObsidianDark,
             shape = RoundedCornerShape(MaterialTheme.spacing.medium),

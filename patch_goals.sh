@@ -1,0 +1,2 @@
+sed -i 's/fun AutonomousGoalsScreen(/fun AutonomousGoalsScreen(\n    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),/' app/src/main/java/com/example/presentation/screens/AutonomousGoalsScreen.kt
+sed -i 's/onClick = { showCreateGoalDialog = true },/onClick = { \n                haptics.performSuccess()\n                showCreateGoalDialog = true \n            },/' app/src/main/java/com/example/presentation/screens/AutonomousGoalsScreen.kt

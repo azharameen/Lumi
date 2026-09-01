@@ -1,7 +1,10 @@
-# Remove the bad imports at line 1
-sed -i '1,4d' app/src/main/java/com/example/presentation/home/components/SeamlessRpgPlayerHud.kt
-sed -i '1,4d' app/src/main/java/com/example/presentation/screens/WardrobeScreen.kt
+#!/bin/bash
+# Remove one of the duplicate handleLifeHubAction lines
+sed -i '0,/val handleLifeHubAction/!b;//d' app/src/main/java/com/example/MainActivity.kt
 
-# Insert them after the package declaration
-sed -i 's/^package .*/&\nimport androidx.compose.material3.Icon\nimport androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.filled.MonetizationOn\nimport androidx.compose.material.icons.filled.Diamond/' app/src/main/java/com/example/presentation/home/components/SeamlessRpgPlayerHud.kt
-sed -i 's/^package .*/&\nimport androidx.compose.material3.Icon\nimport androidx.compose.material.icons.Icons\nimport androidx.compose.material.icons.filled.MonetizationOn\nimport androidx.compose.material.icons.filled.Diamond/' app/src/main/java/com/example/presentation/screens/WardrobeScreen.kt
+# Add missing imports below package com.example
+sed -i '/package com.example/a import com.example.data.local.entity.*\nimport androidx.compose.ui.graphics.Color' app/src/main/java/com/example/MainActivity.kt
+
+# Add OptIn for ExperimentalPermissionsApi above LumiApp
+sed -i '/@Composable/!b;n;/fun LumiApp/i @OptIn(ExperimentalPermissionsApi::class)' app/src/main/java/com/example/MainActivity.kt
+

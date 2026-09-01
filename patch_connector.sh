@@ -1,0 +1,2 @@
+sed -i 's/fun ConnectorCard(/fun ConnectorCard(\n    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),/' app/src/main/java/com/example/presentation/components/ConnectorCard.kt
+sed -i 's/onCheckedChange = onToggle,/onCheckedChange = { \n                if(it) haptics.performSuccess() else haptics.performTick()\n                onToggle(it)\n            },/' app/src/main/java/com/example/presentation/components/ConnectorCard.kt

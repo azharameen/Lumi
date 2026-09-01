@@ -1,0 +1,142 @@
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                }
+                imageUri?.let { uri ->
+                    val bitmap = loadBitmapFromUri(uri)
+                    if (bitmap != null) {
+                        viewModel.handleIncomingSharedImage(bitmap)
+                    }
+                }
+            }
+        }
+
+        // 2. Handle Launcher App Shortcut Actions
+        intent.getStringExtra("SHORTCUT_ACTION")?.let { shortcutAction ->
+            viewModel.handleShortcutAction(shortcutAction)
+        }
+
+        // 3. Handle explicit tab navigation
+        if (intent.hasExtra("NAVIGATE_TAB")) {
+            val tab = intent.getIntExtra("NAVIGATE_TAB", 0)
+            viewModel.setSelectedTab(tab)
+        }
+
+        // 4. Handle Daily Briefing Notification Deep Link
+        intent.getStringExtra("OPEN_BRIEFING")?.let { briefingStr ->
+            viewModel.setSelectedTab(0)
+            val type: com.example.domain.briefing.BriefingType? = when (briefingStr.uppercase()) {
+                "MORNING" -> com.example.domain.briefing.BriefingType.MORNING
+                "EVENING" -> com.example.domain.briefing.BriefingType.EVENING
+                else -> null
+            }
+            lifeHubViewModel.refreshDailyBriefing(type, petViewModel.petStatus.value, petViewModel.petEvolution.value, wellnessViewModel.allWellnessLogs.value)
+        }
+    }
+
+    private fun loadBitmapFromUri(uri: Uri): Bitmap? {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val source = ImageDecoder.createSource(contentResolver, uri)
+                ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                    decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                    decoder.isMutableRequired = true
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                MediaStore.Images.Media.getBitmap(contentResolver, uri)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+}
+
+@Composable
+fun LumiApp(
+    viewModel: LumiViewModel,
+    aiSettingsViewModel: AiSettingsViewModel,
+    chatViewModel: ChatViewModel,
+    wellnessViewModel: WellnessViewModel,
+    lifeHubViewModel: LifeHubViewModel,
+    petViewModel: PetViewModel,
+    authViewModel: AuthViewModel
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val authUiState by authViewModel.uiState.collectAsStateWithLifecycle()
+    val petStatus by petViewModel.petStatus.collectAsStateWithLifecycle()
+    val batteryStatus by viewModel.batteryStatus.collectAsStateWithLifecycle()
+    val networkStatus by viewModel.networkStatus.collectAsStateWithLifecycle()
+    val locationContext by viewModel.locationState.collectAsStateWithLifecycle()
+    val userFacts by viewModel.userFacts.collectAsStateWithLifecycle()
+    val benchmarkStatus by viewModel.benchmarkStatus.collectAsStateWithLifecycle()
+    val chatMessagesList by viewModel.chatMessages.collectAsStateWithLifecycle()
+    val aiRoutingMode by viewModel.aiRoutingMode.collectAsStateWithLifecycle()
+
+    val calendarEvents by lifeHubViewModel.allCalendarEvents.collectAsStateWithLifecycle()
+    val tasks by lifeHubViewModel.allTasks.collectAsStateWithLifecycle()
+    val dailyBriefing by lifeHubViewModel.dailyBriefing.collectAsStateWithLifecycle()
+    val goalPlans by lifeHubViewModel.allGoalPlans.collectAsStateWithLifecycle()
+    val soundState by lifeHubViewModel.soundscapeState.collectAsStateWithLifecycle()
+
+    val wellnessLogs by wellnessViewModel.allWellnessLogs.collectAsStateWithLifecycle()
+    val memories by wellnessViewModel.allMemories.collectAsStateWithLifecycle()
+
+    val isListening by chatViewModel.voiceEngine.isListening.collectAsStateWithLifecycle()
+    val isSpeaking by chatViewModel.voiceEngine.isSpeaking.collectAsStateWithLifecycle()
+
+    val modelDownloadStates by aiSettingsViewModel.modelDownloadStates.collectAsStateWithLifecycle()
+    val activeLocalModelId by aiSettingsViewModel.activeLocalModelId.collectAsStateWithLifecycle()
+    val selectedAccelerator by aiSettingsViewModel.selectedAccelerator.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+
+    val audioPermissionState = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
+    val handleStartVoiceListening = {
+        if (audioPermissionState.status.isGranted) {
+            chatViewModel.startVoiceListening()
+        } else {
+            audioPermissionState.launchPermissionRequest()
+        }
+    }
+
+    if (authUiState.user == null && !authUiState.isGuestMode) {
+        com.example.presentation.screens.auth.LoginScreen(
+            authViewModel = authViewModel,
+            petStatus = petStatus,
+            onLoginSuccess = {
+                // User signed in successfully
+            },
+            onContinueAsGuest = {
+                authViewModel.continueAsGuest()
+            }
+        )
+    } else if (!userProfile.hasCompletedOnboarding) {
+        com.example.presentation.screens.OnboardingScreen(
+            viewModel = viewModel,
+            onComplete = { /* State handles recomposition automatically */ }
+        )
+    } else {
+        BackHandler(
+            enabled = uiState.selectedTab != com.example.core.navigation.NavDestination.PetCompanion.tabIndex || 
+                      uiState.showWardrobeScreen || 
+                      uiState.showCameraDialog || 
+                      uiState.showBreathingDialog ||
+                      uiState.showOverlayPermissionDialog ||
+                      uiState.lifeHubSubTab != 0
+        ) {
+            when {
+                uiState.showWardrobeScreen -> viewModel.setShowWardrobeScreen(false)
+                uiState.showCameraDialog -> viewModel.setShowCamera(false)
+                uiState.showBreathingDialog -> viewModel.setShowBreathing(false)
+                uiState.showOverlayPermissionDialog -> viewModel.setShowOverlayPermission(false)
+                uiState.selectedTab == com.example.core.navigation.NavDestination.LifeHub.tabIndex && uiState.lifeHubSubTab != 0 -> {
+                    viewModel.setLifeHubSubTab(0)
+                }
+                uiState.selectedTab != com.example.core.navigation.NavDestination.PetCompanion.tabIndex -> {
+                    viewModel.setSelectedTab(com.example.core.navigation.NavDestination.PetCompanion.tabIndex)
+                }
+            }
+        }
+        val handleLifeHubAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit = { action ->

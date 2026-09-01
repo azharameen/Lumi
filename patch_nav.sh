@@ -1,0 +1,2 @@
+sed -i 's/fun LumiNavigationBar(/fun LumiNavigationBar(\n    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),/' app/src/main/java/com/example/presentation/components/LumiNavigationBar.kt
+sed -i 's/onClick = { onTabSelected(destination.tabIndex) }/onClick = { \n                        haptics.performTick()\n                        onTabSelected(destination.tabIndex) \n                    }/' app/src/main/java/com/example/presentation/components/LumiNavigationBar.kt

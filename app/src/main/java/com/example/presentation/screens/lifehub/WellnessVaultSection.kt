@@ -118,6 +118,7 @@ import com.example.core.theme.spacing
 
 @Composable
 fun WellnessVaultSection(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     wellnessLogs: List<WellnessLogEntity>,
     memories: List<com.example.data.local.entity.PetMemoryEntity>,
     uiState: com.example.presentation.viewmodel.LumiUiState,
@@ -223,7 +224,10 @@ fun WellnessVaultSection(
                     )
                     Slider(
                         value = moodScore,
-                        onValueChange = { moodScore = it },
+                        onValueChange = { 
+                        if (moodScore != it) haptics.performTick()
+                        moodScore = it 
+                    },
                         valueRange = 1f..10f,
                         steps = 8,
                         colors = SliderDefaults.colors(
@@ -244,7 +248,10 @@ fun WellnessVaultSection(
                     )
                     Slider(
                         value = energyScore,
-                        onValueChange = { energyScore = it },
+                        onValueChange = { 
+                        if (energyScore != it) haptics.performTick()
+                        energyScore = it 
+                    },
                         valueRange = 1f..10f,
                         steps = 8,
                         colors = SliderDefaults.colors(

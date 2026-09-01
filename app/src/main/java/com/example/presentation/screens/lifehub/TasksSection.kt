@@ -31,6 +31,7 @@ import com.example.core.theme.spacing
 
 @Composable
 fun TasksSection(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     tasks: List<TaskEntity>,
     onAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit,
 ) {
@@ -152,6 +153,7 @@ fun TasksSection(
                             Checkbox(
                                 checked = task.isCompleted,
                                 onCheckedChange = { checked ->
+                                    if(checked) haptics.performSuccess() else haptics.performTick()
                                     onAction(com.example.presentation.viewmodel.LumiUiAction.ToggleTask(task.id, checked))
                                 },
                                 colors = CheckboxDefaults.colors(
@@ -219,7 +221,10 @@ fun TasksSection(
         }
 
         FloatingActionButton(
-            onClick = { showAddTaskDialog = true },
+            onClick = { 
+                haptics.performSuccess()
+                showAddTaskDialog = true 
+            },
             containerColor = LumiGold,
             contentColor = ObsidianDark,
             shape = RoundedCornerShape(MaterialTheme.spacing.medium),

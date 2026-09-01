@@ -1,0 +1,112 @@
+package com.example
+
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import android.graphics.Bitmap
+import android.graphics.ImageDecoder
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.provider.MediaStore
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.example.framework.AppShortcutsManager
+import com.example.framework.PetOverlayService
+import com.example.presentation.components.BreathingExerciseModal
+import com.example.presentation.components.CameraVisionDialog
+import com.example.presentation.components.OverlayPermissionDialog
+import com.example.core.navigation.NavDestination
+import com.example.presentation.screens.ChatScreen
+import com.example.presentation.home.HomeScreen
+import com.example.presentation.screens.LifeHubScreen
+import com.example.presentation.screens.UserAccountScreen
+import com.example.presentation.screens.WellnessScreen
+import com.example.core.theme.MyApplicationTheme
+import com.example.core.theme.ObsidianDark
+import com.example.presentation.viewmodel.*
+
+class MainActivity : ComponentActivity() {
+
+    private val viewModel: LumiViewModel by viewModel()
+    private val aiSettingsViewModel: AiSettingsViewModel by viewModel()
+    private val chatViewModel: ChatViewModel by viewModel()
+    private val wellnessViewModel: WellnessViewModel by viewModel()
+    private val lifeHubViewModel: LifeHubViewModel by viewModel()
+    private val petViewModel: PetViewModel by viewModel()
+    private val authViewModel: AuthViewModel by viewModel()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        // Initialize Dynamic App Shortcuts
+        AppShortcutsManager.initDynamicShortcuts(this)
+
+        // Handle incoming intent (Shares, Shortcuts, Alarms, Widgets)
+        handleIntent(intent)
+
+        setContent {
+            val petStatus by petViewModel.petStatus.collectAsStateWithLifecycle()
+            val petPrimary = androidx.compose.ui.graphics.Color(petStatus.bloubSkinColor.primaryHex)
+            val petSecondary = androidx.compose.ui.graphics.Color(petStatus.bloubSkinColor.endHex)
+            MyApplicationTheme(petColorPrimary = petPrimary, petColorSecondary = petSecondary) {
+                LumiApp(
+                    viewModel = viewModel,
+                    aiSettingsViewModel = aiSettingsViewModel,
+                    chatViewModel = chatViewModel,
+                    wellnessViewModel = wellnessViewModel,
+                    lifeHubViewModel = lifeHubViewModel,
+                    petViewModel = petViewModel,
+                    authViewModel = authViewModel
+                )
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        if (intent == null) return
+
+        val action = intent.action
+        val type = intent.type
+
+        // 1. Handle Android System Share Sheet (ACTION_SEND)
+        if (Intent.ACTION_SEND == action && type != null) {
+            if ("text/plain" == type) {
+                intent.getStringExtra(Intent.EXTRA_TEXT)?.let { sharedText ->
+                    viewModel.handleIncomingSharedText(sharedText)
+                }
+            } else if (type.startsWith("image/")) {
+                val imageUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                } else {

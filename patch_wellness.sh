@@ -1,0 +1,3 @@
+sed -i 's/fun WellnessScreen(/fun WellnessScreen(\n    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),/' app/src/main/java/com/example/presentation/screens/WellnessScreen.kt
+sed -i 's/onValueChange = { moodScore = it }/onValueChange = { \n                        if (moodScore != it) haptics.performTick()\n                        moodScore = it \n                    }/' app/src/main/java/com/example/presentation/screens/WellnessScreen.kt
+sed -i 's/onValueChange = { energyLevel = it }/onValueChange = { \n                        if (energyLevel != it) haptics.performTick()\n                        energyLevel = it \n                    }/' app/src/main/java/com/example/presentation/screens/WellnessScreen.kt

@@ -1,4 +1,7 @@
 package com.example
+import com.example.data.local.mapper.*
+import com.example.data.local.entity.*
+import androidx.compose.ui.graphics.Color
 
 import android.Manifest
 import android.content.Intent
@@ -13,6 +16,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -44,24 +48,10 @@ import com.example.presentation.screens.ChatScreen
 import com.example.presentation.home.HomeScreen
 import com.example.presentation.screens.LifeHubScreen
 import com.example.presentation.screens.UserAccountScreen
-
 import com.example.presentation.screens.WellnessScreen
 import com.example.core.theme.MyApplicationTheme
 import com.example.core.theme.ObsidianDark
-import com.example.presentation.viewmodel.LumiViewModel
-import com.example.presentation.viewmodel.ChatViewModel
-import com.example.presentation.viewmodel.WellnessViewModel
-import com.example.presentation.viewmodel.LifeHubViewModel
-import com.example.presentation.viewmodel.PetViewModel
-import com.example.presentation.viewmodel.AiSettingsViewModel
-import com.example.presentation.viewmodel.AuthViewModel
-import com.example.presentation.screens.auth.LoginScreen
-
-/**
- * Main Activity hosting Lumi's full-screen application experience.
- * Fully integrated with Android System Share Sheet, App Shortcuts, and Proactive Services.
- */
-import com.example.data.local.mapper.*
+import com.example.presentation.viewmodel.*
 
 class MainActivity : ComponentActivity() {
 
@@ -175,13 +165,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    companion object {
-        private const val PERMISSION_RECORD_AUDIO_CODE = 101
-    }
 }
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
+@OptIn(ExperimentalPermissionsApi::class)
 fun LumiApp(
     viewModel: LumiViewModel,
     aiSettingsViewModel: AiSettingsViewModel,
@@ -220,6 +207,7 @@ fun LumiApp(
     val selectedAccelerator by aiSettingsViewModel.selectedAccelerator.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
+    val haptics = com.example.core.utils.rememberLumiHaptics(isEnabled = userProfile.enableHapticFeedback)
 
     val audioPermissionState = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
     val handleStartVoiceListening = {
@@ -231,7 +219,7 @@ fun LumiApp(
     }
 
     if (authUiState.user == null && !authUiState.isGuestMode) {
-        LoginScreen(
+        com.example.presentation.screens.auth.LoginScreen(
             authViewModel = authViewModel,
             petStatus = petStatus,
             onLoginSuccess = {
@@ -247,8 +235,30 @@ fun LumiApp(
             onComplete = { /* State handles recomposition automatically */ }
         )
     } else {
-        
+        BackHandler(
+            enabled = uiState.selectedTab != com.example.core.navigation.NavDestination.PetCompanion.tabIndex || 
+                      uiState.showWardrobeScreen || 
+                      uiState.showCameraDialog || 
+                      uiState.showBreathingDialog ||
+                      uiState.showOverlayPermissionDialog ||
+                      uiState.lifeHubSubTab != 0
+        ) {
+            haptics.performTick()
+            when {
+                uiState.showWardrobeScreen -> viewModel.setShowWardrobeScreen(false)
+                uiState.showCameraDialog -> viewModel.setShowCamera(false)
+                uiState.showBreathingDialog -> viewModel.setShowBreathing(false)
+                uiState.showOverlayPermissionDialog -> viewModel.setShowOverlayPermission(false)
+                uiState.selectedTab == com.example.core.navigation.NavDestination.LifeHub.tabIndex && uiState.lifeHubSubTab != 0 -> {
+                    viewModel.setLifeHubSubTab(0)
+                }
+                uiState.selectedTab != com.example.core.navigation.NavDestination.PetCompanion.tabIndex -> {
+                    viewModel.setSelectedTab(com.example.core.navigation.NavDestination.PetCompanion.tabIndex)
+                }
+            }
+        }
     val handleLifeHubAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit = { action ->
+ 
         when (action) {
             is com.example.presentation.viewmodel.LumiUiAction.NavigateToChat -> {
                 viewModel.setSelectedTab(com.example.core.navigation.NavDestination.Assistant.tabIndex)
@@ -277,17 +287,20 @@ fun LumiApp(
 
         Scaffold(
             modifier = Modifier.fillMaxSize()
-        ) { innerPadding ->
+        ) {
+            innerPadding ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
                     .background(ObsidianDark)
             ) {
+
                 Crossfade(
                 targetState = uiState.selectedTab,
                 label = "ScreenTransition"
-            ) { tab ->
+            ) {
+ tab ->
                 when (tab) {
                     NavDestination.Assistant.tabIndex -> ChatScreen(
                         uiState = uiState,
@@ -301,7 +314,7 @@ fun LumiApp(
                         onStartVoiceListening = { handleStartVoiceListening() },
                         onStopVoiceListening = { chatViewModel.stopVoiceListening() },
                         onToggleVoiceOutput = { viewModel.toggleVoiceOutput() },
-                        onNavigateBack = { viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
+                        onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                     )
                     NavDestination.LifeHub.tabIndex -> LifeHubScreen(
                         uiState = uiState,
@@ -314,13 +327,13 @@ fun LumiApp(
                         getMilestonesForGoal = { id -> lifeHubViewModel.getMilestonesForGoal(id) },
                         soundState = soundState,
                         onAction = handleLifeHubAction,
-                        onNavigateBack = { viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
+                        onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                     )
                     NavDestination.Wellness.tabIndex -> WellnessScreen(
                         viewModel = wellnessViewModel,
                         appViewModel = viewModel,
                         onNavigateToChat = { viewModel.setSelectedTab(NavDestination.Assistant.tabIndex) },
-                        onNavigateBack = { viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
+                        onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                     )
                     NavDestination.Account.tabIndex -> UserAccountScreen(
                         userProfile = userProfile,
@@ -357,7 +370,7 @@ fun LumiApp(
                             viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
                             prompt?.let { viewModel.sendMessage(it) }
                         },
-                        onNavigateBack = { viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
+                        onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                     )
                     else -> HomeScreen(
                         petStatus = petStatus,

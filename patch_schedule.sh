@@ -1,0 +1,2 @@
+sed -i 's/fun ScheduleSection(/fun ScheduleSection(\n    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),/' app/src/main/java/com/example/presentation/screens/lifehub/ScheduleSection.kt
+sed -i 's/onClick = { showAddEventDialog = true },/onClick = { \n                haptics.performSuccess()\n                showAddEventDialog = true \n            },/' app/src/main/java/com/example/presentation/screens/lifehub/ScheduleSection.kt

@@ -1,0 +1,2 @@
+sed -i 's/fun LlmSettingsSection(/fun LlmSettingsSection(\n    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),/' app/src/main/java/com/example/presentation/screens/account/LlmSettingsSection.kt
+sed -i 's/onUpdateProfile(userProfile.copy(temperature = it))/onUpdateProfile(userProfile.copy(temperature = it))\n                        },\n                        onValueChangeFinished = { haptics.performSuccess() }/' app/src/main/java/com/example/presentation/screens/account/LlmSettingsSection.kt

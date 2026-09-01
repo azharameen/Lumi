@@ -44,6 +44,7 @@ import com.example.core.theme.spacing
  */
 @Composable
 fun LumiNavigationBar(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
@@ -81,7 +82,10 @@ fun LumiNavigationBar(
                 LumiNavigationItem(
                     destination = destination,
                     isSelected = isSelected,
-                    onClick = { onTabSelected(destination.tabIndex) },
+                    onClick = { 
+                        haptics.performTick()
+                        onTabSelected(destination.tabIndex) 
+                    },
                     badgeCount = if (destination == NavDestination.LifeHub) pendingTasksCount else 0,
                     modifier = Modifier.weight(1f)
                 )

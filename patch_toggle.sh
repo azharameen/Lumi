@@ -1,0 +1,2 @@
+sed -i 's/fun ToggleSettingRow(/fun ToggleSettingRow(\n    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),/' app/src/main/java/com/example/presentation/components/ToggleSettingRow.kt
+sed -i 's/onCheckedChange = onCheckedChange,/onCheckedChange = { \n                if(it) haptics.performSuccess() else haptics.performTick()\n                onCheckedChange(it)\n            },/' app/src/main/java/com/example/presentation/components/ToggleSettingRow.kt

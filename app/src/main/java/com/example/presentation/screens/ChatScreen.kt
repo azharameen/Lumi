@@ -77,6 +77,7 @@ import com.example.core.theme.spacing
 
 @Composable
 fun ChatScreen(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     uiState: com.example.presentation.viewmodel.LumiUiState,
     petStatus: com.example.domain.model.PetStatus,
     chatMessages: LazyPagingItems<com.example.data.local.entity.ChatMessageEntity>,
@@ -296,7 +297,7 @@ fun ChatScreen(
                     color = SurfaceDarkVariant.copy(alpha = 0.85f),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, SurfaceHighlight.copy(alpha = 0.5f)),
-                    modifier = Modifier.clickable { onSendMessage(prompt) }
+                    modifier = Modifier.clickable { haptics.performSuccess(); onSendMessage(prompt) }
                 ) {
                     Text(
                         text = prompt,
@@ -374,6 +375,7 @@ fun ChatScreen(
                     onClick = {
                         val text = uiState.inputText
                         if (text.isNotBlank()) {
+                            haptics.performSuccess()
                             onSendMessage(text)
                         }
                     },

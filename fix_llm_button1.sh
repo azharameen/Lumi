@@ -1,0 +1,1 @@
+sed -i 's/                            Toast.makeText(context, "System instructions saved", Toast.LENGTH_SHORT).show()/                            Toast.makeText(context, "System instructions saved", Toast.LENGTH_SHORT).show()\n                        },/' app/src/main/java/com/example/presentation/screens/account/LlmSettingsSection.kt

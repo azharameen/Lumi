@@ -83,6 +83,7 @@ import com.example.core.theme.spacing
 
 @Composable
 fun AutonomousGoalsScreen(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     goalPlans: List<com.example.data.local.entity.GoalPlanEntity>,
     getMilestonesForGoal: (Long) -> kotlinx.coroutines.flow.Flow<List<com.example.data.local.entity.GoalMilestoneEntity>>,
     onAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit,
@@ -172,7 +173,10 @@ fun AutonomousGoalsScreen(
 
                             Spacer(modifier = Modifier.height(14.dp))
                             Button(
-                                onClick = { showCreateGoalDialog = true },
+                                onClick = { 
+                haptics.performSuccess()
+                showCreateGoalDialog = true 
+            },
                                 colors = ButtonDefaults.buttonColors(containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary),
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier.fillMaxWidth().testTag("btn_decompose_goal")
@@ -245,7 +249,10 @@ fun AutonomousGoalsScreen(
 
         // Floating Action Button
         FloatingActionButton(
-            onClick = { showCreateGoalDialog = true },
+            onClick = { 
+                haptics.performSuccess()
+                showCreateGoalDialog = true 
+            },
             containerColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
             contentColor = Color.White,
             shape = CircleShape,

@@ -139,6 +139,7 @@ import com.example.core.theme.spacing
 
 @Composable
 fun ConnectorCard(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     title: String,
     subtitle: String,
     accountText: String,
@@ -189,7 +190,10 @@ fun ConnectorCard(
 
             Switch(
                 checked = isConnected,
-                onCheckedChange = onToggle,
+                onCheckedChange = { 
+                if(it) haptics.performSuccess() else haptics.performTick()
+                onToggle(it)
+            },
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = ObsidianDark,
                     checkedTrackColor = accentColor,

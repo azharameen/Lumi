@@ -142,6 +142,7 @@ import com.example.core.theme.spacing
 
 @Composable
 fun PrivacyAndVaultSection(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     userProfile: UserProfileData,
     taskCount: Int,
     eventCount: Int,
@@ -194,7 +195,10 @@ fun PrivacyAndVaultSection(
 
                         Switch(
                             checked = isOverlayEnabled,
-                            onCheckedChange = onToggleOverlay,
+                            onCheckedChange = { 
+                                if(it) haptics.performSuccess() else haptics.performTick()
+                                onToggleOverlay(it)
+                            },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = ObsidianDark,
                                 checkedTrackColor = LumiPink,
@@ -240,7 +244,10 @@ fun PrivacyAndVaultSection(
 
                         Switch(
                             checked = userProfile.enableBiometricLock,
-                            onCheckedChange = onToggleBiometric,
+                            onCheckedChange = { 
+                                if(it) haptics.performSuccess() else haptics.performTick()
+                                onToggleBiometric(it)
+                            },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = ObsidianDark,
                                 checkedTrackColor = LumiMint,

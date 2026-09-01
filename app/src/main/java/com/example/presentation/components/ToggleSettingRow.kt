@@ -136,6 +136,7 @@ import com.example.core.theme.spacing
 
 @Composable
 fun ToggleSettingRow(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     title: String,
     subtitle: String,
     isChecked: Boolean,
@@ -158,7 +159,10 @@ fun ToggleSettingRow(
 
         Switch(
             checked = isChecked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = { 
+                if(it) haptics.performSuccess() else haptics.performTick()
+                onCheckedChange(it)
+            },
             colors = SwitchDefaults.colors(
                 checkedThumbColor = ObsidianDark,
                 checkedTrackColor = accentColor,

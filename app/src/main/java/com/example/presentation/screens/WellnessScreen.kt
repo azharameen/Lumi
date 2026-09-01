@@ -90,6 +90,7 @@ import com.example.core.theme.spacing
 
 @Composable
 fun WellnessScreen(
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
     viewModel: com.example.presentation.viewmodel.WellnessViewModel,
     appViewModel: com.example.presentation.viewmodel.LumiViewModel,
     onNavigateToChat: () -> Unit,
@@ -212,7 +213,10 @@ fun WellnessScreen(
                 )
                 Slider(
                     value = moodScore,
-                    onValueChange = { moodScore = it },
+                    onValueChange = { 
+                        if (moodScore != it) haptics.performTick()
+                        moodScore = it 
+                    },
                     valueRange = 1f..10f,
                     steps = 8,
                     colors = SliderDefaults.colors(
@@ -233,7 +237,10 @@ fun WellnessScreen(
                 )
                 Slider(
                     value = energyLevel,
-                    onValueChange = { energyLevel = it },
+                    onValueChange = { 
+                        if (energyLevel != it) haptics.performTick()
+                        energyLevel = it 
+                    },
                     valueRange = 1f..10f,
                     steps = 8,
                     colors = SliderDefaults.colors(

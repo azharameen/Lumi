@@ -1,0 +1,2 @@
+sed -i 's/fun LumiGradientButton(/fun LumiGradientButton(\n    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),/' app/src/main/java/com/example/presentation/components/LumiPrimitives.kt
+sed -i 's/modifier = Modifier.clickable { onClick() }/modifier = Modifier.clickable { haptics.performSuccess(); onClick() }/' app/src/main/java/com/example/presentation/components/LumiPrimitives.kt

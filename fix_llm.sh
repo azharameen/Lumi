@@ -1,0 +1,1 @@
+sed -i 's/HardwareAccelerator.CPU_MULTITHREAD -> "CPU (4-Core)"/HardwareAccelerator.CPU_MULTITHREAD -> "CPU (4-Core)"\n                                        },/' app/src/main/java/com/example/presentation/screens/account/LlmSettingsSection.kt

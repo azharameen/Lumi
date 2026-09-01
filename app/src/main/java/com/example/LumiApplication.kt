@@ -19,6 +19,9 @@ class LumiApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         
+        // Set App Check debug token as early as possible
+        setupAppCheckDebugToken()
+        
         initializeFirebase()
 
         if (org.koin.core.context.GlobalContext.getOrNull() == null) {
@@ -54,29 +57,50 @@ class LumiApplication : Application() {
             // Initialize Firebase App Check with Play Integrity provider
             com.example.data.firebase.LumiAppCheckManager.getInstance().initialize()
             
-            val isEmulator = (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic"))
-                    || android.os.Build.FINGERPRINT.startsWith("generic")
-                    || android.os.Build.FINGERPRINT.startsWith("unknown")
-                    || android.os.Build.HARDWARE.contains("goldfish")
-                    || android.os.Build.HARDWARE.contains("ranchu")
-                    || android.os.Build.HARDWARE.contains("cutf_cvm")
-                    || android.os.Build.MODEL.contains("google_sdk")
-                    || android.os.Build.MODEL.contains("Emulator")
-                    || android.os.Build.MODEL.contains("Android SDK built for x86")
-                    || android.os.Build.MANUFACTURER.contains("Genymotion")
-                    || android.os.Build.PRODUCT.contains("sdk_google")
-                    || android.os.Build.PRODUCT.contains("google_sdk")
-                    || android.os.Build.PRODUCT.contains("sdk")
-                    || android.os.Build.PRODUCT.contains("sdk_x86")
-                    || android.os.Build.PRODUCT.contains("vbox86p")
-                    || android.os.Build.PRODUCT.contains("emulator")
-                    || android.os.Build.PRODUCT.contains("simulator")
-
-            if (com.example.BuildConfig.DEBUG && isEmulator) {
-                Log.d("LumiApp", "Running on emulator, skipping FCM programatic interactions.")
-            }
+            setupFcmSkipping()
         } catch (e: Exception) {
             Log.e("LumiApp", "Error during Firebase initialization", e)
+        }
+    }
+
+    private fun setupAppCheckDebugToken() {
+        if (BuildConfig.DEBUG) {
+            try {
+                // The Secrets plugin should have injected this from .env
+                val debugToken = BuildConfig.FIREBASE_APPCHECK_DEBUG_TOKEN
+                if (debugToken.isNotEmpty() && debugToken != "none") {
+                    Log.i("LumiApp", "Setting Firebase App Check debug token from BuildConfig")
+                    System.setProperty("debug.firebase.appcheck.token", debugToken)
+                } else {
+                    Log.w("LumiApp", "App Check debug token is empty in BuildConfig. Check your .env file.")
+                }
+            } catch (e: Exception) {
+                Log.e("LumiApp", "Failed to set App Check debug token", e)
+            }
+        }
+    }
+
+    private fun setupFcmSkipping() {
+        val isEmulator = (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic"))
+                || android.os.Build.FINGERPRINT.startsWith("generic")
+                || android.os.Build.FINGERPRINT.startsWith("unknown")
+                || android.os.Build.HARDWARE.contains("goldfish")
+                || android.os.Build.HARDWARE.contains("ranchu")
+                || android.os.Build.HARDWARE.contains("cutf_cvm")
+                || android.os.Build.MODEL.contains("google_sdk")
+                || android.os.Build.MODEL.contains("Emulator")
+                || android.os.Build.MODEL.contains("Android SDK built for x86")
+                || android.os.Build.MANUFACTURER.contains("Genymotion")
+                || android.os.Build.PRODUCT.contains("sdk_google")
+                || android.os.Build.PRODUCT.contains("google_sdk")
+                || android.os.Build.PRODUCT.contains("sdk")
+                || android.os.Build.PRODUCT.contains("sdk_x86")
+                || android.os.Build.PRODUCT.contains("vbox86p")
+                || android.os.Build.PRODUCT.contains("emulator")
+                || android.os.Build.PRODUCT.contains("simulator")
+
+        if (com.example.BuildConfig.DEBUG && isEmulator) {
+            Log.d("LumiApp", "Running on emulator, skipping FCM programatic interactions.")
         }
     }
 

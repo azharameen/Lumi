@@ -69,7 +69,7 @@ android {
 secrets {
   propertiesFileName = ".env"
   defaultPropertiesFileName = ".env.example"
-  ignoreList.add("FIREBASE_APPCHECK_DEBUG_TOKEN")
+  // Removed FIREBASE_APPCHECK_DEBUG_TOKEN from ignoreList so it's generated in BuildConfig
 }
 
 googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.WARN }

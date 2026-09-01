@@ -1,8 +1,9 @@
 package com.example.data.remote
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.os.StatFs
+import androidx.datastore.preferences.core.*
+import com.example.data.preferences.dataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -11,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -77,7 +79,20 @@ data class ModelDownloadProgress(
  */
 class ModelDownloadManager private constructor(private val context: Context) {
 
-    private val prefs: SharedPreferences = context.getSharedPreferences("lumi_local_models_prefs", Context.MODE_PRIVATE)
+    companion object {
+        @Volatile
+        private var instance: ModelDownloadManager? = null
+
+        fun getInstance(context: Context): ModelDownloadManager {
+            return instance ?: synchronized(this) {
+                instance ?: ModelDownloadManager(context.applicationContext).also { instance = it }
+            }
+        }
+        
+        private val ACTIVE_MODEL = stringPreferencesKey("active_local_model")
+        private val HARDWARE_ACCEL = stringPreferencesKey("hardware_accelerator")
+    }
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val activeDownloadJobs = ConcurrentHashMap<String, Job>()
 
@@ -195,21 +210,25 @@ class ModelDownloadManager private constructor(private val context: Context) {
     private val _downloadStates = MutableStateFlow<Map<String, ModelDownloadProgress>>(emptyMap())
     val downloadStates: StateFlow<Map<String, ModelDownloadProgress>> = _downloadStates.asStateFlow()
 
-    private val _activeModelId = MutableStateFlow(
-        prefs.getString("active_local_model", "gemma-2b-it-int4") ?: "gemma-2b-it-int4"
-    )
+    private val _activeModelId = MutableStateFlow("gemma-2b-it-int4")
     val activeModelId: StateFlow<String> = _activeModelId.asStateFlow()
 
-    private val _selectedAccelerator = MutableStateFlow(
-        try {
-            HardwareAccelerator.valueOf(
-                prefs.getString("hardware_accelerator", HardwareAccelerator.GPU_OPENCL.name) ?: HardwareAccelerator.GPU_OPENCL.name
-            )
-        } catch (_: Exception) {
-            HardwareAccelerator.GPU_OPENCL
-        }
-    )
+    private val _selectedAccelerator = MutableStateFlow(HardwareAccelerator.GPU_OPENCL)
     val selectedAccelerator: StateFlow<HardwareAccelerator> = _selectedAccelerator.asStateFlow()
+
+    init {
+        scope.launch {
+            val p = context.dataStore.data.first()
+            _activeModelId.value = p[ACTIVE_MODEL] ?: "gemma-2b-it-int4"
+            
+            val accelName = p[HARDWARE_ACCEL] ?: HardwareAccelerator.GPU_OPENCL.name
+            _selectedAccelerator.value = try {
+                HardwareAccelerator.valueOf(accelName)
+            } catch (_: Exception) {
+                HardwareAccelerator.GPU_OPENCL
+            }
+        }
+    }
 
     init {
         cleanupOrphanedTempFiles()
@@ -298,13 +317,21 @@ class ModelDownloadManager private constructor(private val context: Context) {
     }
 
     fun setActiveModel(modelId: String) {
-        prefs.edit().putString("active_local_model", modelId).apply()
         _activeModelId.value = modelId
+        scope.launch {
+            context.dataStore.edit { prefs ->
+                prefs[ACTIVE_MODEL] = modelId
+            }
+        }
     }
 
     fun setAccelerator(accelerator: HardwareAccelerator) {
-        prefs.edit().putString("hardware_accelerator", accelerator.name).apply()
         _selectedAccelerator.value = accelerator
+        scope.launch {
+            context.dataStore.edit { prefs ->
+                prefs[HARDWARE_ACCEL] = accelerator.name
+            }
+        }
     }
 
     fun isModelDownloaded(modelId: String): Boolean {
@@ -572,15 +599,4 @@ class ModelDownloadManager private constructor(private val context: Context) {
         _downloadStates.value = updated
     }
 
-    companion object {
-        @Volatile
-        private var instance: ModelDownloadManager? = null
-
-        fun getInstance(context: Context): ModelDownloadManager {
-            return instance ?: synchronized(this) {
-                instance ?: ModelDownloadManager(context.applicationContext).also { instance = it }
-            }
-        }
-    }
 }
-

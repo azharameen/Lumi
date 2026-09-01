@@ -35,6 +35,15 @@ class LumiApplication : Application() {
         createNotificationChannels()
     }
 
+    private fun getApiKey(): String {
+        return try {
+            val field = BuildConfig::class.java.getDeclaredField("FIREBASE_API_KEY")
+            field.get(null) as? String ?: ""
+        } catch (e: Exception) {
+            "" // Fallback if missing, though Firebase may fail to initialize properly if so.
+        }
+    }
+
     private fun initializeFirebase() {
         try {
             if (FirebaseApp.getApps(this).isEmpty()) {
@@ -42,7 +51,7 @@ class LumiApplication : Application() {
                 if (app == null) {
                     val options = FirebaseOptions.Builder()
                         .setApplicationId("1:663377968514:android:bac0ab54e860f4ed40639b")
-                        .setApiKey("AIzaSyBwusrDv4IY6WvoP7Nqb5FKn3DcdmxYiXk")
+                        .setApiKey(getApiKey())
                         .setProjectId("studio-8325749739-eefac")
                         .setDatabaseUrl("https://studio-8325749739-eefac-default-rtdb.asia-southeast1.firebasedatabase.app")
                         .setStorageBucket("studio-8325749739-eefac.firebasestorage.app")

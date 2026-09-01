@@ -17,12 +17,12 @@ class SemanticMemoryEngine(
     /**
      * Retrieves the top [limit] most semantically relevant memories and facts for the given [query].
      */
-    suspend fun retrieveRelevantContext(query: String, limit: Int = 4): String {
+    suspend fun retrieveRelevantContext(query: String, limit: Int = 4): String = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
         val memories = database.petMemoryDao().getAllMemoriesDirect()
         val facts = database.factKnowledgeDao().getAllFactsDirect()
 
         if (memories.isEmpty() && facts.isEmpty()) {
-            return ""
+            return@withContext ""
         }
 
         // 1. Score and rank episodic memories
@@ -50,10 +50,10 @@ class SemanticMemoryEngine(
         if (topMemories.isEmpty() && topFacts.isEmpty()) {
             // Fallback to recent items if no high similarity match
             val recentMemories = memories.take(2)
-            return buildContextString(recentMemories, facts.take(3))
+            return@withContext buildContextString(recentMemories, facts.take(3))
         }
 
-        return buildContextString(topMemories, topFacts)
+        return@withContext buildContextString(topMemories, topFacts)
     }
 
     private fun buildContextString(memories: List<PetMemoryEntity>, facts: List<FactKnowledgeEntity>): String {

@@ -1,6 +1,6 @@
 package com.example.domain.agent
 
-import android.graphics.Bitmap
+
 import com.example.data.remote.GeminiContent
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.ToolExecutionReport
@@ -23,7 +23,7 @@ data class AgentState(
     val id: String = java.util.UUID.randomUUID().toString(),
     val userQuery: String,
     val history: List<Pair<String, String>> = emptyList(),
-    val imageAttachment: Bitmap? = null,
+    val imageAttachment: ByteArray? = null,
     
     // Planning & Execution
     val currentNodeName: String = "INTENT_ROUTING",

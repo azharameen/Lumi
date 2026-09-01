@@ -1,6 +1,6 @@
 package com.example.domain.repository
 
-import android.graphics.Bitmap
+
 import com.example.data.remote.AiRoutingMode
 import com.example.data.remote.HardwareAccelerator
 import com.example.data.remote.LocalLlmModelSpec
@@ -35,7 +35,7 @@ interface AiEngineRepository {
     suspend fun executeAiTurn(
         userMessage: String,
         recentHistory: List<Pair<String, String>> = emptyList(),
-        imageAttachment: Bitmap? = null
+        imageAttachment: ByteArray? = null
     ): AiTurnResult
     suspend fun benchmarkOnDeviceGemma(): Pair<String, Long>
     suspend fun clearAiAnalyticsLogs()

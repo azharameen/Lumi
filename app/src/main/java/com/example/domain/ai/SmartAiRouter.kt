@@ -1,6 +1,6 @@
 package com.example.domain.ai
 
-import android.graphics.Bitmap
+
 import com.example.data.remote.AiRoutingMode
 
 data class RoutingDecision(
@@ -25,7 +25,7 @@ object SmartAiRouter {
 
     fun routeRequest(
         userMessage: String,
-        imageAttachment: Bitmap?,
+        imageAttachment: ByteArray?,
         userRoutingMode: AiRoutingMode,
         isNetworkAvailable: Boolean = true,
         isLocalModelReady: Boolean = true,
@@ -163,7 +163,7 @@ object SmartAiRouter {
         }
     }
 
-    fun classifyTask(message: String, image: Bitmap?): AiTaskCategory {
+    fun classifyTask(message: String, image: ByteArray?): AiTaskCategory {
         if (image != null) return AiTaskCategory.VISION_MULTIMODAL
 
         // Quick heuristic overrides for obvious tool actions

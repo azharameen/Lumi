@@ -122,7 +122,8 @@ import androidx.compose.ui.unit.sp
 import com.example.domain.account.LumiPersonaTone
 import com.example.domain.account.UserFactItem
 import com.example.domain.account.UserProfileData
-import com.example.domain.connectors.ConnectorManager
+import com.example.data.repository.ConnectorRepositoryImpl
+import com.example.domain.connectors.ConnectorRepository
 import com.example.core.theme.LumiGold
 import com.example.core.theme.LumiGreen
 import com.example.core.theme.LumiMint
@@ -153,7 +154,7 @@ fun ConnectorsControlSection(
 ) {
     val context = LocalContext.current
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
-    val connectorManager = remember { ConnectorManager(context) }
+    val connectorManager = remember { ConnectorRepositoryImpl(context) }
 
     val remoteConfigManager = remember {
         try {

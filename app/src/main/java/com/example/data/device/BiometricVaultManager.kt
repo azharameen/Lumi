@@ -53,16 +53,17 @@ class BiometricVaultManager(private val context: Context) {
     /**
      * Checks if biometric hardware and security credentials are available and enrolled.
      */
+    @android.annotation.SuppressLint("NewApi")
     fun canAuthenticate(): Boolean {
         if (!isDeviceSecure()) return false
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val biometricManager = context.getSystemService(BiometricManager::class.java) ?: return false
-            val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
-            } else {
-                BiometricManager.Authenticators.BIOMETRIC_WEAK
-            }
+            val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
             return biometricManager.canAuthenticate(authenticators) == BiometricManager.BIOMETRIC_SUCCESS
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val biometricManager = context.getSystemService(BiometricManager::class.java) ?: return false
+            @Suppress("DEPRECATION")
+            return biometricManager.canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS
         }
         return isDeviceSecure()
     }

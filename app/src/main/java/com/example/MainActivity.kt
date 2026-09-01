@@ -3,6 +3,9 @@ package com.example
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
 import android.net.Uri
@@ -76,24 +79,6 @@ class MainActivity : ComponentActivity() {
 
         // Initialize Dynamic App Shortcuts
         AppShortcutsManager.initDynamicShortcuts(this)
-
-        // Audio, Location and Notification permissions
-        val permissionsToRequest = mutableListOf<String>()
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            permissionsToRequest.add(Manifest.permission.RECORD_AUDIO)
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
-            permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-        if (permissionsToRequest.isNotEmpty()) {
-            ActivityCompat.requestPermissions(this, permissionsToRequest.toTypedArray(), PERMISSION_RECORD_AUDIO_CODE)
-        }
 
         // Handle incoming intent (Shares, Shortcuts, Alarms, Widgets)
         handleIntent(intent)
@@ -195,6 +180,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun LumiApp(
     viewModel: LumiViewModel,
@@ -234,6 +220,15 @@ fun LumiApp(
     val selectedAccelerator by aiSettingsViewModel.selectedAccelerator.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
+
+    val audioPermissionState = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
+    val handleStartVoiceListening = {
+        if (audioPermissionState.status.isGranted) {
+            chatViewModel.startVoiceListening()
+        } else {
+            audioPermissionState.launchPermissionRequest()
+        }
+    }
 
     if (authUiState.user == null && !authUiState.isGuestMode) {
         LoginScreen(
@@ -303,7 +298,7 @@ fun LumiApp(
                         onSendMessage = { text -> chatViewModel.sendMessage(text) },
                         onSetInputText = { text -> viewModel.setInputText(text) },
                         onShowCamera = { viewModel.setShowCamera(true) },
-                        onStartVoiceListening = { chatViewModel.startVoiceListening() },
+                        onStartVoiceListening = { handleStartVoiceListening() },
                         onStopVoiceListening = { chatViewModel.stopVoiceListening() },
                         onToggleVoiceOutput = { viewModel.toggleVoiceOutput() },
                         onNavigateBack = { viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
@@ -377,7 +372,7 @@ fun LumiApp(
                         onPetPetted = { petViewModel.onPetPetted() },
                         onPetTouched = { petViewModel.onPetTouched() },
                         onTogglePetSleep = { petViewModel.togglePetSleep() },
-                        onStartVoiceListening = { chatViewModel.startVoiceListening() },
+                        onStartVoiceListening = { handleStartVoiceListening() },
                         onStopVoiceListening = { chatViewModel.stopVoiceListening() },
                         onShowCamera = { viewModel.setShowCamera(true) },
                         onShowWardrobe = { viewModel.setShowWardrobeScreen(true) },

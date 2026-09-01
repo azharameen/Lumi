@@ -1,6 +1,6 @@
 package com.example.data.repository
 
-import android.graphics.Bitmap
+
 import com.example.data.remote.*
 import com.example.domain.agent.hitl.HitlPendingAction
 import com.example.domain.repository.AiEngineRepository
@@ -54,7 +54,7 @@ class AiEngineRepositoryImpl(
     override suspend fun executeAiTurn(
         userMessage: String,
         recentHistory: List<Pair<String, String>>,
-        imageAttachment: Bitmap?
+        imageAttachment: ByteArray?
     ): AiTurnResult {
         val result = hybridAiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment)
         return AiTurnResult(

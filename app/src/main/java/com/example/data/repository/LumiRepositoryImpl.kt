@@ -7,7 +7,7 @@ import com.example.framework.tools.SystemToolSuite
 
 import android.content.Context
 import com.example.data.device.HealthConnectManager
-import android.graphics.Bitmap
+
 import com.example.data.local.LumiDatabase
 import com.example.data.local.entity.AiExecutionLogEntity
 import com.example.data.local.entity.CalendarEventEntity
@@ -40,13 +40,13 @@ class LumiRepositoryImpl private constructor(
     private val healthConnectManager: HealthConnectManager? = null
 ) : LumiRepository {
 
-    private val connectorManager = com.example.domain.connectors.ConnectorManager(context)
-    private val integrationService = com.example.domain.connectors.IntegrationService(connectorManager)
+    private val connectorRepository = com.example.data.repository.ConnectorRepositoryImpl(context)
+    private val integrationService = com.example.domain.connectors.IntegrationService(connectorRepository)
     private val toolDispatcher = AgentToolDispatcher(database, integrationService, healthConnectManager)
     private val fastToolIndex = FastToolIndex(database.toolFtsDao())
     private val toolRetriever = ToolRetriever(fastToolIndex)
     private val hybridAiEngine = HybridAiEngine(toolDispatcher, database.aiExecutionLogDao(), database, context, toolRetriever)
-    private val autonomousGoalPlanner = com.example.domain.planner.AutonomousGoalPlanner(context, database, toolDispatcher, integrationService)
+    private val autonomousGoalPlanner = com.example.domain.planner.AutonomousGoalPlanner(database, toolDispatcher, integrationService)
     private val autonomousBriefingEngine = com.example.domain.briefing.AutonomousBriefingEngine(context)
     private val soundscapeEngine = com.example.data.device.ProceduralSoundscapeEngine.getInstance(context)
 
@@ -228,7 +228,7 @@ class LumiRepositoryImpl private constructor(
         }
     }
 
-    override suspend fun sendMessage(userText: String, image: Bitmap?): ChatMessageEntity {
+    override suspend fun sendMessage(userText: String, image: ByteArray?): ChatMessageEntity = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         // Save user message
         val userEntity = ChatMessageEntity(
             sender = "USER",
@@ -266,7 +266,7 @@ class LumiRepositoryImpl private constructor(
         )
         database.chatMessageDao().insertMessage(aiEntity)
 
-        return aiEntity
+        aiEntity
     }
 
     override suspend fun petTheCharacter() {

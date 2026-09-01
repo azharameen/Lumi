@@ -6,7 +6,7 @@ import com.example.data.local.entity.FactKnowledgeEntity
 import com.example.data.local.mapper.toDomain
 import com.example.data.local.mapper.toEntity
 import com.example.domain.account.UserProfileData
-import com.example.domain.account.UserProfileManager
+import com.example.domain.account.UserProfileRepository
 import com.example.domain.briefing.AutonomousBriefingEngine
 import com.example.domain.briefing.BriefingType
 import com.example.domain.model.ChatMessage
@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 class UserMemoryRepositoryImpl(
-    private val userProfileManager: UserProfileManager,
+    private val userProfileManager: UserProfileRepository,
     private val factKnowledgeDao: FactKnowledgeDao,
     private val chatMessageDao: ChatMessageDao,
     private val briefingEngine: AutonomousBriefingEngine

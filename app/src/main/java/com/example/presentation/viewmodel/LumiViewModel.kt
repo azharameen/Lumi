@@ -1,8 +1,10 @@
 package com.example.presentation.viewmodel
-import com.example.domain.account.UserProfileManager
+import com.example.domain.account.UserProfileRepository
 
 import android.app.Application
 import android.graphics.Bitmap
+import java.io.ByteArrayOutputStream
+import android.graphics.Bitmap.CompressFormat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.entity.*
@@ -35,7 +37,7 @@ data class LumiUiState(
 
 class LumiViewModel(
     val repository: LumiRepository,
-    val userProfileManager: UserProfileManager,
+    val userProfileManager: UserProfileRepository,
     val voiceEngine: VoiceEngine,
     val sensorsManager: SensorsManager,
     val batteryManager: BatteryStatusManager,
@@ -212,7 +214,7 @@ class LumiViewModel(
 
     fun sendMessage(text: String, image: Bitmap? = null) {
         viewModelScope.launch {
-            val response = repository.sendMessage(text, image)
+            val imageBytes = image?.let { val stream = ByteArrayOutputStream(); it.compress(CompressFormat.JPEG, 80, stream); stream.toByteArray() }; val response = repository.sendMessage(text, imageBytes)
             if (userProfile.value.enableSpeechOutput) {
                 voiceEngine.speak(response.content)
             }

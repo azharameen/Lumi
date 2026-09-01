@@ -1,6 +1,5 @@
 package com.example.domain.briefing
 
-import android.content.Context
 import com.example.data.firebase.LumiAnalyticsManager
 import com.example.data.firebase.LumiCrashlyticsManager
 import com.example.data.firebase.LumiPerformanceManager
@@ -46,7 +45,7 @@ data class DailyBriefing(
     val generatedAt: Long = System.currentTimeMillis()
 )
 
-class AutonomousBriefingEngine(private val context: Context) {
+class AutonomousBriefingEngine(private val context: Any) {
 
     private val remoteConfigManager by lazy {
         try {
@@ -68,7 +67,7 @@ class AutonomousBriefingEngine(private val context: Context) {
         try {
             GlobalContext.get().get<LumiAnalyticsManager>()
         } catch (_: Exception) {
-            LumiAnalyticsManager(context)
+            LumiAnalyticsManager(context as android.content.Context)
         }
     }
 

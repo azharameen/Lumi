@@ -55,6 +55,15 @@ class FirebaseAuthRepositoryImpl(
         }
     }
 
+    private fun getApiKey(): String {
+        return try {
+            val field = com.example.BuildConfig::class.java.getDeclaredField("FIREBASE_API_KEY")
+            field.get(null) as? String ?: ""
+        } catch (e: Exception) {
+            "" // Fallback if missing
+        }
+    }
+
     private fun ensureFirebaseInitialized(): Boolean {
         return try {
             if (FirebaseApp.getApps(context).isEmpty()) {
@@ -62,7 +71,7 @@ class FirebaseAuthRepositoryImpl(
                 if (app == null) {
                     val options = FirebaseOptions.Builder()
                         .setApplicationId("1:663377968514:android:bac0ab54e860f4ed40639b")
-                        .setApiKey("AIzaSyBwusrDv4IY6WvoP7Nqb5FKn3DcdmxYiXk")
+                        .setApiKey(getApiKey())
                         .setProjectId("studio-8325749739-eefac")
                         .setDatabaseUrl("https://studio-8325749739-eefac-default-rtdb.asia-southeast1.firebasedatabase.app")
                         .setStorageBucket("studio-8325749739-eefac.firebasestorage.app")
@@ -107,12 +116,12 @@ class FirebaseAuthRepositoryImpl(
         return auth?.currentUser?.toDomainModel()
     }
 
-    override suspend fun signInWithGoogle(context: Context): Result<AuthUser> = withContext(Dispatchers.IO) {
+    override suspend fun signInWithGoogle(context: Any): Result<AuthUser> = withContext(Dispatchers.IO) {
         try {
             val auth = getFirebaseAuthSafe()
                 ?: return@withContext Result.failure(AuthGeneralException("Firebase service could not be initialized."))
 
-            val credentialManager = CredentialManager.create(context)
+            val credentialManager = CredentialManager.create(context as Context)
 
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setFilterByAuthorizedAccounts(false)
@@ -120,6 +129,7 @@ class FirebaseAuthRepositoryImpl(
                 .setAutoSelectEnabled(false)
                 .build()
 
+            val activityContext = context as Context
             val request = GetCredentialRequest.Builder()
                 .addCredentialOption(googleIdOption)
                 .build()

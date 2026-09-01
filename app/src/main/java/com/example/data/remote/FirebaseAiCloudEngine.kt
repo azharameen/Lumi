@@ -1,7 +1,8 @@
 package com.example.data.remote
 
-import android.graphics.Bitmap
+
 import android.util.Log
+import android.graphics.BitmapFactory
 import com.example.data.firebase.LumiAnalyticsManager
 import com.example.data.firebase.LumiCrashlyticsManager
 import com.example.data.firebase.LumiPerformanceManager
@@ -118,7 +119,7 @@ class FirebaseAiCloudEngine {
     suspend fun generateChatResponse(
         prompt: String,
         history: List<Pair<String, String>> = emptyList(),
-        image: Bitmap? = null,
+        image: ByteArray? = null,
         systemPrompt: String? = null,
         temperature: Float? = null
     ): String = withContext(Dispatchers.IO) {
@@ -146,7 +147,10 @@ class FirebaseAiCloudEngine {
             contentList.add(
                 content(role = "user") {
                     text(prompt)
-                    image?.let { image(it) }
+                    image?.let {
+                        val bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
+                        image(bitmap)
+                    }
                 }
             )
 

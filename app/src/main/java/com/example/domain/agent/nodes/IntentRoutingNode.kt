@@ -6,13 +6,13 @@ import com.example.data.remote.GeminiPart
 import com.example.domain.agent.AgentNode
 import com.example.domain.agent.AgentState
 import java.io.ByteArrayOutputStream
-import android.graphics.Bitmap
-import android.util.Base64
+
+
 
 class IntentRoutingNode : AgentNode {
     override val name: String = "INTENT_ROUTING"
 
-    override suspend fun execute(state: AgentState): AgentState {
+    override suspend fun execute(state: AgentState): AgentState = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
         val queryLower = state.userQuery.lowercase()
 
         // Local intent heuristic (determine if cloud or local edge execution is preferred)
@@ -76,16 +76,14 @@ class IntentRoutingNode : AgentNode {
             )
         )
 
-        return state.copy(
+        state.copy(
             isLocalExecution = isLocal,
             selectedSkillName = skill,
             contentsList = contentsList
         )
     }
 
-    private fun Bitmap.toBase64(): String {
-        val outputStream = ByteArrayOutputStream()
-        this.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
-        return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
+    private fun ByteArray.toBase64(): String {
+        return java.util.Base64.getEncoder().encodeToString(this)
     }
 }

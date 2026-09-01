@@ -1,8 +1,10 @@
 package com.example.presentation.viewmodel
-import com.example.domain.account.UserProfileManager
+import com.example.domain.account.UserProfileRepository
 
 import android.app.Application
 import android.graphics.Bitmap
+import java.io.ByteArrayOutputStream
+import android.graphics.Bitmap.CompressFormat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.firebase.LumiAnalyticsManager
@@ -20,7 +22,7 @@ import kotlinx.coroutines.launch
 class ChatViewModel(
     val repository: LumiRepository,
     val voiceEngine: VoiceEngine,
-    val userProfileManager: UserProfileManager,
+    val userProfileManager: UserProfileRepository,
     private val analytics: LumiAnalyticsManager? = null,
     private val performance: LumiPerformanceManager? = null
 ) : ViewModel() {
@@ -49,10 +51,10 @@ class ChatViewModel(
             )
             val response = if (performance != null) {
                 performance.traceAsync(LumiPerformanceManager.TRACE_AI_INFERENCE) {
-                    repository.sendMessage(text, image)
+                    val imageBytes = image?.let { val stream = ByteArrayOutputStream(); it.compress(CompressFormat.JPEG, 80, stream); stream.toByteArray() }; repository.sendMessage(text, imageBytes)
                 }
             } else {
-                repository.sendMessage(text, image)
+                val imageBytes = image?.let { val stream = ByteArrayOutputStream(); it.compress(CompressFormat.JPEG, 80, stream); stream.toByteArray() }; repository.sendMessage(text, imageBytes)
             }
             if (userProfileManager.userProfile.value.enableSpeechOutput) {
                 voiceEngine.speak(response.content)

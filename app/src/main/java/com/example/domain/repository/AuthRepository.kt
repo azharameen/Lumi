@@ -1,6 +1,6 @@
 package com.example.domain.repository
 
-import android.content.Context
+
 import com.example.domain.model.AuthUser
 import kotlinx.coroutines.flow.StateFlow
 
@@ -14,7 +14,7 @@ interface AuthRepository {
     /**
      * Initiates Google Sign-In via Android Credential Manager and exchanges ID token with Firebase Auth.
      */
-    suspend fun signInWithGoogle(context: Context): Result<AuthUser>
+    suspend fun signInWithGoogle(context: Any): Result<AuthUser>
 
     /**
      * Signs out the current Firebase user and clears active credentials.

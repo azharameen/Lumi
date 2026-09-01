@@ -1,5 +1,5 @@
 package com.example.presentation.viewmodel
-import com.example.domain.account.UserProfileManager
+import com.example.domain.account.UserProfileRepository
 import com.example.data.remote.ModelDownloadManager
 
 import android.app.Application
@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 
 class AiSettingsViewModel(
     val modelDownloadManager: ModelDownloadManager,
-    val userProfileManager: UserProfileManager
+    val userProfileManager: UserProfileRepository
 ) : ViewModel() {
         private val userProfile = userProfileManager.userProfile
     

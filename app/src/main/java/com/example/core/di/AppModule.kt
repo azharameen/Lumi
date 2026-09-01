@@ -6,7 +6,7 @@ import com.example.data.local.LumiDatabase
 import com.example.data.remote.ModelDownloadManager
 import com.example.data.repository.*
 import com.example.data.tools.FastToolIndex
-import com.example.domain.account.UserProfileManager
+import com.example.domain.account.UserProfileRepository
 import com.example.domain.briefing.AutonomousBriefingEngine
 import com.example.domain.repository.*
 import com.example.domain.tools.ToolRegistry
@@ -29,7 +29,7 @@ val appModule = module {
 
     // Infrastructure & System Managers
     single { HealthConnectManager(androidContext()) }
-    single { UserProfileManager.getInstance(androidContext()) }
+    single<UserProfileRepository> { UserProfileRepositoryImpl(androidContext()) }
     single { VoiceEngine(androidContext()) }
     single { SensorsManager(androidContext()) }
     single { BatteryStatusManager(androidContext()) }

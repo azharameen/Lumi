@@ -1,6 +1,6 @@
 package com.example.domain.repository
 
-import android.graphics.Bitmap
+
 import com.example.data.local.entity.CalendarEventEntity
 import com.example.data.local.entity.ChatMessageEntity
 import com.example.data.local.entity.PetEvolutionEntity
@@ -32,7 +32,7 @@ interface LumiRepository {
     val chatMessages: Flow<List<ChatMessageEntity>>
     val pagedChatMessages: Flow<androidx.paging.PagingData<ChatMessageEntity>>
 
-    suspend fun sendMessage(userText: String, image: Bitmap? = null): ChatMessageEntity
+    suspend fun sendMessage(userText: String, image: ByteArray? = null): ChatMessageEntity
     suspend fun petTheCharacter()
     suspend fun setBloubShape(shape: com.example.domain.model.BloubShape)
     suspend fun setBloubSkinColor(skinColor: com.example.domain.model.BloubSkinColor)

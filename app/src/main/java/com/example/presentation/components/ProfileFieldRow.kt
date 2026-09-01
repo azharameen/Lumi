@@ -117,7 +117,7 @@ import androidx.compose.ui.unit.sp
 import com.example.domain.account.LumiPersonaTone
 import com.example.domain.account.UserFactItem
 import com.example.domain.account.UserProfileData
-import com.example.domain.connectors.ConnectorManager
+import com.example.domain.connectors.ConnectorRepository
 import com.example.core.theme.LumiGold
 import com.example.core.theme.LumiGreen
 import com.example.core.theme.LumiMint

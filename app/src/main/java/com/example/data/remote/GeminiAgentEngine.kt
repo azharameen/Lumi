@@ -1,6 +1,6 @@
 package com.example.data.remote
 
-import android.graphics.Bitmap
+
 import com.example.data.local.LumiDatabase
 import com.example.domain.agent.AgentState
 import com.example.domain.agent.AgentStatus
@@ -32,7 +32,7 @@ class GeminiAgentEngine(
     suspend fun executeUserTurn(
         userMessage: String,
         recentHistory: List<Pair<String, String>> = emptyList(),
-        imageAttachment: Bitmap? = null
+        imageAttachment: ByteArray? = null
     ): AgentExecutionResult = withContext(Dispatchers.IO) {
         try {
             val initialState = AgentState(

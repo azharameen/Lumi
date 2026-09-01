@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.firebase.LumiAnalyticsManager
 import com.example.data.firebase.LumiCrashlyticsManager
 import com.example.data.repository.AuthCancellationException
-import com.example.domain.account.UserProfileManager
+import com.example.domain.account.UserProfileRepository
 import com.example.domain.model.AuthUser
 import com.example.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +27,7 @@ data class AuthUiState(
 
 class AuthViewModel(
     private val authRepository: AuthRepository,
-    private val userProfileManager: UserProfileManager,
+    private val userProfileManager: UserProfileRepository,
     private val crashlytics: LumiCrashlyticsManager? = null,
     private val analytics: LumiAnalyticsManager? = null
 ) : ViewModel() {

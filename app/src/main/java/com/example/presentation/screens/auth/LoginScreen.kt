@@ -316,7 +316,7 @@ fun GoogleSignInEnterpriseButton(
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(22.dp),
-                    color = Color(0xFF1F1F1F),
+                    color = SurfaceDarkVariant,
                     strokeWidth = 2.5.dp
                 )
                 Spacer(modifier = Modifier.width(10.dp))
@@ -324,7 +324,7 @@ fun GoogleSignInEnterpriseButton(
                     text = "Connecting...",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1F1F1F)
+                        color = SurfaceDarkVariant
                     )
                 )
             } else {
@@ -341,7 +341,7 @@ fun GoogleSignInEnterpriseButton(
                     text = "Sign in with Google",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF1F1F1F),
+                        color = SurfaceDarkVariant,
                         letterSpacing = 0.2.sp
                     )
                 )

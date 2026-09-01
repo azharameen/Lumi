@@ -1,6 +1,5 @@
 package com.example.domain.planner
 
-import android.content.Context
 import com.example.data.local.LumiDatabase
 import com.example.data.local.entity.GoalMilestoneEntity
 import com.example.data.local.entity.GoalPlanEntity
@@ -49,7 +48,6 @@ data class PlannedMilestone(
  * eliminating brittle regex extractions.
  */
 class AutonomousGoalPlanner(
-    private val context: Context,
     private val database: LumiDatabase,
     private val toolDispatcher: AgentToolDispatcher,
     private val integrationService: IntegrationService

@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit
  * Enterprise integration service executing real HTTP/OAuth requests to Google Workspace,
  * GitHub, and Slack with decoupled contract statuses.
  */
-class IntegrationService(private val connectorManager: ConnectorManager) {
+class IntegrationService(private val connectorManager: ConnectorRepository) {
 
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)

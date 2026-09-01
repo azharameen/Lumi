@@ -1,7 +1,7 @@
 package com.example.data.remote
 
 import android.content.Context
-import android.graphics.Bitmap
+
 import com.example.data.firebase.LumiAnalyticsManager
 import com.example.data.firebase.LumiCrashlyticsManager
 import com.example.data.firebase.LumiPerformanceManager
@@ -77,7 +77,7 @@ class HybridAiEngine(
     suspend fun executeUserTurn(
         userMessage: String,
         recentHistory: List<Pair<String, String>> = emptyList(),
-        imageAttachment: Bitmap? = null
+        imageAttachment: ByteArray? = null
     ): EngineTurnResult = withContext(Dispatchers.IO) {
         val startTime = System.currentTimeMillis()
         val currentRoutingMode = _routingMode.value

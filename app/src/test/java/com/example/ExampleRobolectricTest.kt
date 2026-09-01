@@ -5,7 +5,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.domain.account.UserProfileData
 import com.example.domain.account.UserProfileManager
-import com.example.ui.navigation.NavDestination
+import com.example.core.navigation.NavDestination
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -26,7 +26,7 @@ class ExampleRobolectricTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext<Application>()
-        userProfileManager = UserProfileManager(context)
+        userProfileManager = UserProfileManager.getInstance(context)
         userProfileManager.resetToDefaults()
     }
 

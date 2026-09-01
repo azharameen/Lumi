@@ -54,7 +54,7 @@ import androidx.compose.material.icons.filled.Key
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Psychology
@@ -264,7 +264,7 @@ fun ProfileAndPersonaSection(
                             colors = ButtonDefaults.buttonColors(containerColor = SurfaceDarkVariant)
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Logout,
+                                imageVector = Icons.AutoMirrored.Filled.Logout,
                                 contentDescription = null,
                                 tint = TextSecondary,
                                 modifier = Modifier.size(16.dp)
@@ -416,7 +416,7 @@ fun ProfileAndPersonaSection(
                         modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall, bottom = 12.dp)
                     )
 
-                    LumiPersonaTone.values().forEach { tone ->
+                    LumiPersonaTone.entries.forEach { tone ->
                         val isSelected = userProfile.personaTone == tone
                         Surface(
                             color = if (isSelected) tone.accentColor.copy(alpha = 0.15f) else SurfaceDarkVariant,

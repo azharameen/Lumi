@@ -21,10 +21,12 @@ class LumiApplication : Application() {
         
         initializeFirebase()
 
-        startKoin {
-            androidLogger()
-            androidContext(this@LumiApplication)
-            modules(appModule)
+        if (org.koin.core.context.GlobalContext.getOrNull() == null) {
+            startKoin {
+                androidLogger()
+                androidContext(this@LumiApplication)
+                modules(appModule)
+            }
         }
         
         createNotificationChannels()
@@ -49,6 +51,30 @@ class LumiApplication : Application() {
                     Log.i("LumiApp", "Firebase initialized automatically from google-services")
                 }
             }
+            // Initialize Firebase App Check with Play Integrity provider
+            com.example.data.firebase.LumiAppCheckManager.getInstance().initialize()
+            
+            val isEmulator = (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic"))
+                    || android.os.Build.FINGERPRINT.startsWith("generic")
+                    || android.os.Build.FINGERPRINT.startsWith("unknown")
+                    || android.os.Build.HARDWARE.contains("goldfish")
+                    || android.os.Build.HARDWARE.contains("ranchu")
+                    || android.os.Build.HARDWARE.contains("cutf_cvm")
+                    || android.os.Build.MODEL.contains("google_sdk")
+                    || android.os.Build.MODEL.contains("Emulator")
+                    || android.os.Build.MODEL.contains("Android SDK built for x86")
+                    || android.os.Build.MANUFACTURER.contains("Genymotion")
+                    || android.os.Build.PRODUCT.contains("sdk_google")
+                    || android.os.Build.PRODUCT.contains("google_sdk")
+                    || android.os.Build.PRODUCT.contains("sdk")
+                    || android.os.Build.PRODUCT.contains("sdk_x86")
+                    || android.os.Build.PRODUCT.contains("vbox86p")
+                    || android.os.Build.PRODUCT.contains("emulator")
+                    || android.os.Build.PRODUCT.contains("simulator")
+
+            if (com.example.BuildConfig.DEBUG && isEmulator) {
+                Log.d("LumiApp", "Running on emulator, skipping FCM programatic interactions.")
+            }
         } catch (e: Exception) {
             Log.e("LumiApp", "Error during Firebase initialization", e)
         }
@@ -72,9 +98,37 @@ class LumiApplication : Application() {
                 description = "Daily wellness, mindfulness and schedule reminders from Lumi"
             }
 
+            val fcmChannel = NotificationChannel(
+                com.example.framework.LumiFirebaseMessagingService.CHANNEL_PROACTIVE_ALERTS,
+                "Lumi Proactive Companion Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Proactive check-ins, mindful nudges, and real-time alerts from your companion Lumi"
+                enableVibration(true)
+            }
+
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
             manager.createNotificationChannel(reminderChannel)
+            manager.createNotificationChannel(fcmChannel)
+        }
+        
+        // Subscribe to companion notification topics
+        val isEmulator = (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic"))
+                || android.os.Build.FINGERPRINT.startsWith("generic")
+                || android.os.Build.FINGERPRINT.startsWith("unknown")
+                || android.os.Build.HARDWARE.contains("goldfish")
+                || android.os.Build.HARDWARE.contains("ranchu")
+                || android.os.Build.HARDWARE.contains("cutf_cvm")
+                || android.os.Build.MODEL.contains("google_sdk")
+                || android.os.Build.MODEL.contains("Emulator")
+                || android.os.Build.MODEL.contains("Android SDK built for x86")
+                || android.os.Build.PRODUCT.contains("sdk")
+                || android.os.Build.PRODUCT.contains("emulator")
+                || android.os.Build.PRODUCT.contains("simulator")
+                
+        if (!isEmulator) {
+            com.example.framework.LumiFirebaseMessagingService.subscribeToCompanionTopics()
         }
     }
 }

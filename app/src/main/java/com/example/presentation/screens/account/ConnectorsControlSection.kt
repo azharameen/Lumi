@@ -139,12 +139,49 @@ import androidx.compose.material3.MaterialTheme
 import com.example.core.theme.spacing
 
 
+import com.example.data.firebase.LumiAnalyticsManager
+import com.example.data.firebase.LumiCrashlyticsManager
+import com.example.data.firebase.LumiRemoteConfigManager
+import com.example.framework.LumiFirebaseMessagingService
+import kotlinx.coroutines.launch
+import org.koin.core.context.GlobalContext
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ConnectorsControlSection(
     
 ) {
     val context = LocalContext.current
+    val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
     val connectorManager = remember { ConnectorManager(context) }
+
+    val remoteConfigManager = remember {
+        try {
+            GlobalContext.get().get<LumiRemoteConfigManager>()
+        } catch (_: Exception) {
+            LumiRemoteConfigManager()
+        }
+    }
+    val analyticsManager = remember {
+        try {
+            GlobalContext.get().get<LumiAnalyticsManager>()
+        } catch (_: Exception) {
+            LumiAnalyticsManager(context)
+        }
+    }
+    val crashlyticsManager = remember {
+        try {
+            GlobalContext.get().get<LumiCrashlyticsManager>()
+        } catch (_: Exception) {
+            LumiCrashlyticsManager()
+        }
+    }
+
+    val remoteConfig by remoteConfigManager.config.collectAsStateWithLifecycle()
+    val isFetchingRc by remoteConfigManager.isFetching.collectAsStateWithLifecycle()
+    val rcStatus by remoteConfigManager.lastStatus.collectAsStateWithLifecycle()
+
+    var showRcDetails by remember { mutableStateOf(false) }
 
     val isGoogleConnected by connectorManager.googleConnected.collectAsStateWithLifecycle()
     val googleEmail by connectorManager.googleAccount.collectAsStateWithLifecycle()
@@ -180,6 +217,256 @@ fun ConnectorsControlSection(
                 fontSize = 12.sp,
                 modifier = Modifier.padding(top = 2.dp)
             )
+        }
+
+        // Firebase Cloud Platform Card
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, LumiMint.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
+                    .testTag("card_connector_firebase")
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(MaterialTheme.spacing.medium)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(LumiMint.copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Cloud,
+                                    contentDescription = "Firebase",
+                                    tint = LumiMint,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
+                            Column {
+                                Text(
+                                    text = "Firebase Cloud Platform",
+                                    color = TextPrimary,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Project: studio-8325749739-eefac",
+                                    color = LumiMint,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+
+                        Surface(
+                            color = LumiGreen.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(6.dp)
+                                        .clip(CircleShape)
+                                        .background(LumiGreen)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "ACTIVE",
+                                    color = LumiGreen,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Feature Pill Grid
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf(
+                            "🔔 Proactive FCM Push",
+                            "⚙️ Remote Config",
+                            "🛡️ Crashlytics Logs",
+                            "📊 Companion Analytics",
+                            "⚡ Performance Tracing"
+                        ).forEach { tag ->
+                            Surface(
+                                color = SurfaceDarkVariant,
+                                shape = RoundedCornerShape(6.dp),
+                                border = androidx.compose.foundation.BorderStroke(0.5.dp, SurfaceHighlight)
+                            ) {
+                                Text(
+                                    text = tag,
+                                    color = TextSecondary,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+                    HorizontalDivider(color = SurfaceHighlight, thickness = 0.5.dp)
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Remote Config Status & Inspection Toggle
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { showRcDetails = !showRcDetails }
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Live Remote Config Parameters",
+                                    color = TextPrimary,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                if (isFetchingRc) {
+                                    androidx.compose.material3.CircularProgressIndicator(
+                                        modifier = Modifier.size(12.dp),
+                                        strokeWidth = 1.5.dp,
+                                        color = LumiMint
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "Status: $rcStatus",
+                                color = LumiMint.copy(alpha = 0.8f),
+                                fontSize = 11.sp
+                            )
+                        }
+                        Text(
+                            text = if (showRcDetails) "Hide ▲" else "Inspect ▼",
+                            color = LumiGold,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    AnimatedVisibility(visible = showRcDetails) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
+                                .background(SurfaceDarkVariant, RoundedCornerShape(8.dp))
+                                .border(0.5.dp, SurfaceHighlight, RoundedCornerShape(8.dp))
+                                .padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Welcome Greeting:", color = TextTertiary, fontSize = 11.sp)
+                                Text(remoteConfig.welcomeGreeting.take(28) + if (remoteConfig.welcomeGreeting.length > 28) "..." else "", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Tip of the Day:", color = TextTertiary, fontSize = 11.sp)
+                                Text(remoteConfig.companionTipOfTheDay.take(28) + if (remoteConfig.companionTipOfTheDay.length > 28) "..." else "", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("AI Creativity Temp:", color = TextTertiary, fontSize = 11.sp)
+                                Text("${remoteConfig.aiCreativityTemperature}", color = LumiGreen, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Proactive Nudge Interval:", color = TextTertiary, fontSize = 11.sp)
+                                Text("${remoteConfig.proactiveNudgeIntervalHours} hours", color = LumiGold, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Seasonal Theme:", color = TextTertiary, fontSize = 11.sp)
+                                Text(if (remoteConfig.seasonalThemeEnabled) remoteConfig.seasonalThemeName else "Default Theme", color = TextSecondary, fontSize = 11.sp)
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Action Buttons Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                coroutineScope.launch {
+                                    val result = remoteConfigManager.forceRefreshConfig()
+                                    result.onSuccess {
+                                        analyticsManager.logRemoteConfigSync("success")
+                                        Toast.makeText(context, "Remote Config Synced: ${it.welcomeGreeting.take(24)}...", Toast.LENGTH_SHORT).show()
+                                    }.onFailure { err ->
+                                        analyticsManager.logRemoteConfigSync("failed")
+                                        Toast.makeText(context, "Sync Failed: ${err.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("btn_sync_remote_config"),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = LumiMint),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, LumiMint.copy(alpha = 0.5f)),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Sync Config", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        }
+
+                        Button(
+                            onClick = {
+                                LumiFirebaseMessagingService.sendLocalTestNotification(
+                                    context = context,
+                                    title = "✨ Lumi: Mindful Alert",
+                                    body = "Proactive FCM push received! Your companion is in sync with your schedule.",
+                                    targetTab = 1,
+                                    alertType = "manual_test_alert"
+                                )
+                                analyticsManager.logScreenView("FCM_Test_Notification_Triggered")
+                                crashlyticsManager.log("Triggered local test companion notification from Connectors UI")
+                                Toast.makeText(context, "Proactive alert sent to notification shade", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .testTag("btn_test_fcm_alert"),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = LumiMint, contentColor = ObsidianDark),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                        ) {
+                            Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Test FCM Push", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         }
 
         // Google Workspace Card

@@ -62,6 +62,10 @@ import com.example.data.device.NetworkStatus
 import com.example.data.device.NetworkType
 import com.example.presentation.pet.LumiPetView
 import com.example.core.theme.*
+import com.example.data.firebase.LumiRemoteConfigManager
+import com.example.domain.model.LumiRemoteConfig
+import org.koin.core.context.GlobalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
@@ -117,6 +121,15 @@ fun HomeScreen(
     var showQuestsBottomSheet by remember { mutableStateOf(false) }
     var interactionRewardEffect by remember { mutableStateOf<String?>(null) }
     var isCareFabExpanded by remember { mutableStateOf(false) }
+
+    val remoteConfigManager = remember {
+        try {
+            GlobalContext.get().get<LumiRemoteConfigManager>()
+        } catch (_: Exception) {
+            null
+        }
+    }
+    val remoteConfig = remoteConfigManager?.config?.collectAsStateWithLifecycle(initialValue = LumiRemoteConfig())?.value
 
     // Ambient floating background pulses
     val infiniteTransition = rememberInfiniteTransition(label = "HomeGamifiedAura")
@@ -209,6 +222,17 @@ fun HomeScreen(
                 petPrimary = petPrimary,
                 onClick = onNavigateToChat
             )
+
+            // Dynamic Remote Config Event Banner if active
+            if (remoteConfig != null && (remoteConfig.specialEventBannerText.isNotBlank() || remoteConfig.seasonalThemeEnabled)) {
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
+                RemoteConfigSeasonalBanner(
+                    bannerText = if (remoteConfig.specialEventBannerText.isNotBlank()) remoteConfig.specialEventBannerText else "Enjoy the ${remoteConfig.seasonalThemeName}!",
+                    seasonalThemeName = if (remoteConfig.seasonalThemeEnabled) remoteConfig.seasonalThemeName else "",
+                    petPrimary = petPrimary,
+                    onClick = onNavigateToChat
+                )
+            }
 
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
 

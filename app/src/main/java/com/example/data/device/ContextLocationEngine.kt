@@ -90,12 +90,24 @@ class ContextLocationEngine(private val context: Context) {
         var placeDescription = "Earth Sanctuary"
         try {
             val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
-            val addresses = geocoder.getFromLocation(loc.latitude, loc.longitude, 1)
-            val city = addresses?.firstOrNull()?.locality 
-                ?: addresses?.firstOrNull()?.subAdminArea 
-                ?: addresses?.firstOrNull()?.adminArea
-            if (!city.isNullOrBlank()) {
-                placeDescription = city
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                geocoder.getFromLocation(loc.latitude, loc.longitude, 1) { addresses ->
+                    val city = addresses.firstOrNull()?.locality
+                        ?: addresses.firstOrNull()?.subAdminArea
+                        ?: addresses.firstOrNull()?.adminArea
+                    if (!city.isNullOrBlank()) {
+                        _locationState.value = _locationState.value.copy(approximatePlace = city)
+                    }
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                val addresses = geocoder.getFromLocation(loc.latitude, loc.longitude, 1)
+                val city = addresses?.firstOrNull()?.locality
+                    ?: addresses?.firstOrNull()?.subAdminArea
+                    ?: addresses?.firstOrNull()?.adminArea
+                if (!city.isNullOrBlank()) {
+                    placeDescription = city
+                }
             }
         } catch (e: Exception) {
             placeDescription = if (loc.latitude != 0.0) {

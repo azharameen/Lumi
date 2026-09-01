@@ -5,6 +5,7 @@ import com.example.data.local.LumiDatabase
 import com.example.data.local.entity.GoalMilestoneEntity
 import com.example.data.local.entity.GoalPlanEntity
 import com.example.data.local.entity.TaskEntity
+import com.example.data.remote.FirebaseAiCloudEngine
 import com.example.data.remote.GeminiClient
 import com.example.data.remote.GeminiContent
 import com.example.data.remote.GeminiGenerationConfig
@@ -79,59 +80,47 @@ class AutonomousGoalPlanner(
         )
         val goalId = database.goalPlanDao().insertGoal(initialGoalEntity)
 
-        // 2. Structured JSON generation via Gemini or deterministic fallback
-        val milestones = if (apiKey.isNotBlank() && apiKey != "MY_GEMINI_API_KEY") {
-            try {
-                val prompt = """
-                    You are an Autonomous AI Goal Planner. Decompose this objective into 3 to 4 sequential phases, each with 1 to 2 concrete execution steps.
-                    
-                    Goal: "$title"
-                    Details: "$description"
-                    Category: "$category"
-                    
-                    For each step, specify the best automated action tool:
-                    - "CALENDAR" (schedule focus blocks, events)
-                    - "DOC" (create docs, specifications, outlines)
-                    - "GITHUB" (open issues, code tracking)
-                    - "SLACK" (team broadcast, status updates)
-                    - "TASK" (internal action item)
-                    - "NONE" (general step)
-                    
-                    Return ONLY a JSON array of objects with keys:
-                    [
-                      {
-                        "phaseNumber": 1,
-                        "phaseTitle": "Phase 1: Foundation",
-                        "stepTitle": "Step title",
-                        "stepDescription": "Detailed actionable step",
-                        "suggestedTool": "CALENDAR|DOC|GITHUB|SLACK|TASK|NONE"
-                      }
-                    ]
-                """.trimIndent()
+        // 2. Structured JSON generation via Firebase AI Logic or deterministic fallback
+        val milestones = try {
+            val prompt = """
+                You are an Autonomous AI Goal Planner. Decompose this objective into 3 to 4 sequential phases, each with 1 to 2 concrete execution steps.
+                
+                Goal: "$title"
+                Details: "$description"
+                Category: "$category"
+                
+                For each step, specify the best automated action tool:
+                - "CALENDAR" (schedule focus blocks, events)
+                - "DOC" (create docs, specifications, outlines)
+                - "GITHUB" (open issues, code tracking)
+                - "SLACK" (team broadcast, status updates)
+                - "TASK" (internal action item)
+                - "NONE" (general step)
+                
+                Return ONLY a JSON array of objects with keys:
+                [
+                  {
+                    "phaseNumber": 1,
+                    "phaseTitle": "Phase 1: Foundation",
+                    "stepTitle": "Step title",
+                    "stepDescription": "Detailed actionable step",
+                    "suggestedTool": "CALENDAR|DOC|GITHUB|SLACK|TASK|NONE"
+                  }
+                ]
+            """.trimIndent()
 
-                val request = GeminiRequest(
-                    systemInstruction = GeminiContent(
-                        parts = listOf(
-                            GeminiPart(text = "You are Lumi's Goal Planner. Always output strictly valid JSON array of milestone objects.")
-                        )
-                    ),
-                    contents = listOf(
-                        GeminiContent(
-                            parts = listOf(GeminiPart(text = prompt))
-                        )
-                    ),
-                    generationConfig = GeminiGenerationConfig(
-                        temperature = 0.2f
-                    )
-                )
+            val rawText = FirebaseAiCloudEngine.getInstance().generateStructuredText(
+                systemInstruction = "You are Lumi's Goal Planner. Always output strictly valid JSON array of milestone objects.",
+                prompt = prompt,
+                temperature = 0.2f
+            )
 
-                val response = GeminiClient.apiService.generateContent(apiKey, request)
-                val rawText = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text ?: "[]"
+            if (rawText.isNotBlank()) {
                 parseJsonMilestones(rawText)
-            } catch (e: Exception) {
+            } else {
                 generateFallbackMilestones(title, category)
             }
-        } else {
+        } catch (e: Exception) {
             generateFallbackMilestones(title, category)
         }
 

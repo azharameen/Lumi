@@ -3,6 +3,9 @@ package com.example.presentation.viewmodel
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.firebase.LumiAnalyticsManager
+import com.example.data.firebase.LumiRemoteConfigManager
+import com.example.domain.model.LumiRemoteConfig
 import com.example.data.local.entity.*
 import com.example.data.repository.LumiRepositoryImpl
 import com.example.domain.briefing.AutonomousBriefingEngine
@@ -21,12 +24,16 @@ import kotlinx.coroutines.launch
 class LifeHubViewModel(
     val repository: LumiRepository,
     val sensorsManager: SensorsManager,
-    val briefingEngine: AutonomousBriefingEngine
+    val briefingEngine: AutonomousBriefingEngine,
+    val remoteConfigManager: LumiRemoteConfigManager? = null,
+    val analytics: LumiAnalyticsManager? = null
 ) : ViewModel() {
-                    val allTasks: StateFlow<List<TaskEntity>> = repository.allTasks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allTasks: StateFlow<List<TaskEntity>> = repository.allTasks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val allCalendarEvents: StateFlow<List<CalendarEventEntity>> = repository.allCalendarEvents.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val allGoalPlans: StateFlow<List<GoalPlanEntity>> = repository.allGoalPlans.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val soundscapeState = repository.soundscapeState
+
+    val remoteConfig: StateFlow<LumiRemoteConfig> = remoteConfigManager?.config ?: MutableStateFlow(LumiRemoteConfig())
 
     private val _dailyBriefing = MutableStateFlow<DailyBriefing?>(null)
     val dailyBriefing: StateFlow<DailyBriefing?> = _dailyBriefing.asStateFlow()
@@ -37,6 +44,7 @@ class LifeHubViewModel(
     fun decomposeGoal(title: String, description: String, category: String = "Productivity", targetDate: String = "") {
         viewModelScope.launch {
             sensorsManager.vibrateCelebration()
+            analytics?.logGoalMilestone(title, category, isCompleted = false)
             repository.decomposeGoal(title, description, category, targetDate)
         }
     }
@@ -51,6 +59,9 @@ class LifeHubViewModel(
     fun toggleMilestone(milestoneId: Long, goalId: Long, isCompleted: Boolean) {
         viewModelScope.launch {
             sensorsManager.vibrateTap()
+            if (isCompleted) {
+                analytics?.logGoalMilestone("Milestone #$milestoneId", "Goal", isCompleted = true)
+            }
             repository.toggleMilestone(milestoneId, goalId, isCompleted)
         }
     }

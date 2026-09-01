@@ -1,10 +1,15 @@
 package com.example.domain.briefing
 
 import android.content.Context
+import com.example.data.firebase.LumiAnalyticsManager
+import com.example.data.firebase.LumiCrashlyticsManager
+import com.example.data.firebase.LumiPerformanceManager
+import com.example.data.firebase.LumiRemoteConfigManager
 import com.example.data.local.entity.CalendarEventEntity
 import com.example.data.local.entity.PetEvolutionEntity
 import com.example.data.local.entity.TaskEntity
 import com.example.data.local.entity.WellnessLogEntity
+import com.example.data.remote.FirebaseAiCloudEngine
 import com.example.data.remote.GeminiClient
 import com.example.data.remote.GeminiContent
 import com.example.data.remote.GeminiGenerationConfig
@@ -15,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import org.koin.core.context.GlobalContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -41,6 +47,38 @@ data class DailyBriefing(
 )
 
 class AutonomousBriefingEngine(private val context: Context) {
+
+    private val remoteConfigManager by lazy {
+        try {
+            GlobalContext.get().get<LumiRemoteConfigManager>()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private val performanceManager by lazy {
+        try {
+            GlobalContext.get().get<LumiPerformanceManager>()
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private val analyticsManager by lazy {
+        try {
+            GlobalContext.get().get<LumiAnalyticsManager>()
+        } catch (_: Exception) {
+            LumiAnalyticsManager(context)
+        }
+    }
+
+    private val crashlyticsManager by lazy {
+        try {
+            GlobalContext.get().get<LumiCrashlyticsManager>()
+        } catch (_: Exception) {
+            null
+        }
+    }
 
     suspend fun generateBriefing(
         type: BriefingType? = null,
@@ -77,94 +115,118 @@ class AutonomousBriefingEngine(private val context: Context) {
         val petLevel = petEvolution?.level ?: 1
         val bondScore = petEvolution?.bondScore ?: 50
 
-        // Dynamic LLM Synthesis if API available
-        val apiKey = GeminiClient.getApiKey()
-        if (apiKey.isNotBlank() && apiKey != "MY_GEMINI_API_KEY") {
-            try {
-                val prompt = """
-                    You are Lumi, a sentient companion AI generating a personalized daily intelligence briefing for the user.
-                    Time of day: ${resolvedType.name}
-                    Date: $dateString
-                    Companion: $petName (Level $petLevel, Bond $bondScore%)
-                    Events today: ${todayEvents.map { "${it.title} at ${it.startTimeMillis}" }}
-                    Pending Tasks (${pendingTasks.size}): ${pendingTasks.take(5).map { "${it.title} [${it.priority}]" }}
-                    Completed Today: ${completedTasksToday.size}
-                    Water Logged: $totalWaterGlasses glasses
-                    
-                    Return ONLY a JSON object:
-                    {
-                      "title": "Title with emoji",
-                      "greeting": "Personalized companion greeting",
-                      "highlights": ["highlight 1", "highlight 2", "highlight 3"],
-                      "motivationalQuote": "A profound, uplifting quote matching their current workload",
-                      "focusGoal": "Clear, single highest-leverage focus objective",
-                      "recommendedAction": "Action button text",
-                      "recommendedActionType": "BREATHING" or "HYDRATE" or "TASKS" or "SCHEDULE",
-                      "audioScript": "Conversational speech script for voice narration"
-                    }
-                """.trimIndent()
+        val rcConfig = remoteConfigManager?.config?.value
+        val dynamicTip = rcConfig?.companionTipOfTheDay ?: "Take a mindful deep breath whenever you feel overwhelmed."
+        val dynamicGreetingPrefix = rcConfig?.welcomeGreeting ?: "Hi! I'm $petName"
 
-                val request = GeminiRequest(
-                    contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
-                    generationConfig = GeminiGenerationConfig(temperature = 0.5f)
-                )
+        analyticsManager.logScreenView("DailyBriefing_${resolvedType.name}")
 
-                val response = GeminiClient.apiService.generateContent(apiKey, request)
-                val jsonText = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+        // Dynamic Firebase AI LLM Synthesis (Zero-key cloud intelligence)
+        try {
+            val prompt = """
+                You are Lumi, a sentient companion AI generating a personalized daily intelligence briefing for the user.
+                Time of day: ${resolvedType.name}
+                Date: $dateString
+                Companion: $petName (Level $petLevel, Bond $bondScore%)
+                Events today: ${todayEvents.map { "${it.title} at ${it.startTimeMillis}" }}
+                Pending Tasks (${pendingTasks.size}): ${pendingTasks.take(5).map { "${it.title} [${it.priority}]" }}
+                Completed Today: ${completedTasksToday.size}
+                Water Logged: $totalWaterGlasses glasses
+                Inspirational context: $dynamicTip
+                
+                Return ONLY a JSON object:
+                {
+                  "title": "Title with emoji",
+                  "greeting": "Personalized companion greeting",
+                  "highlights": ["highlight 1", "highlight 2", "highlight 3"],
+                  "motivationalQuote": "A profound, uplifting quote matching their current workload",
+                  "focusGoal": "Clear, single highest-leverage focus objective",
+                  "recommendedAction": "Action button text",
+                  "recommendedActionType": "BREATHING" or "HYDRATE" or "TASKS" or "SCHEDULE",
+                  "audioScript": "Conversational speech script for voice narration"
+                }
+            """.trimIndent()
 
-                if (!jsonText.isNullOrBlank()) {
-                    val cleanJson = jsonText.trim().removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
-                    val jsonObj = JSONObject(cleanJson)
-
-                    val highlightsList = mutableListOf<String>()
-                    val highlightsArr = jsonObj.optJSONArray("highlights")
-                    if (highlightsArr != null) {
-                        for (i in 0 until highlightsArr.length()) {
-                            highlightsList.add(highlightsArr.getString(i))
-                        }
-                    }
-
-                    return@withContext DailyBriefing(
-                        type = resolvedType,
-                        title = jsonObj.optString("title", "✨ Daily Intelligence Briefing"),
-                        greeting = jsonObj.optString("greeting", "Hello from $petName! Ready to make today great!"),
-                        dateFormatted = dateString,
-                        highlights = if (highlightsList.isNotEmpty()) highlightsList else listOf("Track your tasks and wellness", "Stay focused and hydrated"),
-                        motivationalQuote = jsonObj.optString("motivationalQuote", "\"The journey of a thousand miles begins with a single step.\""),
-                        focusGoal = jsonObj.optString("focusGoal", "Deep focus on top priority goals"),
-                        recommendedAction = jsonObj.optString("recommendedAction", "Start Focus Session"),
-                        recommendedActionType = jsonObj.optString("recommendedActionType", "TASKS"),
-                        audioScript = jsonObj.optString("audioScript", "Here is your daily update with Lumi.")
+            val jsonText: String = if (performanceManager != null) {
+                performanceManager!!.traceAsync<String>(LumiPerformanceManager.TRACE_DAILY_BRIEFING_GEN) {
+                    FirebaseAiCloudEngine.getInstance().generateStructuredText(
+                        systemInstruction = "You are Lumi's briefing synthesizer. Output strictly valid JSON.",
+                        prompt = prompt,
+                        temperature = 0.4f
                     )
                 }
-            } catch (e: Exception) {
-                return@withContext DailyBriefing(
-                    type = resolvedType,
-                    title = "⚠️ Briefing Unavailable",
-                    greeting = "Please configure your AI API key in Settings.",
-                    dateFormatted = dateString,
-                    highlights = listOf("Requires AI Engine to synthesize briefing."),
-                    motivationalQuote = "Waiting for intelligence uplink...",
-                    focusGoal = "Configure API Key",
-                    recommendedAction = "Open Settings",
-                    recommendedActionType = "TASKS",
-                    audioScript = "Please configure your AI API key in Settings."
+            } else {
+                FirebaseAiCloudEngine.getInstance().generateStructuredText(
+                    systemInstruction = "You are Lumi's briefing synthesizer. Output strictly valid JSON.",
+                    prompt = prompt,
+                    temperature = 0.4f
                 )
             }
+
+            if (jsonText.isNotBlank()) {
+                val cleanJson = jsonText.trim().removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
+                val jsonObj = JSONObject(cleanJson)
+
+                val highlightsList = mutableListOf<String>()
+                val highlightsArr = jsonObj.optJSONArray("highlights")
+                if (highlightsArr != null) {
+                    for (i in 0 until highlightsArr.length()) {
+                        highlightsList.add(highlightsArr.getString(i))
+                    }
+                }
+
+                return@withContext DailyBriefing(
+                    type = resolvedType,
+                    title = jsonObj.optString("title", "✨ Daily Intelligence Briefing"),
+                    greeting = jsonObj.optString("greeting", "$dynamicGreetingPrefix! Ready to make today great!"),
+                    dateFormatted = dateString,
+                    highlights = if (highlightsList.isNotEmpty()) highlightsList else listOf("Track your tasks and wellness", "Stay focused and hydrated"),
+                    motivationalQuote = jsonObj.optString("motivationalQuote", "\"$dynamicTip\""),
+                    focusGoal = jsonObj.optString("focusGoal", "Deep focus on top priority goals"),
+                    recommendedAction = jsonObj.optString("recommendedAction", "Start Focus Session"),
+                    recommendedActionType = jsonObj.optString("recommendedActionType", "TASKS"),
+                    audioScript = jsonObj.optString("audioScript", "Here is your daily update with Lumi.")
+                )
+            }
+        } catch (e: Exception) {
+            crashlyticsManager?.logBreadcrumb("AutonomousBriefingEngine", "Firebase AI briefing synthesis failed: ${e.message}")
         }
 
-        // If API key is blank, just return the exact same fallback
-        return@withContext DailyBriefing(
+        // Intelligent offline heuristic synthesis with Remote Config fallback
+        val defaultHighlights = mutableListOf<String>()
+        if (todayEvents.isNotEmpty()) {
+            defaultHighlights.add("${todayEvents.size} schedule events planned today")
+        } else {
+            defaultHighlights.add("Open calendar schedule today")
+        }
+        if (pendingTasks.isNotEmpty()) {
+            defaultHighlights.add("${pendingTasks.size} tasks pending (${highPriorityTasks.size} high priority)")
+        } else {
+            defaultHighlights.add("All current tasks completed!")
+        }
+        defaultHighlights.add("Hydration: $totalWaterGlasses glasses logged")
+
+        val timeGreeting = when (resolvedType) {
+            BriefingType.MORNING -> "Good morning from $petName!"
+            BriefingType.AFTERNOON -> "Good afternoon from $petName!"
+            BriefingType.EVENING -> "Good evening from $petName!"
+        }
+
+        DailyBriefing(
             type = resolvedType,
-            title = "⚠️ Briefing Unavailable",
-            greeting = "Please configure your AI API key in Settings.",
+            title = when (resolvedType) {
+                BriefingType.MORNING -> "🌅 Morning Intelligence Briefing"
+                BriefingType.AFTERNOON -> "☀️ Afternoon Pulse"
+                BriefingType.EVENING -> "🌙 Evening Wind Down"
+            },
+            greeting = "$timeGreeting $dynamicGreetingPrefix",
             dateFormatted = dateString,
-            highlights = listOf("Requires AI Engine to synthesize briefing."),
-            motivationalQuote = "Waiting for intelligence uplink...",
-            focusGoal = "Configure API Key",
-            recommendedAction = "Open Settings",
-            recommendedActionType = "TASKS",
-            audioScript = "Please configure your AI API key in Settings."
+            highlights = defaultHighlights,
+            motivationalQuote = dynamicTip,
+            focusGoal = if (highPriorityTasks.isNotEmpty()) "Focus on: ${highPriorityTasks.first().title}" else "Organize upcoming goals and mindful pause",
+            recommendedAction = if (totalWaterGlasses < 4) "Log Hydration" else "Start 4-7-8 Breathing",
+            recommendedActionType = if (totalWaterGlasses < 4) "HYDRATE" else "BREATHING",
+            audioScript = "$timeGreeting Here is your daily summary: You have ${pendingTasks.size} pending tasks and ${todayEvents.size} events on your schedule today. $dynamicTip"
         )
     }
 }

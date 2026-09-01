@@ -5,6 +5,8 @@ import android.app.Application
 import android.graphics.Bitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.firebase.LumiAnalyticsManager
+import com.example.data.firebase.LumiPerformanceManager
 import com.example.data.local.entity.ChatMessageEntity
 import com.example.data.repository.LumiRepositoryImpl
 import com.example.domain.repository.LumiRepository
@@ -18,9 +20,11 @@ import kotlinx.coroutines.launch
 class ChatViewModel(
     val repository: LumiRepository,
     val voiceEngine: VoiceEngine,
-    val userProfileManager: UserProfileManager
+    val userProfileManager: UserProfileManager,
+    private val analytics: LumiAnalyticsManager? = null,
+    private val performance: LumiPerformanceManager? = null
 ) : ViewModel() {
-                private     val userProfile = userProfileManager.userProfile
+    private val userProfile = userProfileManager.userProfile
 
     val pagedChatMessages = repository.pagedChatMessages.cachedIn(viewModelScope)
 
@@ -38,7 +42,18 @@ class ChatViewModel(
 
     fun sendMessage(text: String, image: Bitmap? = null) {
         viewModelScope.launch {
-            val response = repository.sendMessage(text, image)
+            analytics?.logAiChatMessage(
+                mode = if (image != null) "multimodal_vision" else "text",
+                messageLength = text.length,
+                modelUsed = userProfile.value.geminiModelChoice
+            )
+            val response = if (performance != null) {
+                performance.traceAsync(LumiPerformanceManager.TRACE_AI_INFERENCE) {
+                    repository.sendMessage(text, image)
+                }
+            } else {
+                repository.sendMessage(text, image)
+            }
             if (userProfileManager.userProfile.value.enableSpeechOutput) {
                 voiceEngine.speak(response.content)
             }

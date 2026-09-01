@@ -56,6 +56,12 @@ class OnDeviceGemmaEngine(
     }
 
 
+    fun isModelReady(): Boolean {
+        val activeSpec = downloadManager?.getActiveModelSpec() ?: return false
+        val modelFile = downloadManager.getModelFile(activeSpec.id)
+        return modelFile.exists() && modelFile.length() > 0L
+    }
+
     fun checkMemoryAvailability(requiredBytes: Long): Pair<Boolean, Long> {
         if (context == null) return Pair(true, Long.MAX_VALUE)
         val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager

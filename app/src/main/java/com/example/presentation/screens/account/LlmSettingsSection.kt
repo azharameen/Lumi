@@ -104,6 +104,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import com.example.data.remote.HardwareAccelerator
 import com.example.data.remote.ModelDownloadStatus
+import com.example.data.firebase.LumiRemoteConfigManager
+import com.example.domain.model.LumiRemoteConfig
+import org.koin.core.context.GlobalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -111,6 +116,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -153,7 +159,17 @@ fun LlmSettingsSection(
     onRunGemmaBenchmark: () -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var temperature by remember { mutableFloatStateOf(userProfile.temperature) }
+
+    val remoteConfigManager = remember {
+        try {
+            GlobalContext.get().get<LumiRemoteConfigManager>()
+        } catch (_: Exception) {
+            null
+        }
+    }
+    val rcConfig = remoteConfigManager?.config?.collectAsStateWithLifecycle(initialValue = LumiRemoteConfig())?.value
     var customInstructions by remember { mutableStateOf(userProfile.customAiInstructions) }
 
     val cloudModels = listOf(
@@ -171,6 +187,72 @@ fun LlmSettingsSection(
         contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 90.dp),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
     ) {
+        // Firebase AI Cloud LLM Status Banner
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(MaterialTheme.spacing.medium),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(
+                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = stringResource(R.string.text_firebase_ai_cloud_llm),
+                                color = TextPrimary,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                color = LumiGreen.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = "Zero-Key Active",
+                                    color = LumiGreen,
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = stringResource(R.string.text_firebase_ai_desc),
+                            color = TextSecondary,
+                            fontSize = 11.sp,
+                            lineHeight = 15.sp
+                        )
+                    }
+                }
+            }
+        }
+
         // Active Engine Router
         item {
             Card(
@@ -300,7 +382,7 @@ fun LlmSettingsSection(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
                     ) {
-                        HardwareAccelerator.values().forEach { acc ->
+                        HardwareAccelerator.entries.forEach { acc ->
                             val isAccSelected = selectedAccelerator == acc
                             Surface(
                                 color = if (isAccSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else SurfaceDarkVariant,
@@ -680,6 +762,116 @@ fun LlmSettingsSection(
                                 modifier = Modifier.padding(10.dp)
                             )
                         }
+                    }
+                }
+            }
+        }
+
+        // Firebase Remote Config Live Sync & Cloud Parameters Card
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Cloud,
+                                contentDescription = null,
+                                tint = LumiCyan,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Firebase Cloud Parameters",
+                                color = LumiCyan,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Surface(
+                            color = LumiCyan.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "Live",
+                                color = LumiCyan,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (rcConfig != null) {
+                        Text(
+                            text = "Dynamic Temperature: ${rcConfig.aiCreativityTemperature} | Nudge Interval: ${rcConfig.proactiveNudgeIntervalHours}h",
+                            color = TextSecondary,
+                            fontSize = 12.sp
+                        )
+                        if (rcConfig.seasonalThemeEnabled) {
+                            Text(
+                                text = "Seasonal Theme: ${rcConfig.seasonalThemeName}",
+                                color = LumiGold,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        if (rcConfig.companionTipOfTheDay.isNotBlank()) {
+                            Text(
+                                text = "Daily Companion Tip: \"${rcConfig.companionTipOfTheDay}\"",
+                                color = TextTertiary,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "Cloud configuration synchronized with default local parameters.",
+                            color = TextSecondary,
+                            fontSize = 12.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                val success = remoteConfigManager?.fetchAndActivate() ?: false
+                                Toast.makeText(
+                                    context,
+                                    if (success) "Remote Config parameters updated!" else "Remote Config checked (already up to date)",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceDarkVariant),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = null,
+                            tint = LumiCyan,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Sync Cloud Parameters",
+                            color = TextPrimary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

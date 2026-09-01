@@ -165,48 +165,30 @@ object SmartAiRouter {
 
     fun classifyTask(message: String, image: Bitmap?): AiTaskCategory {
         if (image != null) return AiTaskCategory.VISION_MULTIMODAL
+
+        // Quick heuristic overrides for obvious tool actions
         val lower = message.lowercase().trim()
+        if (lower.startsWith("remind me") || lower.startsWith("add task") || lower.startsWith("set a timer")) {
+            return AiTaskCategory.QUICK_DEVICE_ACTION
+        }
 
-        return when {
-            // Deep Reasoning keywords
-            lower.contains("explain code") || lower.contains("debug") || lower.contains("algorithm") ||
-            lower.contains("solve") || lower.contains("calculate") || lower.contains("math problem") ||
-            lower.contains("essay") || lower.contains("physics") || lower.contains("chemistry") -> {
-                AiTaskCategory.DEEP_REASONING
-            }
+        // Fast Semantic NLP Math (TF-IDF Cosine Similarity)
+        val isLocal = SemanticIntentClassifier.isLocalIntent(message)
 
-            // Complex Schedule Planning keywords
-            (lower.contains("optimize") || lower.contains("reorganize") || lower.contains("conflict") || lower.contains("reschedule")) &&
-            (lower.contains("calendar") || lower.contains("week") || lower.contains("schedule")) -> {
-                AiTaskCategory.TIMELINE_PLANNING
-            }
-
-            // Wellness & Mood keywords
-            lower.contains("stress") || lower.contains("anxious") || lower.contains("depressed") ||
-            lower.contains("sad") || lower.contains("tired") || lower.contains("burnout") ||
-            lower.contains("journal") || lower.contains("hydrate") || lower.contains("drink water") ||
-            lower.contains("breathe") || lower.contains("meditat") || lower.contains("feeling") -> {
+        return if (isLocal) {
+            // Local paradigms
+            if (lower.contains("stress") || lower.contains("anxious") || lower.contains("feel")) {
                 AiTaskCategory.WELLNESS_MOOD
-            }
-
-            // Quick Device Actions
-            lower.startsWith("add task") || lower.startsWith("todo") || lower.startsWith("remind me") ||
-            lower.startsWith("create task") || lower.startsWith("schedule meeting") || lower.startsWith("buy ") -> {
-                AiTaskCategory.QUICK_DEVICE_ACTION
-            }
-
-            // Companion Chat & Banter
-            lower.contains("hello") || lower.contains("hi") || lower.contains("hey") ||
-            lower.contains("how are you") || lower.contains("joke") || lower.contains("pet") ||
-            lower.contains("who are you") || lower.contains("lumi") || lower.contains("love") ||
-            lower.contains("cute") || lower.contains("thank") -> {
+            } else {
                 AiTaskCategory.COMPANION_CHAT
             }
-
-            // Longer multi-sentence prompts default to deep reasoning / general
-            message.length > 180 -> AiTaskCategory.DEEP_REASONING
-
-            else -> AiTaskCategory.COMPANION_CHAT
+        } else {
+            // Cloud paradigms
+            if (lower.contains("optimize") && lower.contains("schedule")) {
+                AiTaskCategory.TIMELINE_PLANNING
+            } else {
+                AiTaskCategory.DEEP_REASONING
+            }
         }
     }
 }

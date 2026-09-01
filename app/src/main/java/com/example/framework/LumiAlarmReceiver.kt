@@ -74,10 +74,16 @@ class LumiAlarmReceiver : BroadcastReceiver() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
 
+                val dynamicTip = try {
+                    org.koin.core.context.GlobalContext.get().get<com.example.data.firebase.LumiRemoteConfigManager>().config.value.companionTipOfTheDay
+                } catch (_: Exception) {
+                    "Time for a sip of water and a deep breath with Lumi!"
+                }
+
                 val notification = NotificationCompat.Builder(context, CHANNEL_REMINDERS)
                     .setSmallIcon(R.mipmap.ic_launcher)
                     .setContentTitle("💧 Lumi Wellness Check")
-                    .setContentText("Time for a sip of water and a deep breath with Lumi!")
+                    .setContentText(dynamicTip)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setAutoCancel(true)
                     .setContentIntent(pendingIntent)
@@ -241,7 +247,12 @@ object LumiAlarmScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val triggerTime = System.currentTimeMillis() + (2 * 60 * 60 * 1000L) // in 2 hours
+        val intervalHours: Int = try {
+            org.koin.core.context.GlobalContext.get().get<com.example.data.firebase.LumiRemoteConfigManager>().config.value.proactiveNudgeIntervalHours
+        } catch (_: Exception) {
+            2
+        }
+        val triggerTime = System.currentTimeMillis() + (intervalHours.coerceAtLeast(1).toLong() * 60 * 60 * 1000L)
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)

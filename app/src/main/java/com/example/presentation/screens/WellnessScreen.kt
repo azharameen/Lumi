@@ -28,7 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Favorite
@@ -128,7 +128,7 @@ fun WellnessScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.desc_back),
                             tint = TextPrimary
                         )
@@ -267,7 +267,7 @@ fun WellnessScreen(
                             onClick = { if (hydrationCups > 0) hydrationCups-- },
                             modifier = Modifier.size(MaterialTheme.spacing.extraLarge).background(SurfaceHighlight, CircleShape)
                         ) {
-                            Text(stringResource(id = R.string.text_), color = TextPrimary, fontWeight = FontWeight.Bold)
+                            Text(stringResource(id = R.string.text_minus), color = TextPrimary, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                         IconButton(

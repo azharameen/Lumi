@@ -3,6 +3,8 @@ package com.example.presentation.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.firebase.LumiAnalyticsManager
+import com.example.data.firebase.LumiCrashlyticsManager
 import com.example.data.repository.AuthCancellationException
 import com.example.domain.account.UserProfileManager
 import com.example.domain.model.AuthUser
@@ -25,7 +27,9 @@ data class AuthUiState(
 
 class AuthViewModel(
     private val authRepository: AuthRepository,
-    private val userProfileManager: UserProfileManager
+    private val userProfileManager: UserProfileManager,
+    private val crashlytics: LumiCrashlyticsManager? = null,
+    private val analytics: LumiAnalyticsManager? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())
@@ -45,8 +49,11 @@ class AuthViewModel(
                         isGuestMode = if (user != null) false else current.isGuestMode
                     )
                 }
-                // Sync profile data if user logged in
+                // Sync profile data and update Crashlytics user ID
                 if (user != null) {
+                    crashlytics?.setUserId(user.uid)
+                    crashlytics?.setCustomKey("user_email", user.email ?: "")
+                    crashlytics?.setCustomKey("is_guest", false)
                     userProfileManager.updateField { profile ->
                         profile.copy(
                             userName = user.displayName ?: profile.userName,
@@ -80,6 +87,10 @@ class AuthViewModel(
                         error = null
                     )
                 }
+                crashlytics?.setUserId(user.uid)
+                crashlytics?.log("Google Sign-In successful for uid=${user.uid}")
+                analytics?.logAuthEvent(method = "google", isNewUser = user.isNewUser)
+
                 userProfileManager.updateField { profile ->
                     profile.copy(
                         userName = user.displayName ?: profile.userName,
@@ -93,6 +104,7 @@ class AuthViewModel(
                         it.copy(isLoading = false, loadingMessage = null, error = null)
                     }
                 } else {
+                    crashlytics?.recordException(throwable, "GoogleSignInFailure")
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -109,6 +121,9 @@ class AuthViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, loadingMessage = "Signing out...") }
             authRepository.signOut()
+            crashlytics?.setUserId(null)
+            crashlytics?.setCustomKey("is_guest", false)
+            analytics?.logAuthEvent(method = "sign_out", isNewUser = false)
             _uiState.update {
                 it.copy(
                     user = null,
@@ -122,6 +137,9 @@ class AuthViewModel(
     }
 
     fun continueAsGuest() {
+        crashlytics?.setUserId("guest_${System.currentTimeMillis()}")
+        crashlytics?.setCustomKey("is_guest", true)
+        analytics?.logAuthEvent(method = "guest", isNewUser = false)
         _uiState.update { it.copy(isGuestMode = true, error = null) }
         userProfileManager.updateField { it.copy(hasCompletedOnboarding = true) }
     }

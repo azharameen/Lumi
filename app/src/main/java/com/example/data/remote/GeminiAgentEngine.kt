@@ -20,24 +20,20 @@ data class AgentExecutionResult(
 
 /**
  * Enterprise Agent Engine executing state machine graphs (LumiAgentGraph).
- * Replaces legacy ReAct loops with structured DAG execution nodes and HITL governance.
+ * Uses Firebase AI Logic as the zero-key Cloud LLM provider with Play Integrity transport security.
  */
 class GeminiAgentEngine(
     private val toolDispatcher: AgentToolDispatcher,
     private val database: LumiDatabase,
     private val hitlApprovalManager: HitlApprovalManager? = null
 ) {
+    private val firebaseAiEngine = FirebaseAiCloudEngine.getInstance()
 
     suspend fun executeUserTurn(
         userMessage: String,
-        recentHistory: List<Pair<String, String>> = emptyList(), // Pair of (sender, text)
+        recentHistory: List<Pair<String, String>> = emptyList(),
         imageAttachment: Bitmap? = null
     ): AgentExecutionResult = withContext(Dispatchers.IO) {
-        val apiKey = GeminiClient.getApiKey()
-        if (apiKey.isBlank() || apiKey == "MY_GEMINI_API_KEY") {
-            return@withContext executeLocalFallback(userMessage, imageAttachment)
-        }
-
         try {
             val initialState = AgentState(
                 userQuery = userMessage,
@@ -64,32 +60,43 @@ class GeminiAgentEngine(
             }
 
             if (finalState.status == AgentStatus.FAILED) {
+                // Fallback to direct Firebase AI generation
+                val directResponse = firebaseAiEngine.generateChatResponse(
+                    prompt = userMessage,
+                    history = recentHistory,
+                    image = imageAttachment
+                )
                 return@withContext AgentExecutionResult(
-                    responseText = finalState.lastError ?: "State machine execution encountered an error.",
-                    inferredEmotion = PetEmotion.CONCERNED,
+                    responseText = directResponse,
+                    inferredEmotion = PetEmotion.HAPPY,
                     toolReports = finalState.executedToolReports
                 )
             }
 
+            val finalReply = finalState.finalResponseText
+                ?: firebaseAiEngine.generateChatResponse(
+                    prompt = userMessage,
+                    history = recentHistory,
+                    image = imageAttachment
+                )
+
             AgentExecutionResult(
-                responseText = finalState.finalResponseText ?: "Action completed for you! ✨",
+                responseText = finalReply,
                 inferredEmotion = finalState.inferredEmotion,
                 toolReports = finalState.executedToolReports
             )
 
         } catch (e: Exception) {
-            executeLocalFallback(userMessage, imageAttachment)
+            val fallbackText = firebaseAiEngine.generateChatResponse(
+                prompt = userMessage,
+                history = recentHistory,
+                image = imageAttachment
+            )
+            AgentExecutionResult(
+                responseText = fallbackText,
+                inferredEmotion = PetEmotion.HAPPY,
+                toolReports = emptyList()
+            )
         }
-    }
-
-    private fun executeLocalFallback(
-        userMessage: String,
-        imageAttachment: Bitmap?
-    ): AgentExecutionResult {
-        return AgentExecutionResult(
-            "I need a Gemini API Key to process your request and run tools dynamically! Please add it in the Settings screen.",
-            PetEmotion.CONCERNED,
-            emptyList()
-        )
     }
 }

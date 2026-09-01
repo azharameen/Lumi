@@ -201,7 +201,7 @@ fun PersonaStep(
             verticalArrangement = Arrangement.spacedBy(14.dp),
             modifier = Modifier.weight(1f)
         ) {
-            LumiPersonaTone.values().forEach { persona ->
+            LumiPersonaTone.entries.forEach { persona ->
                 val isSelected = currentPersona == persona
                 Surface(
                     modifier = Modifier

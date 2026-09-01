@@ -3,6 +3,8 @@ package com.example.presentation.viewmodel
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.firebase.LumiAnalyticsManager
+import com.example.data.firebase.LumiCrashlyticsManager
 import com.example.data.repository.LumiRepositoryImpl
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
@@ -17,9 +19,11 @@ import kotlinx.coroutines.launch
 
 class PetViewModel(
     val repository: LumiRepository,
-    val sensorsManager: SensorsManager
+    val sensorsManager: SensorsManager,
+    private val analytics: LumiAnalyticsManager? = null,
+    private val crashlytics: LumiCrashlyticsManager? = null
 ) : ViewModel() {
-                val petStatus = repository.petStatus.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PetStatus())
+    val petStatus = repository.petStatus.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PetStatus())
     val petEvolution = repository.petEvolution.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     init {
@@ -28,6 +32,8 @@ class PetViewModel(
                 viewModelScope.launch {
                     sensorsManager.vibratePurr()
                     repository.setPetEmotion(PetEmotion.PLAYFUL)
+                    analytics?.logPetInteraction("shake_play", "PLAYFUL", petStatus.value.happiness)
+                    crashlytics?.log("Pet emotion changed to PLAYFUL via shake gesture")
                 }
             }
         )
@@ -37,6 +43,7 @@ class PetViewModel(
         viewModelScope.launch {
             sensorsManager.vibrateTap()
             repository.setPetEmotion(PetEmotion.HAPPY)
+            analytics?.logPetInteraction("touch", "HAPPY", petStatus.value.happiness)
         }
     }
 
@@ -44,6 +51,7 @@ class PetViewModel(
         viewModelScope.launch {
             sensorsManager.vibratePurr()
             repository.setPetEmotion(PetEmotion.HAPPY)
+            analytics?.logPetInteraction("pet", "HAPPY", petStatus.value.happiness)
         }
     }
 
@@ -54,6 +62,7 @@ class PetViewModel(
             val success = repository.buyAccessory(accessory)
             if (success) {
                 sensorsManager.vibratePurr()
+                analytics?.logPetInteraction("buy_accessory", petStatus.value.currentEmotion.name, petStatus.value.happiness)
             }
             onResult(success)
         }
@@ -62,6 +71,7 @@ class PetViewModel(
         viewModelScope.launch {
             repository.equipAccessory(accessoryId)
             sensorsManager.vibrateTap()
+            analytics?.logPetInteraction("equip_accessory", petStatus.value.currentEmotion.name, petStatus.value.happiness)
         }
     }
     fun updatePetName(name: String) { viewModelScope.launch { repository.updatePetName(name) } }
@@ -70,6 +80,7 @@ class PetViewModel(
             repository.setPetEmotion(PetEmotion.ENERGETIC)
             repository.earnCoinsAndExp(coins = 10, exp = 15, reason = "Feeding Lumi")
             sensorsManager.vibratePurr()
+            analytics?.logPetInteraction("feed", "ENERGETIC", petStatus.value.happiness)
         }
     }
     fun dancePet() {
@@ -77,6 +88,7 @@ class PetViewModel(
             repository.setPetEmotion(PetEmotion.PLAYFUL)
             repository.earnCoinsAndExp(coins = 10, exp = 15, reason = "Dancing with Lumi")
             sensorsManager.vibrateTap()
+            analytics?.logPetInteraction("dance", "PLAYFUL", petStatus.value.happiness)
         }
     }
     fun pokePet() { viewModelScope.launch { repository.setPetEmotion(PetEmotion.CONCERNED) } }
@@ -85,8 +97,10 @@ class PetViewModel(
         viewModelScope.launch {
             if (petStatus.value.currentEmotion == PetEmotion.SLEEPY) {
                 repository.setPetEmotion(PetEmotion.HAPPY)
+                analytics?.logPetInteraction("wake_up", "HAPPY", petStatus.value.happiness)
             } else {
                 repository.setPetEmotion(PetEmotion.SLEEPY)
+                analytics?.logPetInteraction("sleep", "SLEEPY", petStatus.value.happiness)
             }
         }
     }

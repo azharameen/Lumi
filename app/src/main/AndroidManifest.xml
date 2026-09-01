@@ -44,8 +44,6 @@
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
 
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-
     <!-- Health Connect Permissions -->
     <uses-permission android:name="android.permission.health.READ_STEPS" />
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
@@ -106,6 +104,15 @@
                 android:value="Floating AI companion pet screen overlay" />
         </service>
 
+        <!-- Firebase Cloud Messaging Companion Alert Service -->
+        <service
+            android:name=".framework.LumiFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <!-- Alarm & Boot Receiver -->
         <receiver
             android:name=".framework.LumiAlarmReceiver"
@@ -132,6 +139,11 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/lumi_app_widget_info" />
         </receiver>
+
+        <!-- Disable FCM auto-init by default to prevent emulator crash -->
+        <meta-data
+            android:name="firebase_messaging_auto_init_enabled"
+            android:value="false" />
 
     </application>
 

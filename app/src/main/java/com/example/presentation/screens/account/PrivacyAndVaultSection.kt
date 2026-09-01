@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -247,6 +248,44 @@ fun PrivacyAndVaultSection(
                                 uncheckedTrackColor = SurfaceDarkVariant
                             )
                         )
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Firebase App Check Play Integrity Badge
+                    Surface(
+                        color = SurfaceDarkVariant,
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, LumiMint.copy(alpha = 0.3f))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Security,
+                                contentDescription = null,
+                                tint = LumiMint,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.text_firebase_app_check),
+                                    color = TextPrimary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                                Text(
+                                    text = stringResource(R.string.text_app_check_desc),
+                                    color = TextSecondary,
+                                    fontSize = 10.sp,
+                                    lineHeight = 13.sp
+                                )
+                            }
+                        }
                     }
                 }
             }

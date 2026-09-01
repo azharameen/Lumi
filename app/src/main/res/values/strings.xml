@@ -60,7 +60,8 @@
 
     <string name="text_create_new_quest_in_life_hub">Create New Quest in Life Hub</string>
 
-    <string name="text_">•</string>
+    <string name="bullet_point">•</string>
+    <string name="text_minus">−</string>
 
     <string name="desc_charging">Charging</string>
 
@@ -316,4 +317,26 @@
     <string name="text_lumi_securely_stores_your_habits_preferences">Lumi securely stores your habits, preferences, and personal insights. Authenticate with biometrics to unlock.</string>
     <string name="text_unlock_with_biometrics">Unlock with Biometrics</string>
     <string name="text_vault_unlocked_no_memories_logged_yet">Vault unlocked. No memories logged yet. As you converse with Lumi, learned preferences will be securely archived here.</string>
+    <string name="text_firebase_app_check">Firebase App Check Attestation</string>
+    <string name="text_play_integrity_active">Play Integrity Provider Active</string>
+    <string name="text_app_check_desc">Backend access restricted to authentic, verified application instances via Google Play Integrity.</string>
+    <string name="text_firebase_ai_cloud_llm">Firebase AI Cloud LLM</string>
+    <string name="text_firebase_ai_active">Zero-Key Cloud Intelligence Active</string>
+    <string name="text_firebase_ai_desc">Powered by Firebase AI Logic (Gemini 2.5 Flash). No manual API keys required. Authenticated automatically via Play Integrity.</string>
+    <string name="text_ai_architecture_mode">AI Architecture Mode</string>
+    <string name="text_ai_mode_cloud">Cloud Only</string>
+    <string name="text_ai_mode_local">Local On-Device</string>
+    <string name="text_ai_mode_hybrid">Hybrid (Both)</string>
+    <string name="text_ai_mode_cloud_desc">All requests execute on Google Cloud via Gemini 2.5 Flash / Pro. Maximum capability, multimodal vision &amp; fast reasoning.</string>
+    <string name="text_ai_mode_local_desc">100% offline &amp; private on-device execution via MediaPipe &amp; Gemma 2B. Zero data leaves your device.</string>
+    <string name="text_ai_mode_hybrid_desc">Intelligent auto-routing: Wellness, personal reflections &amp; quick chat run locally on-device. Deep reasoning, vision &amp; planning route to Cloud.</string>
+    <string name="text_hybrid_routing_policy">Hybrid Auto-Routing Policy</string>
+    <string name="text_sent_to_local">⚡ Sent to Local On-Device (Gemma)</string>
+    <string name="text_sent_to_cloud">☁️ Sent to Cloud (Gemini)</string>
+    <string name="text_prompt_routing_tester">Prompt Routing Analyzer</string>
+    <string name="text_prompt_routing_tester_desc">Test any message to see whether Hybrid mode dispatches it to Local On-Device or Cloud Gemini and why.</string>
+    <string name="text_test_prompt_placeholder">Enter a prompt to analyze routing...</string>
+
+    <!-- Firebase App Check Static Debug Secret for Emulators -->
+    <string name="com.google.firebase.appcheck.debug.DEBUG_SECRET" translatable="false">9f000300-8b15-4cf9-93e1-7004f1418b76</string>
 </resources>

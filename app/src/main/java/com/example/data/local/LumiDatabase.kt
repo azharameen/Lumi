@@ -50,7 +50,7 @@ abstract class LumiDatabase : RoomDatabase() {
                     context.applicationContext,
                     LumiDatabase::class.java,
                     "lumi_ai_companion.db"
-                ).fallbackToDestructiveMigration(true).fallbackToDestructiveMigration().build()
+                ).fallbackToDestructiveMigration(dropAllTables = true).build()
                 INSTANCE = instance
                 instance
             }

@@ -1,6 +1,9 @@
 package com.example.presentation.screens
 import androidx.compose.ui.res.stringResource
 import com.example.R
+import com.example.data.firebase.LumiRemoteConfigManager
+import org.koin.core.context.GlobalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 
 import androidx.compose.animation.AnimatedVisibility
@@ -39,7 +42,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -53,6 +56,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import com.example.domain.model.LumiRemoteConfig
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -88,6 +93,15 @@ fun ChatScreen(
 ) {
 
     val listState = rememberLazyListState()
+
+    val remoteConfigManager = remember {
+        try {
+            GlobalContext.get().get<LumiRemoteConfigManager>()
+        } catch (_: Exception) {
+            null
+        }
+    }
+    val remoteConfig = remoteConfigManager?.config?.collectAsStateWithLifecycle(initialValue = LumiRemoteConfig())?.value ?: LumiRemoteConfig()
 
     LaunchedEffect(chatMessages.itemCount) {
         if (chatMessages.itemCount > 0) {
@@ -125,7 +139,7 @@ fun ChatScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.desc_back),
                             tint = TextPrimary
                         )
@@ -190,23 +204,64 @@ fun ChatScreen(
         }
 
         // Messages List
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = MaterialTheme.spacing.medium),
-            contentPadding = PaddingValues(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            items(
-                count = chatMessages.itemCount,
-                key = chatMessages.itemKey { it.id },
-                contentType = chatMessages.itemContentType { "chat_message" }
-            ) { index ->
-                val msg = chatMessages[index]
-                if (msg != null) {
-                    ChatMessageBubble(message = msg)
+        if (chatMessages.itemCount == 0) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(MaterialTheme.spacing.medium),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    color = SurfaceDark.copy(alpha = 0.85f),
+                    shape = RoundedCornerShape(20.dp),
+                    border = BorderStroke(1.dp, Brush.horizontalGradient(listOf(LumiCyan.copy(alpha = 0.5f), LumiPink.copy(alpha = 0.5f)))),
+                    shadowElevation = 6.dp,
+                    modifier = Modifier.fillMaxWidth(0.92f)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "✨", fontSize = 36.sp)
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = remoteConfig?.welcomeGreeting ?: stringResource(R.string.text_lumi_neural_companion),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = remoteConfig?.companionTipOfTheDay ?: "I'm here to help manage your schedule, log wellness, and keep you company. Ask me anything!",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
+            }
+        } else {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = MaterialTheme.spacing.medium),
+                contentPadding = PaddingValues(vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                items(
+                    count = chatMessages.itemCount,
+                    key = chatMessages.itemKey { it.id },
+                    contentType = chatMessages.itemContentType { "chat_message" }
+                ) { index ->
+                    val msg = chatMessages[index]
+                    if (msg != null) {
+                        ChatMessageBubble(message = msg)
+                    }
                 }
             }
         }

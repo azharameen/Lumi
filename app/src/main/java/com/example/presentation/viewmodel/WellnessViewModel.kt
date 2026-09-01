@@ -3,6 +3,7 @@ package com.example.presentation.viewmodel
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.firebase.LumiAnalyticsManager
 import com.example.data.local.entity.PetMemoryEntity
 import com.example.data.local.entity.WellnessLogEntity
 import com.example.data.repository.LumiRepositoryImpl
@@ -16,7 +17,8 @@ import kotlinx.coroutines.launch
 
 class WellnessViewModel(
     val repository: LumiRepository,
-    val biometricVault: BiometricVaultManager
+    val biometricVault: BiometricVaultManager,
+    private val analytics: LumiAnalyticsManager? = null
 ) : ViewModel() {
 
     val pagedWellnessLogs = repository.pagedWellnessLogs.cachedIn(viewModelScope)
@@ -29,11 +31,17 @@ class WellnessViewModel(
     )
 
     fun logWellness(moodScore: Int, moodLabel: String, energyLevel: Int, hydrationCups: Int, gratitude: String) {
-        viewModelScope.launch { repository.logWellness(moodScore, moodLabel, energyLevel, hydrationCups, gratitude) }
+        viewModelScope.launch {
+            analytics?.logWellnessSession(exerciseType = "mood_checkin_$moodLabel", durationSeconds = 60)
+            repository.logWellness(moodScore, moodLabel, energyLevel, hydrationCups, gratitude)
+        }
     }
 
     fun incrementHydration(logId: Long) {
-        viewModelScope.launch { repository.incrementHydration(logId) }
+        viewModelScope.launch {
+            analytics?.logWellnessSession(exerciseType = "hydration_increment", durationSeconds = 5)
+            repository.incrementHydration(logId)
+        }
     }
 }
 

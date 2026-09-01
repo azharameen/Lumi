@@ -1,6 +1,7 @@
 package com.example.core.di
 
 import com.example.data.device.*
+import com.example.data.firebase.*
 import com.example.data.local.LumiDatabase
 import com.example.data.remote.ModelDownloadManager
 import com.example.data.repository.*
@@ -18,6 +19,13 @@ import org.koin.dsl.module
 val appModule = module {
     // Database instance
     single { LumiDatabase.getDatabase(androidContext()) }
+
+    // Firebase Enterprise Infrastructure
+    single { LumiCrashlyticsManager() }
+    single { LumiAnalyticsManager(androidContext()) }
+    single { LumiPerformanceManager() }
+    single { LumiRemoteConfigManager() }
+    single { LumiAppCheckManager.getInstance() }
 
     // Infrastructure & System Managers
     single { HealthConnectManager(androidContext()) }
@@ -51,11 +59,11 @@ val appModule = module {
     single<TaskGoalRepository> { TaskGoalRepositoryImpl(get<LumiDatabase>().taskDao(), get<LumiDatabase>().calendarEventDao()) }
 
     // ViewModels
-    viewModel { AuthViewModel(get(), get()) }
+    viewModel { AuthViewModel(get(), get(), get(), get()) }
     viewModel { AiSettingsViewModel(get(), get()) }
-    viewModel { ChatViewModel(get(), get(), get()) }
-    viewModel { LifeHubViewModel(get(), get(), get()) }
+    viewModel { ChatViewModel(get(), get(), get(), get(), get()) }
+    viewModel { LifeHubViewModel(get(), get(), get(), get(), get()) }
     viewModel { LumiViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { PetViewModel(get(), get()) }
-    viewModel { WellnessViewModel(get(), get()) }
+    viewModel { PetViewModel(get(), get(), get(), get()) }
+    viewModel { WellnessViewModel(get(), get(), get()) }
 }

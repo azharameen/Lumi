@@ -166,40 +166,14 @@ class FirebaseAuthRepositoryImpl(
     }
 
     override suspend fun syncUserWithFirestore(user: AuthUser): Result<Boolean> = withContext(Dispatchers.IO) {
-        try {
-            val db = getFirestoreSafe()
-                ?: return@withContext Result.failure(AuthGeneralException("Firestore service is unavailable."))
-
-            val userDocRef = db.collection("users").document(user.uid)
-            val snapshot = userDocRef.get().awaitTask()
-
-            if (!snapshot.exists()) {
-                // New User: Create initial Firestore document entry
-                val newUserData = hashMapOf<String, Any?>(
-                    "uid" to user.uid,
-                    "email" to (user.email ?: ""),
-                    "displayName" to (user.displayName ?: "Lumi Explorer"),
-                    "photoUrl" to (user.photoUrl ?: ""),
-                    "createdAt" to FieldValue.serverTimestamp(),
-                    "lastLoginAt" to FieldValue.serverTimestamp(),
-                    "appId" to "com.iywa.app",
-                    "role" to "user",
-                    "status" to "active"
-                )
-                userDocRef.set(newUserData).awaitTask()
-                Log.i(TAG, "Created new Firestore user entry for uid=${user.uid}")
-                Result.success(true)
-            } else {
-                // Existing User: Update only last login timestamp without overwriting data
-                userDocRef.update("lastLoginAt", FieldValue.serverTimestamp()).awaitTask()
-                Log.i(TAG, "Updated lastLoginAt for existing user uid=${user.uid}")
-                Result.success(false)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to sync user with Firestore for uid=${user.uid}", e)
-            // Still return failure so auth flow is not blocked if Firestore is offline
-            Result.failure(e)
-        }
+        // Billing Optimization: We no longer sync basic auth data (like lastLoginAt) to Firestore
+        // because it is already securely stored and accessible via Firebase Auth's user.metadata.
+        // This eliminates unnecessary Firestore read/write costs on every single login.
+        
+        // If we ever need to store complex, app-specific data (like multiplayer stats or cross-device settings),
+        // we can implement a dedicated Firestore sync here. For now, SharedPreferences + Firebase Auth is sufficient and free.
+        
+        Result.success(false)
     }
 
     override suspend fun signOut(): Result<Unit> = withContext(Dispatchers.IO) {

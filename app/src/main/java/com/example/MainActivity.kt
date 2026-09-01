@@ -373,6 +373,7 @@ fun LumiApp(
                         tasks = tasks,
                         isListening = isListening,
                         isSpeaking = isSpeaking,
+                        authUser = authUiState.user,
                         onPetPetted = { petViewModel.onPetPetted() },
                         onPetTouched = { petViewModel.onPetTouched() },
                         onTogglePetSleep = { petViewModel.togglePetSleep() },

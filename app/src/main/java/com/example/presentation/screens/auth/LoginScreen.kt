@@ -32,14 +32,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.painterResource
+import com.example.R
+import com.example.BuildConfig
 import com.example.core.theme.*
 import com.example.domain.model.PetStatus
 import com.example.presentation.pet.LumiPetView
 import com.example.presentation.viewmodel.AuthViewModel
 
-/**
- * Clean & friendly Google Sign-In & Onboarding Screen featuring Lumi the mascot.
- */
 @Composable
 fun LoginScreen(
     authViewModel: AuthViewModel,
@@ -142,25 +142,24 @@ fun LoginScreen(
                 )
             }
 
-            // MIDDLE: Actions & Error Notice
+            // MIDDLE: Auth Forms & State
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                // Friendly Error Alert Banner
+                // Error State Banner
                 AnimatedVisibility(
                     visible = uiState.error != null,
                     enter = fadeIn() + expandVertically(),
                     exit = fadeOut() + shrinkVertically()
                 ) {
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = LumiCoral.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, LumiCoral.copy(alpha = 0.4f)),
-                        modifier = Modifier.fillMaxWidth()
+                        shape = RoundedCornerShape(14.dp),
+                        color = SurfaceDark,
+                        border = BorderStroke(1.dp, LumiCoral.copy(alpha = 0.3f)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
                     ) {
                         Row(
                             modifier = Modifier.padding(14.dp),
@@ -235,38 +234,40 @@ fun LoginScreen(
                     modifier = Modifier.testTag("google_sign_in_button")
                 )
 
-                // Secondary: Guest / Offline Mode Button
-                OutlinedButton(
-                    onClick = {
-                        authViewModel.continueAsGuest()
-                        onContinueAsGuest()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp)
-                        .testTag("guest_mode_button"),
-                    shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = TextSecondary
-                    )
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                // Secondary: Guest / Offline Mode Button (DEBUG ONLY)
+                if (BuildConfig.DEBUG) {
+                    OutlinedButton(
+                        onClick = {
+                            authViewModel.signInAsMockUser()
+                            onContinueAsGuest() // We can still call this to signal the UI to proceed
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                            .testTag("guest_mode_button"),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = TextSecondary
+                        )
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.VisibilityOff,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                            tint = TextSecondary
-                        )
-                        Text(
-                            text = "Continue as Guest",
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                fontWeight = FontWeight.Medium
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.VisibilityOff,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = TextSecondary
                             )
-                        )
+                            Text(
+                                text = "Continue as Mock User (Debug)",
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Medium
+                                )
+                            )
+                        }
                     }
                 }
             }
@@ -292,33 +293,31 @@ fun GoogleSignInEnterpriseButton(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(54.dp)
-            .shadow(
-                elevation = 6.dp,
-                shape = RoundedCornerShape(14.dp),
-                ambientColor = Color.White.copy(alpha = 0.15f),
-                spotColor = LumiCyan.copy(alpha = 0.25f)
-            ),
+        onClick = onClick,
         shape = RoundedCornerShape(14.dp),
         color = Color.White,
-        border = BorderStroke(1.dp, Color(0xFFDADCE0)),
-        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .padding(bottom = 12.dp)
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(14.dp),
+                ambientColor = Color.Black.copy(alpha = 0.3f),
+                spotColor = Color.Black.copy(alpha = 0.2f)
+            ),
         enabled = !isLoading
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 18.dp),
+            modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(22.dp),
                     color = Color(0xFF1F1F1F),
-                    strokeWidth = 2.dp
+                    strokeWidth = 2.5.dp
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
@@ -329,7 +328,12 @@ fun GoogleSignInEnterpriseButton(
                     )
                 )
             } else {
-                GoogleLogoIcon(modifier = Modifier.size(22.dp))
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_google_logo),
+                    contentDescription = "Google Logo",
+                    modifier = Modifier.size(24.dp),
+                    tint = Color.Unspecified
+                )
 
                 Spacer(modifier = Modifier.width(12.dp))
 
@@ -343,64 +347,5 @@ fun GoogleSignInEnterpriseButton(
                 )
             }
         }
-    }
-}
-
-/**
- * Authentic Canvas Drawing of the 4-color Google "G" logo.
- */
-@Composable
-fun GoogleLogoIcon(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val cx = w / 2f
-        val cy = h / 2f
-        val strokeWidth = w * 0.18f
-
-        // Red segment (top arc)
-        drawArc(
-            color = Color(0xFFEA4335),
-            startAngle = 190f,
-            sweepAngle = 120f,
-            useCenter = false,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
-        )
-
-        // Yellow segment (left arc)
-        drawArc(
-            color = Color(0xFFFBBC05),
-            startAngle = 120f,
-            sweepAngle = 70f,
-            useCenter = false,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
-        )
-
-        // Green segment (bottom arc)
-        drawArc(
-            color = Color(0xFF34A853),
-            startAngle = 30f,
-            sweepAngle = 90f,
-            useCenter = false,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
-        )
-
-        // Blue segment (right arc & horizontal bar)
-        drawArc(
-            color = Color(0xFF4285F4),
-            startAngle = 330f,
-            sweepAngle = 60f,
-            useCenter = false,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
-        )
-
-        // Blue horizontal crossbar
-        drawLine(
-            color = Color(0xFF4285F4),
-            start = Offset(cx - strokeWidth * 0.2f, cy),
-            end = Offset(w - strokeWidth * 0.5f, cy),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Square
-        )
     }
 }

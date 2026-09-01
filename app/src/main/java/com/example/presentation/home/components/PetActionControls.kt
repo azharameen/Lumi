@@ -84,12 +84,12 @@ fun PetCareFixedAnchorFab(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                PetMiniActionButton(emoji = "🍓", onClick = onFeed, tooltip = "Feed")
-                PetMiniActionButton(emoji = "💖", onClick = onPet, tooltip = "Pet")
-                PetMiniActionButton(emoji = "🎵", onClick = onDance, tooltip = "Dance")
-                PetMiniActionButton(emoji = "⚡", onClick = onPoke, tooltip = "Poke")
+                PetMiniActionButton(icon = androidx.compose.material.icons.Icons.Default.Restaurant, onClick = onFeed, tooltip = "Feed")
+                PetMiniActionButton(icon = androidx.compose.material.icons.Icons.Default.Favorite, onClick = onPet, tooltip = "Pet")
+                PetMiniActionButton(icon = androidx.compose.material.icons.Icons.Default.MusicNote, onClick = onDance, tooltip = "Dance")
+                PetMiniActionButton(icon = androidx.compose.material.icons.Icons.Default.Bolt, onClick = onPoke, tooltip = "Poke")
                 PetMiniActionButton(
-                    emoji = if (petEmotion == PetEmotion.SLEEPY) "☀️" else "🌙",
+                    icon = if (petEmotion == PetEmotion.SLEEPY) androidx.compose.material.icons.Icons.Default.WbSunny else androidx.compose.material.icons.Icons.Default.Bedtime,
                     onClick = onSleepToggle,
                     tooltip = if (petEmotion == PetEmotion.SLEEPY) "Wake" else "Nap"
                 )
@@ -99,7 +99,7 @@ fun PetCareFixedAnchorFab(
 }
 
 @Composable
-fun PetMiniActionButton(emoji: String, onClick: () -> Unit, tooltip: String) {
+fun PetMiniActionButton(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, tooltip: String) {
     Surface(
         color = SurfaceDark.copy(alpha = 0.92f),
         shape = CircleShape,
@@ -110,7 +110,12 @@ fun PetMiniActionButton(emoji: String, onClick: () -> Unit, tooltip: String) {
             .clickable { onClick() }
     ) {
         Box(contentAlignment = Alignment.Center) {
-            Text(text = emoji, fontSize = 15.sp)
+            Icon(
+                imageVector = icon,
+                contentDescription = tooltip,
+                tint = TextPrimary,
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }

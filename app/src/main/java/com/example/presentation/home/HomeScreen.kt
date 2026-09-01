@@ -1,4 +1,5 @@
 package com.example.presentation.home
+import com.example.domain.model.AuthUser
 import com.example.presentation.home.components.*
 
 import androidx.compose.animation.AnimatedVisibility
@@ -107,6 +108,7 @@ fun HomeScreen(
     onNavigateToWellness: () -> Unit,
     locationContext: LocationContext = LocationContext(),
     userProfile: UserProfileData = UserProfileData(),
+    authUser: AuthUser? = null,
     onFeedPet: () -> Unit = {},
     onDancePet: () -> Unit = {},
     onPokePet: () -> Unit = {},
@@ -209,6 +211,7 @@ fun HomeScreen(
                 networkStatus = networkStatus,
                 locationContext = locationContext,
                 userProfile = userProfile,
+                authUser = authUser,
                 onNavigateToAccount = onNavigateToAccount
             )
 

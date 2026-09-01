@@ -89,9 +89,11 @@ class LumiAppCheckManager {
                     || android.os.Build.PRODUCT.contains("simulator")
             
             if (BuildConfig.DEBUG && isEmulator) {
-                Log.d(TAG, "Running on emulator. Using statically defined DebugAppCheckProviderFactory token.")
+                Log.w(TAG, "Skipping App Check installation for debug build on emulator to prevent attestation errors.")
+                _statusMessage.value = "Skipped: Debug Emulator"
+                return
             }
-
+            
             val providerFactory = if (BuildConfig.DEBUG) {
                 _providerName.value = "Debug Provider"
                 Log.d(TAG, "Installing DebugAppCheckProviderFactory for debug build")

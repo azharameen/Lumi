@@ -1,4 +1,8 @@
 package com.example.presentation.home.components
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Diamond
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,6 +34,10 @@ import com.example.data.device.NetworkType
 import com.example.domain.account.UserProfileData
 import com.example.domain.model.PetStatus
 
+import com.example.domain.model.AuthUser
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+
 /**
  * Seamless Floating RPG Player HUD Banner:
  * - Left: Solid warm brown Avatar touching the dual progress bars directly.
@@ -44,9 +52,10 @@ fun SeamlessRpgPlayerHud(
     networkStatus: NetworkStatus,
     locationContext: LocationContext,
     userProfile: UserProfileData,
+    authUser: AuthUser? = null,
     onNavigateToAccount: () -> Unit
 ) {
-    val displayName = userProfile.userName.ifBlank { "Azhar Ameen" }
+    val displayName = authUser?.displayName?.takeIf { it.isNotBlank() } ?: userProfile.userName.ifBlank { "Azhar Ameen" }
 
     // Initials calculation
     val initials = remember(displayName) {
@@ -125,13 +134,22 @@ fun SeamlessRpgPlayerHud(
                             ),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = initials,
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 1.sp
-                        )
+                        if (authUser?.photoUrl != null) {
+                            AsyncImage(
+                                model = authUser.photoUrl,
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            Text(
+                                text = initials,
+                                color = Color.White,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Black,
+                                letterSpacing = 1.sp
+                            )
+                        }
                     }
                 }
 
@@ -171,7 +189,12 @@ fun SeamlessRpgPlayerHud(
                     ) {
                         // Coins
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "🪙", fontSize = 10.sp)
+                            Icon(
+                                imageVector = Icons.Filled.MonetizationOn,
+                                contentDescription = "Coins",
+                                tint = LumiGold,
+                                modifier = Modifier.size(12.dp)
+                            )
                             Spacer(modifier = Modifier.width(2.dp))
                             Text(
                                 text = "${petStatus.coins}",
@@ -180,9 +203,15 @@ fun SeamlessRpgPlayerHud(
                                 fontWeight = FontWeight.Bold
                             )
                         }
+
                         // Gems
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "💎", fontSize = 10.sp)
+                            Icon(
+                                imageVector = Icons.Filled.Diamond,
+                                contentDescription = "Gems",
+                                tint = LumiCyanLight,
+                                modifier = Modifier.size(12.dp)
+                            )
                             Spacer(modifier = Modifier.width(2.dp))
                             Text(
                                 text = "${petStatus.gems}",

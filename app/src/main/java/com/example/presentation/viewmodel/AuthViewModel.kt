@@ -136,6 +136,24 @@ class AuthViewModel(
         }
     }
 
+    fun signInAsMockUser() {
+        val mockUser = AuthUser(
+            uid = "mock-debug-uid-123",
+            email = "mockuser@lumi.dev",
+            displayName = "Mock Debug User",
+            photoUrl = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y",
+            isNewUser = false,
+            isAnonymous = false
+        )
+        
+        crashlytics?.setUserId(mockUser.uid)
+        crashlytics?.setCustomKey("is_mock", true)
+        analytics?.logAuthEvent(method = "mock", isNewUser = false)
+        
+        _uiState.update { it.copy(user = mockUser, isGuestMode = false, error = null) }
+        userProfileManager.updateField { it.copy(hasCompletedOnboarding = true) }
+    }
+
     fun continueAsGuest() {
         crashlytics?.setUserId("guest_${System.currentTimeMillis()}")
         crashlytics?.setCustomKey("is_guest", true)

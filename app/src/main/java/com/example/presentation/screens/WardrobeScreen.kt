@@ -1,4 +1,7 @@
 package com.example.presentation.screens
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Diamond
 import androidx.compose.ui.res.stringResource
 import com.example.R
 
@@ -115,19 +118,22 @@ fun WardrobeScreen(
         petStatus.unlockedAccessoriesCsv.split(",").toSet()
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(ObsidianDark)
-                .padding(horizontal = MaterialTheme.spacing.medium),
-            contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
-        ) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(ObsidianDark)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             // Header with Coins and Gems Counter
-            item(key = "header") {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = MaterialTheme.spacing.medium,
+                        end = MaterialTheme.spacing.medium,
+                        top = MaterialTheme.spacing.medium,
+                        bottom = MaterialTheme.spacing.small
+                    ),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -172,7 +178,12 @@ fun WardrobeScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = MaterialTheme.spacing.extraSmall)
                             ) {
-                                Text(text = "🪙", fontSize = 12.sp)
+                                Icon(
+                                    imageVector = Icons.Filled.MonetizationOn,
+                                    contentDescription = "Coins",
+                                    tint = LumiGold,
+                                    modifier = Modifier.size(14.dp)
+                                )
                                 Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                                 Text(
                                     text = "${petStatus.coins}",
@@ -192,7 +203,12 @@ fun WardrobeScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = MaterialTheme.spacing.extraSmall)
                             ) {
-                                Text(text = "💎", fontSize = 12.sp)
+                                Icon(
+                                    imageVector = Icons.Filled.Diamond,
+                                    contentDescription = "Gems",
+                                    tint = LumiCyanLight,
+                                    modifier = Modifier.size(14.dp)
+                                )
                                 Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                                 Text(
                                     text = "${petStatus.gems}",
@@ -204,10 +220,16 @@ fun WardrobeScreen(
                         }
                     }
                 }
-            }
 
-            // Live Pet Showcase
-            item(key = "pet_showcase") {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = MaterialTheme.spacing.medium),
+                contentPadding = PaddingValues(bottom = 100.dp),
+                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
+            ) {
+                // Live Pet Showcase
+                item(key = "pet_showcase") {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = SurfaceDark),
                     shape = RoundedCornerShape(MaterialTheme.spacing.large),
@@ -440,20 +462,36 @@ fun WardrobeScreen(
                                                     modifier = Modifier.size(10.dp)
                                                 )
                                                 if (acc.coinCost > 0) {
-                                                    Text(
-                                                        text = "${acc.coinCost}🪙",
-                                                        color = LumiGold,
-                                                        fontSize = 10.sp,
-                                                        fontWeight = FontWeight.Bold
-                                                    )
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Text(
+                                                            text = "${acc.coinCost}",
+                                                            color = LumiGold,
+                                                            fontSize = 10.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                        Icon(
+                                                            imageVector = Icons.Filled.MonetizationOn,
+                                                            contentDescription = "Coins",
+                                                            tint = LumiGold,
+                                                            modifier = Modifier.size(10.dp)
+                                                        )
+                                                    }
                                                 }
                                                 if (acc.gemCost > 0) {
-                                                    Text(
-                                                        text = "${acc.gemCost}💎",
-                                                        color = LumiCyanLight,
-                                                        fontSize = 10.sp,
-                                                        fontWeight = FontWeight.Bold
-                                                    )
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Text(
+                                                            text = "${acc.gemCost}",
+                                                            color = LumiCyanLight,
+                                                            fontSize = 10.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                        Icon(
+                                                            imageVector = Icons.Filled.Diamond,
+                                                            contentDescription = "Gems",
+                                                            tint = LumiCyanLight,
+                                                            modifier = Modifier.size(10.dp)
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -649,6 +687,7 @@ fun WardrobeScreen(
                     }
                 }
             }
+        }
         }
 
         // Rename Dialog

@@ -4,6 +4,7 @@ import com.example.data.device.*
 import com.example.data.firebase.*
 import com.example.data.local.LumiDatabase
 import com.example.data.remote.HybridAiEngine
+import com.example.data.remote.LocalVisionEngine
 import com.example.data.remote.ModelDownloadManager
 import com.example.data.remote.OnDeviceGemmaEngine
 import com.example.data.repository.*
@@ -67,10 +68,11 @@ val appModule = module {
     // Connectors & Tool Dispatching
     single { ConnectorRepositoryImpl(androidContext()) }
     single { IntegrationService(get<ConnectorRepositoryImpl>()) }
-    single { AgentToolDispatcher(get(), get(), getOrNull()) }
+    single { AgentToolDispatcher(get()) }
 
     // AI Engines
     single { OnDeviceGemmaEngine(get(), get(), androidContext(), get()) }
+    single { LocalVisionEngine(androidContext()) }
     single { HybridAiEngine(get(), get<LumiDatabase>().aiExecutionLogDao(), get(), androidContext(), get(), get()) }
     single { AutonomousGoalPlanner(get(), get(), get()) }
 

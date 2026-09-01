@@ -113,7 +113,8 @@ fun HomeScreen(
     onDancePet: () -> Unit = {},
     onPokePet: () -> Unit = {},
     onToggleTask: (Long, Boolean) -> Unit = { _, _ -> },
-    onQuickAgentPrompt: (String) -> Unit = {}
+    onQuickAgentPrompt: (String) -> Unit = {},
+    innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     val context = LocalContext.current
     val haptics = com.example.core.utils.rememberLumiHaptics(isEnabled = userProfile.enableHapticFeedback)
@@ -198,6 +199,7 @@ fun HomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = MaterialTheme.spacing.medium, vertical = 2.dp),
             horizontalAlignment = Alignment.CenterHorizontally

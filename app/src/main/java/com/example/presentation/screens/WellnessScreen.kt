@@ -94,7 +94,8 @@ fun WellnessScreen(
     viewModel: com.example.presentation.viewmodel.WellnessViewModel,
     appViewModel: com.example.presentation.viewmodel.LumiViewModel,
     onNavigateToChat: () -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     val logs = viewModel.pagedWellnessLogs.collectAsLazyPagingItems()
     val memories by viewModel.allMemories.collectAsStateWithLifecycle()
@@ -115,6 +116,7 @@ fun WellnessScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(ObsidianDark)
+            .padding(innerPadding)
             .padding(horizontal = MaterialTheme.spacing.medium),
         contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 90.dp),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)

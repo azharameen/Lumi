@@ -53,6 +53,11 @@ class ReasoningNode(
     """.trimIndent()
 
     override suspend fun execute(state: AgentState): AgentState {
+        // 1. Context Compression (Point 6 in plan)
+        val compressionContext = if (state.history.size > 8) {
+            com.example.domain.ai.ContextSummarizer.summarizeHistory(state.history)
+        } else ""
+
         val dynamicTemp = (remoteConfigManager?.config?.value?.aiCreativityTemperature ?: 0.75).toFloat()
         val apiKey = GeminiClient.getApiKey()
 
@@ -64,6 +69,10 @@ class ReasoningNode(
             if (activeSkill.systemPromptExtension.isNotBlank()) {
                 append("\n\nActive Skill Focus (${activeSkill.displayName}):\n")
                 append(activeSkill.systemPromptExtension)
+            }
+            if (compressionContext.isNotBlank()) {
+                append("\n\nLong-term Context Summary:\n")
+                append(compressionContext)
             }
             if (state.retrievedContext.isNotBlank()) {
                 append("\n\nUser Context & Memories:\n")
@@ -183,7 +192,12 @@ class ReasoningNode(
 
     private fun shouldExecuteLocally(state: AgentState): Boolean {
         val query = state.userQuery.lowercase()
-        if (state.imageAttachment != null) return false
+        
+        // Local Vision Gate (Point 4 in plan)
+        if (state.imageAttachment != null) {
+            return query.contains("what is this") || query.contains("see")
+        }
+        
         if (query.contains("analyze") || query.contains("explain") || query.length > 300) return false
         return true
     }

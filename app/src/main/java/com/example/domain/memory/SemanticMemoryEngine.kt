@@ -27,14 +27,23 @@ class SemanticMemoryEngine(
 
         // 1. Score and rank episodic memories
         val scoredMemories = memories.map { memory ->
-            val score = computeCosineSimilarity(query, "${memory.category} ${memory.memoryText}")
-            memory to score
+            val content = "${memory.category} ${memory.memoryText}"
+            val tfIdfScore = computeCosineSimilarity(query, content)
+            val embeddingScore = WordEmbeddingSimilarity.calculateSimilarity(query, content)
+            
+            // Weighted ensemble score
+            val combinedScore = (tfIdfScore * 0.3f) + (embeddingScore * 0.7f)
+            memory to combinedScore
         }.sortedByDescending { it.second }
 
         // 2. Score and rank knowledge graph facts
         val scoredFacts = facts.map { fact ->
-            val score = computeCosineSimilarity(query, "${fact.predicate} ${fact.objectValue}")
-            fact to score
+            val content = "${fact.predicate} ${fact.objectValue}"
+            val tfIdfScore = computeCosineSimilarity(query, content)
+            val embeddingScore = WordEmbeddingSimilarity.calculateSimilarity(query, content)
+            
+            val combinedScore = (tfIdfScore * 0.3f) + (embeddingScore * 0.7f)
+            fact to combinedScore
         }.sortedByDescending { it.second }
 
         val topMemories = scoredMemories

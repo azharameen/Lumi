@@ -135,7 +135,8 @@ fun LifeHubScreen(
     getMilestonesForGoal: (Long) -> kotlinx.coroutines.flow.Flow<List<com.example.data.local.entity.GoalMilestoneEntity>>,
     soundState: com.example.data.device.SoundscapeState,
     onAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     val context = LocalContext.current
     
@@ -149,6 +150,7 @@ fun LifeHubScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(ObsidianDark)
+            .padding(innerPadding)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Segmented Tab Header

@@ -22,7 +22,8 @@ object LumiAgentGraph {
             .registerNode(StartNode())
             .registerNode(IntentRoutingNode(onDeviceGemmaEngine))
             .registerNode(MemoryRetrievalNode(database))
-            .registerNode(ReasoningNode())
+            .registerNode(PlanningNode())
+            .registerNode(ReasoningNode(onDeviceGemmaEngine))
             .registerNode(ToolExecutionNode(toolDispatcher))
             .registerNode(ReflexionNode())
             .registerNode(FinalSynthesisNode())
@@ -30,7 +31,8 @@ object LumiAgentGraph {
         // 2. Define Transition Edges
         stateMachine
             .addParallelEdge("START") { listOf("INTENT_ROUTING", "MEMORY_RETRIEVAL") }
-            .addEdge("MEMORY_RETRIEVAL") { "REASONING" }
+            .addEdge("MEMORY_RETRIEVAL") { "PLANNING" }
+            .addEdge("PLANNING") { "REASONING" }
             .addEdge("REASONING") { state ->
                 if (state.pendingToolName != null) {
                     "TOOL_EXECUTION"

@@ -193,7 +193,8 @@ fun UserAccountScreen(
     onToggleOverlay: (Boolean) -> Unit,
     onNavigateToChat: ((String?) -> Unit)? = null,
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     val context = LocalContext.current
 
@@ -208,6 +209,7 @@ fun UserAccountScreen(
         modifier = modifier
             .fillMaxSize()
             .background(ObsidianDark)
+            .padding(innerPadding)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // 1. Top Account Hero Header

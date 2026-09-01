@@ -7,6 +7,11 @@ import android.content.Context
 import android.os.Build
 
 import com.example.core.di.appModule
+import com.example.data.local.LumiDatabase
+import com.example.domain.connectors.IntegrationService
+import com.example.domain.tools.CoreToolsModule
+import com.example.domain.tools.IntegrationToolsModule
+import com.example.framework.tools.SystemToolSuite
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import android.util.Log
@@ -32,7 +37,17 @@ class LumiApplication : Application() {
             }
         }
         
+        registerTools()
         createNotificationChannels()
+    }
+
+    private fun registerTools() {
+        val database: LumiDatabase = org.koin.core.context.GlobalContext.get().get()
+        val integrationService: IntegrationService = org.koin.core.context.GlobalContext.get().get()
+        
+        SystemToolSuite.registerAll(this)
+        CoreToolsModule.register(database, integrationService)
+        IntegrationToolsModule.register(integrationService)
     }
 
     private fun getApiKey(): String {
@@ -67,8 +82,8 @@ class LumiApplication : Application() {
             com.example.data.firebase.LumiAppCheckManager.getInstance().initialize()
             
             setupFcmSkipping()
-        } catch (e: Exception) {
-            Log.e("LumiApp", "Error during Firebase initialization", e)
+        } catch (_: Exception) {
+            // Log omitted
         }
     }
 

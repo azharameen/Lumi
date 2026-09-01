@@ -286,126 +286,128 @@ fun LumiApp(
         val petPrimary = androidx.compose.ui.graphics.Color(petStatus.bloubSkinColor.primaryHex)
 
         Scaffold(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            innerPadding ->
+            modifier = Modifier.fillMaxSize(),
+            contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
+        ) { innerPadding ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
                     .background(ObsidianDark)
             ) {
-
                 Crossfade(
-                targetState = uiState.selectedTab,
-                label = "ScreenTransition"
-            ) {
- tab ->
-                when (tab) {
-                    NavDestination.Assistant.tabIndex -> ChatScreen(
-                        uiState = uiState,
-                        petStatus = petStatus,
-                        chatMessages = chatViewModel.pagedChatMessages.collectAsLazyPagingItems(),
-                        isListening = isListening,
-                        isSpeaking = isSpeaking,
-                        onSendMessage = { text -> chatViewModel.sendMessage(text) },
-                        onSetInputText = { text -> viewModel.setInputText(text) },
-                        onShowCamera = { viewModel.setShowCamera(true) },
-                        onStartVoiceListening = { handleStartVoiceListening() },
-                        onStopVoiceListening = { chatViewModel.stopVoiceListening() },
-                        onToggleVoiceOutput = { viewModel.toggleVoiceOutput() },
-                        onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
-                    )
-                    NavDestination.LifeHub.tabIndex -> LifeHubScreen(
-                        uiState = uiState,
-                        tasks = tasks,
-                        events = calendarEvents,
-                        wellnessLogs = wellnessLogs,
-                        memories = memories,
-                        dailyBriefing = dailyBriefing,
-                        goalPlans = goalPlans,
-                        getMilestonesForGoal = { id -> lifeHubViewModel.getMilestonesForGoal(id) },
-                        soundState = soundState,
-                        onAction = handleLifeHubAction,
-                        onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
-                    )
-                    NavDestination.Wellness.tabIndex -> WellnessScreen(
-                        viewModel = wellnessViewModel,
-                        appViewModel = viewModel,
-                        onNavigateToChat = { viewModel.setSelectedTab(NavDestination.Assistant.tabIndex) },
-                        onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
-                    )
-                    NavDestination.Account.tabIndex -> UserAccountScreen(
-                        userProfile = userProfile,
-                        authUser = authUiState.user,
-                        onSignInWithGoogle = { authViewModel.signInWithGoogle(context) },
-                        onSignOut = { authViewModel.signOut() },
-                        userFacts = userFacts,
-                        petStatus = petStatus,
-                        benchmarkStatus = benchmarkStatus ?: "",
-                        tasks = tasks.map { it.toDomain() },
-                        events = calendarEvents.map { it.toDomain() },
-                        messages = chatMessagesList.map { it.toDomain() },
-                        aiRoutingMode = aiRoutingMode,
-                        onSetAiRoutingMode = { mode -> viewModel.setAiRoutingMode(mode) },
-                        localModelCatalog = aiSettingsViewModel.localModelCatalog,
-                        modelDownloadStates = modelDownloadStates,
-                        activeLocalModelId = activeLocalModelId,
-                        selectedAccelerator = selectedAccelerator,
-                        onUpdateProfile = { updated -> aiSettingsViewModel.updateUserProfile(updated) },
-                        onAddUserFact = { cat, txt, isPinned -> viewModel.addUserFact(cat, txt, isPinned) },
-                        onRemoveUserFact = { id -> viewModel.removeUserFact(id) },
-                        onTogglePinFact = { id -> viewModel.togglePinFact(id) },
-                        onClearAiAnalytics = { viewModel.clearAiAnalytics() },
-                        onDownloadLocalModel = { id -> aiSettingsViewModel.downloadLocalModel(id) },
-                        onCancelModelDownload = { id -> aiSettingsViewModel.cancelModelDownload(id) },
-                        onPauseModelDownload = { id -> aiSettingsViewModel.pauseModelDownload(id) },
-                        onDeleteLocalModel = { id -> aiSettingsViewModel.deleteLocalModel(id) },
-                        onSetActiveLocalModel = { id -> aiSettingsViewModel.setActiveLocalModel(id) },
-                        onSetHardwareAccelerator = { acc -> aiSettingsViewModel.setHardwareAccelerator(acc) },
-                        onRunGemmaBenchmark = { viewModel.runGemmaBenchmark() },
-                        isOverlayEnabled = uiState.isOverlayEnabled,
-                        onToggleOverlay = { if (it) viewModel.setShowOverlayPermission(true) else viewModel.setOverlayEnabled(false) },
-                        onNavigateToChat = { prompt ->
-                            viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
-                            prompt?.let { viewModel.sendMessage(it) }
-                        },
-                        onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
-                    )
-                    else -> HomeScreen(
-                        petStatus = petStatus,
-                        uiState = uiState,
-                        batteryStatus = batteryStatus,
-                        networkStatus = networkStatus,
-                        events = calendarEvents,
-                        tasks = tasks,
-                        isListening = isListening,
-                        isSpeaking = isSpeaking,
-                        authUser = authUiState.user,
-                        onPetPetted = { petViewModel.onPetPetted() },
-                        onPetTouched = { petViewModel.onPetTouched() },
-                        onTogglePetSleep = { petViewModel.togglePetSleep() },
-                        onStartVoiceListening = { handleStartVoiceListening() },
-                        onStopVoiceListening = { chatViewModel.stopVoiceListening() },
-                        onShowCamera = { viewModel.setShowCamera(true) },
-                        onShowWardrobe = { viewModel.setShowWardrobeScreen(true) },
-                        onNavigateToChat = { viewModel.setSelectedTab(NavDestination.Assistant.tabIndex) },
-                        onNavigateToLifeHub = { subTab -> viewModel.navigateToLifeHub(subTab) },
-                        onNavigateToAccount = { viewModel.setSelectedTab(NavDestination.Account.tabIndex) },
-                        onNavigateToWellness = { viewModel.setSelectedTab(NavDestination.Wellness.tabIndex) },
-                        locationContext = locationContext,
-                        userProfile = userProfile,
-                        onFeedPet = { petViewModel.feedPet() },
-                        onDancePet = { petViewModel.dancePet() },
-                        onPokePet = { petViewModel.pokePet() },
-                        onToggleTask = { id, isCompleted -> lifeHubViewModel.toggleTask(id, isCompleted) },
-                        onQuickAgentPrompt = { prompt ->
-                            viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
-                            chatViewModel.sendMessage(prompt)
-                        }
-                    )
+                    targetState = uiState.selectedTab,
+                    label = "ScreenTransition"
+                ) { tab ->
+                    when (tab) {
+                        NavDestination.Assistant.tabIndex -> ChatScreen(
+                            uiState = uiState,
+                            petStatus = petStatus,
+                            chatMessages = chatViewModel.pagedChatMessages.collectAsLazyPagingItems(),
+                            isListening = isListening,
+                            isSpeaking = isSpeaking,
+                            onSendMessage = { text -> chatViewModel.sendMessage(text) },
+                            onSetInputText = { text -> viewModel.setInputText(text) },
+                            onShowCamera = { viewModel.setShowCamera(true) },
+                            onStartVoiceListening = { handleStartVoiceListening() },
+                            onStopVoiceListening = { chatViewModel.stopVoiceListening() },
+                            onToggleVoiceOutput = { viewModel.toggleVoiceOutput() },
+                            onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) },
+                            innerPadding = innerPadding
+                        )
+                        NavDestination.LifeHub.tabIndex -> LifeHubScreen(
+                            uiState = uiState,
+                            tasks = tasks,
+                            events = calendarEvents,
+                            wellnessLogs = wellnessLogs,
+                            memories = memories,
+                            dailyBriefing = dailyBriefing,
+                            goalPlans = goalPlans,
+                            getMilestonesForGoal = { id -> lifeHubViewModel.getMilestonesForGoal(id) },
+                            soundState = soundState,
+                            onAction = handleLifeHubAction,
+                            onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) },
+                            innerPadding = innerPadding
+                        )
+                        NavDestination.Wellness.tabIndex -> WellnessScreen(
+                            viewModel = wellnessViewModel,
+                            appViewModel = viewModel,
+                            onNavigateToChat = { viewModel.setSelectedTab(NavDestination.Assistant.tabIndex) },
+                            onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) },
+                            innerPadding = innerPadding
+                        )
+                        NavDestination.Account.tabIndex -> UserAccountScreen(
+                            userProfile = userProfile,
+                            authUser = authUiState.user,
+                            onSignInWithGoogle = { authViewModel.signInWithGoogle(context) },
+                            onSignOut = { authViewModel.signOut() },
+                            userFacts = userFacts,
+                            petStatus = petStatus,
+                            benchmarkStatus = benchmarkStatus ?: "",
+                            tasks = tasks.map { it.toDomain() },
+                            events = calendarEvents.map { it.toDomain() },
+                            messages = chatMessagesList.map { it.toDomain() },
+                            aiRoutingMode = aiRoutingMode,
+                            onSetAiRoutingMode = { mode -> viewModel.setAiRoutingMode(mode) },
+                            localModelCatalog = aiSettingsViewModel.localModelCatalog,
+                            modelDownloadStates = modelDownloadStates,
+                            activeLocalModelId = activeLocalModelId,
+                            selectedAccelerator = selectedAccelerator,
+                            onUpdateProfile = { updated -> aiSettingsViewModel.updateUserProfile(updated) },
+                            onAddUserFact = { cat, txt, isPinned -> viewModel.addUserFact(cat, txt, isPinned) },
+                            onRemoveUserFact = { id -> viewModel.removeUserFact(id) },
+                            onTogglePinFact = { id -> viewModel.togglePinFact(id) },
+                            onClearAiAnalytics = { viewModel.clearAiAnalytics() },
+                            onDownloadLocalModel = { id -> aiSettingsViewModel.downloadLocalModel(id) },
+                            onCancelModelDownload = { id -> aiSettingsViewModel.cancelModelDownload(id) },
+                            onPauseModelDownload = { id -> aiSettingsViewModel.pauseModelDownload(id) },
+                            onDeleteLocalModel = { id -> aiSettingsViewModel.deleteLocalModel(id) },
+                            onSetActiveLocalModel = { id -> aiSettingsViewModel.setActiveLocalModel(id) },
+                            onSetHardwareAccelerator = { acc -> aiSettingsViewModel.setHardwareAccelerator(acc) },
+                            onRunGemmaBenchmark = { viewModel.runGemmaBenchmark() },
+                            isOverlayEnabled = uiState.isOverlayEnabled,
+                            onToggleOverlay = { if (it) viewModel.setShowOverlayPermission(true) else viewModel.setOverlayEnabled(false) },
+                            onNavigateToChat = { prompt ->
+                                viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
+                                prompt?.let { viewModel.sendMessage(it) }
+                            },
+                            onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) },
+                            innerPadding = innerPadding
+                        )
+                        else -> HomeScreen(
+                            petStatus = petStatus,
+                            uiState = uiState,
+                            batteryStatus = batteryStatus,
+                            networkStatus = networkStatus,
+                            events = calendarEvents,
+                            tasks = tasks,
+                            isListening = isListening,
+                            isSpeaking = isSpeaking,
+                            authUser = authUiState.user,
+                            onPetPetted = { petViewModel.onPetPetted() },
+                            onPetTouched = { petViewModel.onPetTouched() },
+                            onTogglePetSleep = { petViewModel.togglePetSleep() },
+                            onStartVoiceListening = { handleStartVoiceListening() },
+                            onStopVoiceListening = { chatViewModel.stopVoiceListening() },
+                            onShowCamera = { viewModel.setShowCamera(true) },
+                            onShowWardrobe = { viewModel.setShowWardrobeScreen(true) },
+                            onNavigateToChat = { viewModel.setSelectedTab(NavDestination.Assistant.tabIndex) },
+                            onNavigateToLifeHub = { subTab -> viewModel.navigateToLifeHub(subTab) },
+                            onNavigateToAccount = { viewModel.setSelectedTab(NavDestination.Account.tabIndex) },
+                            onNavigateToWellness = { viewModel.setSelectedTab(NavDestination.Wellness.tabIndex) },
+                            locationContext = locationContext,
+                            userProfile = userProfile,
+                            onFeedPet = { petViewModel.feedPet() },
+                            onDancePet = { petViewModel.dancePet() },
+                            onPokePet = { petViewModel.pokePet() },
+                            onToggleTask = { id, isCompleted -> lifeHubViewModel.toggleTask(id, isCompleted) },
+                            onQuickAgentPrompt = { prompt ->
+                                viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
+                                chatViewModel.sendMessage(prompt)
+                            },
+                            innerPadding = innerPadding
+                        )
+                    }
                 }
-            }
             if (uiState.showWardrobeScreen) {
                 com.example.presentation.screens.WardrobeScreen(petViewModel = petViewModel, wellnessViewModel = wellnessViewModel, onClose = { viewModel.setShowWardrobeScreen(false) })
             }

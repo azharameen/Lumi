@@ -90,7 +90,8 @@ fun ChatScreen(
     onStopVoiceListening: () -> Unit,
     onToggleVoiceOutput: () -> Unit,
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
 
     val listState = rememberLazyListState()
@@ -123,6 +124,7 @@ fun ChatScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(ObsidianDark)
+            .padding(innerPadding)
     ) {
         // Top Companion Status Header
         Surface(

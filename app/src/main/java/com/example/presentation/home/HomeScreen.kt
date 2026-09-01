@@ -380,7 +380,10 @@ fun HomeScreen(
                     shadowElevation = MaterialTheme.spacing.extraSmall,
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { onNavigateToLifeHub(0) }
+                        .clickable { 
+                            haptics.performTick()
+                            onNavigateToLifeHub(0) 
+                        }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -411,7 +414,10 @@ fun HomeScreen(
                     shadowElevation = MaterialTheme.spacing.extraSmall,
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { onNavigateToWellness() }
+                        .clickable { 
+                            haptics.performTick()
+                            onNavigateToWellness() 
+                        }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),

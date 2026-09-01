@@ -242,7 +242,9 @@ fun SeamlessRpgPlayerHud(
                         fillRatio = xpRatio,
                         gradient = xpGradient,
                         height = MaterialTheme.spacing.small,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        trailingText = "${petStatus.exp}/${petStatus.expToNextLevel}",
+                        trailingTextColor = LumiCyan
                     )
                     
                     Spacer(modifier = Modifier.width(6.dp))

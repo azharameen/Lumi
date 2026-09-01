@@ -99,7 +99,12 @@ fun PetCareFixedAnchorFab(
 }
 
 @Composable
-fun PetMiniActionButton(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, tooltip: String) {
+fun PetMiniActionButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector, 
+    onClick: () -> Unit, 
+    tooltip: String,
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics()
+) {
     Surface(
         color = SurfaceDark.copy(alpha = 0.92f),
         shape = CircleShape,
@@ -107,7 +112,10 @@ fun PetMiniActionButton(icon: androidx.compose.ui.graphics.vector.ImageVector, o
         shadowElevation = MaterialTheme.spacing.extraSmall,
         modifier = Modifier
             .size(34.dp)
-            .clickable { onClick() }
+            .clickable { 
+                haptics.performTick()
+                onClick() 
+            }
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(

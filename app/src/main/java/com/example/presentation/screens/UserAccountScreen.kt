@@ -161,6 +161,7 @@ data class AiModelInfo(
 @Composable
 fun UserAccountScreen(
     userProfile: com.example.domain.account.UserProfileData,
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(isEnabled = userProfile.enableHapticFeedback),
     authUser: AuthUser? = null,
     onSignInWithGoogle: () -> Unit = {},
     onSignOut: () -> Unit = {},
@@ -284,7 +285,10 @@ fun UserAccountScreen(
 
                         // Quick Edit Profile Button
                         IconButton(
-                            onClick = { showEditProfileDialog = true },
+                            onClick = { 
+                                haptics.performClick()
+                                showEditProfileDialog = true 
+                            },
                             modifier = Modifier
                                 .background(SurfaceDarkVariant, CircleShape)
                                 .size(38.dp)

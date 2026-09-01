@@ -41,7 +41,8 @@ import kotlin.random.Random
 fun MinimalPetSpeechCard(
     petStatus: PetStatus,
     petPrimary: Color,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics()
 ) {
     val speechText = petStatus.speechBubbleText ?: "Hey friend! How are you feeling today?"
 
@@ -52,7 +53,10 @@ fun MinimalPetSpeechCard(
         shadowElevation = 6.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .clickable { 
+                haptics.performTick()
+                onClick()
+            }
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
@@ -110,7 +114,8 @@ fun RemoteConfigSeasonalBanner(
     bannerText: String,
     seasonalThemeName: String = "",
     petPrimary: Color = LumiCyan,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics()
 ) {
     Surface(
         color = SurfaceDark.copy(alpha = 0.9f),
@@ -119,7 +124,10 @@ fun RemoteConfigSeasonalBanner(
         shadowElevation = 4.dp,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .clickable { 
+                haptics.performTick()
+                onClick()
+            }
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),

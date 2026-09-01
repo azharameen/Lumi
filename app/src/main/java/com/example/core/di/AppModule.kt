@@ -5,6 +5,7 @@ import com.example.data.firebase.*
 import com.example.data.local.LumiDatabase
 import com.example.data.remote.HybridAiEngine
 import com.example.data.remote.ModelDownloadManager
+import com.example.data.remote.OnDeviceGemmaEngine
 import com.example.data.repository.*
 import com.example.data.tools.FastToolIndex
 import com.example.domain.account.UserProfileRepository
@@ -69,7 +70,8 @@ val appModule = module {
     single { AgentToolDispatcher(get(), get(), getOrNull()) }
 
     // AI Engines
-    single { HybridAiEngine(get(), get<LumiDatabase>().aiExecutionLogDao(), get(), androidContext(), get()) }
+    single { OnDeviceGemmaEngine(get(), get(), androidContext(), get()) }
+    single { HybridAiEngine(get(), get<LumiDatabase>().aiExecutionLogDao(), get(), androidContext(), get(), get()) }
     single { AutonomousGoalPlanner(get(), get(), get()) }
 
     // Specialized Clean Domain Repositories

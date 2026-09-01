@@ -9,7 +9,9 @@ import com.example.domain.agent.AgentState
 import com.example.domain.skill.SkillRegistry
 import org.koin.core.context.GlobalContext
 
-class ReasoningNode : AgentNode {
+class ReasoningNode(
+    private val onDeviceGemmaEngine: OnDeviceGemmaEngine? = null
+) : AgentNode {
     override val name: String = "REASONING"
 
     private val remoteConfigManager by lazy {
@@ -69,7 +71,24 @@ class ReasoningNode : AgentNode {
             }
         }
 
-        // 1. If an explicit custom API Key is configured by developer, utilize direct REST with tool calling
+        // 1. Local-First Reasoning Strategy (Gemma 2B / Phi-2)
+        if (onDeviceGemmaEngine?.isModelReady() == true && shouldExecuteLocally(state)) {
+            try {
+                val localResult = onDeviceGemmaEngine.executeOnDeviceTurn(state.userQuery, state.history)
+                return state.copy(
+                    finalResponseText = localResult.responseText,
+                    inferredEmotion = localResult.inferredEmotion,
+                    executedToolReports = state.executedToolReports + localResult.toolReports,
+                    pendingToolName = null,
+                    pendingToolArgs = null,
+                    currentThought = "Lumi reasoned locally and generated a response."
+                )
+            } catch (e: Exception) {
+                crashlyticsManager?.logBreadcrumb("ReasoningNode", "Local reasoning failed, falling back: ${e.message}")
+            }
+        }
+
+        // 2. Cloud Gemini Strategy
         if (apiKey.isNotBlank() && apiKey != "MY_GEMINI_API_KEY") {
             try {
                 val request = GeminiRequest(
@@ -119,14 +138,16 @@ class ReasoningNode : AgentNode {
                         contentsList = updatedContents,
                         pendingToolName = funcCall.name,
                         pendingToolArgs = funcCall.args,
-                        lastError = null
+                        lastError = null,
+                        currentThought = "Decided to execute tool: ${funcCall.name}"
                     )
                 } else {
                     val responseText = firstPart?.text ?: "I'm right here beside you, friend! ✨"
                     return state.copy(
                         finalResponseText = responseText,
                         pendingToolName = null,
-                        pendingToolArgs = null
+                        pendingToolArgs = null,
+                        currentThought = "Generated final response via Cloud Gemini."
                     )
                 }
             } catch (e: Exception) {
@@ -148,7 +169,8 @@ class ReasoningNode : AgentNode {
                 finalResponseText = responseText,
                 pendingToolName = null,
                 pendingToolArgs = null,
-                lastError = null
+                lastError = null,
+                currentThought = "Generated response via Firebase AI."
             )
         } catch (e: Exception) {
             crashlyticsManager?.logBreadcrumb("ReasoningNode", "Firebase AI reasoning failed: ${e.message}")
@@ -157,5 +179,12 @@ class ReasoningNode : AgentNode {
                 retryCount = state.retryCount + 1
             )
         }
+    }
+
+    private fun shouldExecuteLocally(state: AgentState): Boolean {
+        val query = state.userQuery.lowercase()
+        if (state.imageAttachment != null) return false
+        if (query.contains("analyze") || query.contains("explain") || query.length > 300) return false
+        return true
     }
 }

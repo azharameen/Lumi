@@ -14,6 +14,8 @@ import com.example.domain.repository.ChatRepository
 import com.example.domain.repository.PetRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 
 class ChatRepositoryImpl(
@@ -21,6 +23,9 @@ class ChatRepositoryImpl(
     private val hybridAiEngine: HybridAiEngine,
     private val petRepository: PetRepository
 ) : ChatRepository {
+
+    private val _agentThoughts = MutableStateFlow<String?>(null)
+    override val agentThoughts: Flow<String?> = _agentThoughts.asStateFlow()
 
     override val chatMessages: Flow<List<ChatMessageEntity>> = database.chatMessageDao().getAllMessages()
 
@@ -55,11 +60,14 @@ class ChatRepositoryImpl(
             hybridAiEngine.executeUserTurn(
                 userMessage = userText,
                 recentHistory = historyTurns,
-                imageAttachment = image
+                imageAttachment = image,
+                onThought = { thought -> _agentThoughts.value = thought }
             )
         } catch (e: Exception) {
             petRepository.setThinking(false)
             throw e
+        } finally {
+            _agentThoughts.value = null
         }
 
         petRepository.setThinking(false)

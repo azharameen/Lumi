@@ -1,6 +1,7 @@
 package com.example.domain.agent
 
 import com.example.data.local.LumiDatabase
+import com.example.data.remote.OnDeviceGemmaEngine
 import com.example.domain.agent.nodes.*
 import com.example.domain.tools.AgentToolDispatcher
 
@@ -11,13 +12,15 @@ object LumiAgentGraph {
      */
     fun create(
         database: LumiDatabase,
-        toolDispatcher: AgentToolDispatcher
+        toolDispatcher: AgentToolDispatcher,
+        onDeviceGemmaEngine: OnDeviceGemmaEngine? = null
     ): AgentStateMachine {
         val stateMachine = AgentStateMachine(database.agentCheckpointDao())
 
         // 1. Register Nodes
         stateMachine
-            .registerNode(IntentRoutingNode())
+            .registerNode(StartNode())
+            .registerNode(IntentRoutingNode(onDeviceGemmaEngine))
             .registerNode(MemoryRetrievalNode(database))
             .registerNode(ReasoningNode())
             .registerNode(ToolExecutionNode(toolDispatcher))
@@ -26,7 +29,7 @@ object LumiAgentGraph {
 
         // 2. Define Transition Edges
         stateMachine
-            .addEdge("INTENT_ROUTING") { "MEMORY_RETRIEVAL" }
+            .addParallelEdge("START") { listOf("INTENT_ROUTING", "MEMORY_RETRIEVAL") }
             .addEdge("MEMORY_RETRIEVAL") { "REASONING" }
             .addEdge("REASONING") { state ->
                 if (state.pendingToolName != null) {

@@ -33,7 +33,8 @@ data class LumiUiState(
     val detectedClipboardText: String? = null,
     val isMemoryVaultUnlocked: Boolean = false,
     val vaultAuthError: String? = null,
-    val sharedIncomingBanner: String? = null
+    val sharedIncomingBanner: String? = null,
+    val agentThought: String? = null
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -124,6 +125,11 @@ class LumiViewModel(
         viewModelScope.launch {
             userProfile.collect { profile ->
                 _uiState.update { it.copy(isOverlayEnabled = profile.enableOverlay) }
+            }
+        }
+        viewModelScope.launch {
+            chatRepository.agentThoughts.collect { thought ->
+                _uiState.update { it.copy(agentThought = thought) }
             }
         }
     }

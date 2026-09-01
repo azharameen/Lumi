@@ -25,14 +25,16 @@ data class AgentExecutionResult(
 class GeminiAgentEngine(
     private val toolDispatcher: AgentToolDispatcher,
     private val database: LumiDatabase,
-    private val hitlApprovalManager: HitlApprovalManager? = null
+    private val hitlApprovalManager: HitlApprovalManager? = null,
+    private val onDeviceGemmaEngine: OnDeviceGemmaEngine? = null
 ) {
     private val firebaseAiEngine = FirebaseAiCloudEngine.getInstance()
 
     suspend fun executeUserTurn(
         userMessage: String,
         recentHistory: List<Pair<String, String>> = emptyList(),
-        imageAttachment: ByteArray? = null
+        imageAttachment: ByteArray? = null,
+        onThought: (String?) -> Unit = {}
     ): AgentExecutionResult = withContext(Dispatchers.IO) {
         try {
             val initialState = AgentState(
@@ -41,12 +43,13 @@ class GeminiAgentEngine(
                 imageAttachment = imageAttachment
             )
 
-            val stateMachine = LumiAgentGraph.create(database, toolDispatcher)
+            val stateMachine = LumiAgentGraph.create(database, toolDispatcher, onDeviceGemmaEngine)
             var finalState = initialState
 
             // Execute the DAG state machine via Kotlin Flow
             stateMachine.run(initialState).collect { state ->
                 finalState = state
+                onThought(state.currentThought)
             }
 
             if (finalState.status == AgentStatus.WAITING_FOR_HITL) {

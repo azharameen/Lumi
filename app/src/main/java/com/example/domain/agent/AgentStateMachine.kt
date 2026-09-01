@@ -2,20 +2,23 @@ package com.example.domain.agent
 
 import com.example.data.local.dao.AgentCheckpointDao
 import com.example.data.local.entity.AgentCheckpointEntity
+import com.example.domain.model.PetEmotion
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.concurrent.ConcurrentHashMap
 
 /**
  * State Machine Engine for executing Agentic workflows using Kotlin Coroutines & Flows.
- * Replaces unstructured ReAct loops with a deterministic Directed Acyclic Graph (DAG).
+ * Supports both sequential and parallel node execution.
  */
 class AgentStateMachine(
     private val checkpointDao: AgentCheckpointDao? = null
 ) {
 
     private val nodes = ConcurrentHashMap<String, AgentNode>()
-    private val transitions = ConcurrentHashMap<String, (AgentState) -> String>()
+    private val transitions = ConcurrentHashMap<String, (AgentState) -> List<String>>()
 
     /**
      * Registers a node in the state machine graph.
@@ -26,83 +29,107 @@ class AgentStateMachine(
     }
 
     /**
-     * Defines a conditional edge from [sourceNodeName] to a target node name determined by [transitionLogic].
+     * Defines a sequential edge from [sourceNodeName] to a target node.
      */
     fun addEdge(sourceNodeName: String, transitionLogic: (AgentState) -> String): AgentStateMachine {
+        transitions[sourceNodeName] = { state -> listOf(transitionLogic(state)) }
+        return this
+    }
+
+    /**
+     * Defines a branching edge from [sourceNodeName] to multiple parallel target nodes.
+     */
+    fun addParallelEdge(sourceNodeName: String, transitionLogic: (AgentState) -> List<String>): AgentStateMachine {
         transitions[sourceNodeName] = transitionLogic
         return this
     }
 
     /**
      * Executes the state machine starting from initial state, emitting intermediate states via [Flow].
-     * Can pause if [AgentStatus.WAITING_FOR_HITL] is set, allowing safe mobile lifecycle suspensions.
      */
     fun run(initialState: AgentState): Flow<AgentState> = flow {
         var currentState = initialState
+        var activeNodes = listOf(currentState.currentNodeName)
 
-        while (currentState.status == AgentStatus.RUNNING) {
-            // Protect against infinite execution loops
+        while (currentState.status == AgentStatus.RUNNING && activeNodes.isNotEmpty()) {
             if (currentState.stepCount >= currentState.maxSteps) {
-                val failedState = currentState.copy(
-                    status = AgentStatus.FAILED,
-                    lastError = "Agent exceeded maximum step limit of ${currentState.maxSteps}"
-                )
-                emit(failedState)
-                checkpointDao?.deleteCheckpoint(currentState.id)
+                emit(currentState.copy(status = AgentStatus.FAILED, lastError = "Step limit exceeded"))
                 return@flow
             }
 
-            val currentNodeName = currentState.currentNodeName
-            val node = nodes[currentNodeName]
-
-            if (node == null) {
-                val failedState = currentState.copy(
-                    status = AgentStatus.FAILED,
-                    lastError = "No registered node found for name: $currentNodeName"
-                )
-                emit(failedState)
-                checkpointDao?.deleteCheckpoint(currentState.id)
-                return@flow
+            // Execute active nodes (potentially in parallel)
+            val nextState = coroutineScope {
+                val deferredResults = activeNodes.map { nodeName ->
+                    val node = nodes[nodeName]
+                    if (node == null) throw IllegalStateException("Node $nodeName not found")
+                    async { node.execute(currentState) }
+                }
+                
+                // Merge results sequentially (assuming nodes modify disjoint state fields)
+                var merged = currentState.copy(stepCount = currentState.stepCount + 1)
+                deferredResults.forEach { deferred ->
+                    val result = deferred.await()
+                    merged = mergeStates(merged, result)
+                }
+                merged
             }
 
-            // Increment step count and execute current node
-            currentState = currentState.copy(stepCount = currentState.stepCount + 1)
-            currentState = node.execute(currentState)
+            currentState = nextState
             emit(currentState)
 
-            // Check if state was suspended for HITL approval or completed/failed
             if (currentState.status != AgentStatus.RUNNING) {
-                if (currentState.status == AgentStatus.WAITING_FOR_HITL) {
-                    // Checkpoint state to database for process-death resilience
-                    checkpointDao?.saveCheckpoint(
-                        AgentCheckpointEntity(
-                            stateId = currentState.id,
-                            userQuery = currentState.userQuery,
-                            currentNodeName = currentState.currentNodeName,
-                            status = currentState.status.name,
-                            pendingToolName = currentState.pendingToolName,
-                            pendingToolArgsJson = currentState.pendingToolArgs?.toString(),
-                            serializedStateJson = ""
-                        )
-                    )
-                } else {
-                    checkpointDao?.deleteCheckpoint(currentState.id)
-                }
+                handleCheckpointing(currentState)
                 break
             }
 
-            // Determine next node using transition rules
-            val transition = transitions[currentNodeName]
-            if (transition != null) {
-                val nextNodeName = transition(currentState)
-                currentState = currentState.copy(currentNodeName = nextNodeName)
+            // Determine next active nodes based on transitions
+            // For simplicity, we take transitions from the LAST node in the parallel batch if multiple existed
+            // or we could support complex join logic. Here we assume the last node triggers the next phase.
+            val lastNodeName = activeNodes.last()
+            activeNodes = transitions[lastNodeName]?.invoke(currentState) ?: emptyList()
+            
+            if (activeNodes.isNotEmpty()) {
+                currentState = currentState.copy(currentNodeName = activeNodes.first())
             } else {
-                // Default termination if no transition edge defined
                 currentState = currentState.copy(status = AgentStatus.COMPLETED)
                 emit(currentState)
-                checkpointDao?.deleteCheckpoint(currentState.id)
+                handleCheckpointing(currentState)
                 break
             }
+        }
+    }
+
+    private fun mergeStates(base: AgentState, update: AgentState): AgentState {
+        // Merge specific fields updated by nodes
+        return base.copy(
+            isLocalExecution = if (update.isLocalExecution != base.isLocalExecution) update.isLocalExecution else base.isLocalExecution,
+            selectedSkillName = update.selectedSkillName ?: base.selectedSkillName,
+            contentsList = if (update.contentsList.size > base.contentsList.size) update.contentsList else base.contentsList,
+            retrievedContext = if (update.retrievedContext.isNotBlank()) update.retrievedContext else base.retrievedContext,
+            pendingToolName = update.pendingToolName ?: base.pendingToolName,
+            pendingToolArgs = update.pendingToolArgs ?: base.pendingToolArgs,
+            finalResponseText = update.finalResponseText ?: base.finalResponseText,
+            inferredEmotion = if (update.inferredEmotion != PetEmotion.HAPPY) update.inferredEmotion else base.inferredEmotion,
+            status = if (update.status != AgentStatus.RUNNING) update.status else base.status,
+            lastError = update.lastError ?: base.lastError
+        )
+    }
+
+    private suspend fun handleCheckpointing(state: AgentState) {
+        if (state.status == AgentStatus.WAITING_FOR_HITL) {
+            checkpointDao?.saveCheckpoint(
+                AgentCheckpointEntity(
+                    stateId = state.id,
+                    userQuery = state.userQuery,
+                    currentNodeName = state.currentNodeName,
+                    status = state.status.name,
+                    pendingToolName = state.pendingToolName,
+                    pendingToolArgsJson = state.pendingToolArgs?.toString(),
+                    serializedStateJson = ""
+                )
+            )
+        } else {
+            checkpointDao?.deleteCheckpoint(state.id)
         }
     }
 

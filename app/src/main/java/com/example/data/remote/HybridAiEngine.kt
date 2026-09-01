@@ -32,12 +32,12 @@ class HybridAiEngine(
     private val aiAnalyticsDao: AiExecutionLogDao,
     private val database: LumiDatabase,
     private val context: Context? = null,
-    private val toolRetriever: ToolRetriever? = null
+    private val toolRetriever: ToolRetriever? = null,
+    val onDeviceGemmaEngine: OnDeviceGemmaEngine
 ) {
     val hitlApprovalManager = HitlApprovalManager(database, toolDispatcher)
-    private val geminiEngine = GeminiAgentEngine(toolDispatcher, database, hitlApprovalManager)
+    private val geminiEngine = GeminiAgentEngine(toolDispatcher, database, hitlApprovalManager, onDeviceGemmaEngine)
     val downloadManager = context?.let { ModelDownloadManager.getInstance(it) }
-    val onDeviceGemmaEngine = OnDeviceGemmaEngine(toolDispatcher, downloadManager, context, toolRetriever)
 
     private val _routingMode = MutableStateFlow(AiRoutingMode.HYBRID_AUTO)
     val routingMode = _routingMode.asStateFlow()
@@ -77,7 +77,8 @@ class HybridAiEngine(
     suspend fun executeUserTurn(
         userMessage: String,
         recentHistory: List<Pair<String, String>> = emptyList(),
-        imageAttachment: ByteArray? = null
+        imageAttachment: ByteArray? = null,
+        onThought: (String?) -> Unit = {}
     ): EngineTurnResult = withContext(Dispatchers.IO) {
         val startTime = System.currentTimeMillis()
         val currentRoutingMode = _routingMode.value
@@ -111,7 +112,7 @@ class HybridAiEngine(
                     )
                 } else {
                     // Hybrid mode: Auto-failover to Cloud Gemini 2.5 Flash
-                    val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment)
+                    val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment, onThought)
                     EngineTurnResult(
                         responseText = cloudResult.responseText,
                         inferredEmotion = cloudResult.inferredEmotion,
@@ -121,7 +122,7 @@ class HybridAiEngine(
                 }
             }
         } else {
-            val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment)
+            val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment, onThought)
             EngineTurnResult(
                 responseText = cloudResult.responseText,
                 inferredEmotion = cloudResult.inferredEmotion,

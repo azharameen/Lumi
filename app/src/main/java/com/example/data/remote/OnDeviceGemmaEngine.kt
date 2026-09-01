@@ -206,4 +206,52 @@ class OnDeviceGemmaEngine(
         val response = llmInference?.generateResponse("Test") ?: "Failed"
         Pair(response, System.currentTimeMillis() - start)
     }
+
+    /**
+     * Semantically classifies a user query into a structured Intent/Skill category.
+     */
+    suspend fun classifyIntent(userQuery: String): String = withContext(Dispatchers.Default) {
+        if (!isModelReady()) return@withContext "GENERAL_COMPANION"
+        
+        val prompt = """
+            You are a semantic classifier. Categorize the user's message into EXACTLY ONE of these categories:
+            - GOOGLE_WORKSPACE (if about emails, docs, sheets, drive)
+            - GITHUB (if about issues, repos, code, pull requests)
+            - SLACK (if about messaging, channels, status)
+            - LIFE_ORGANIZER (if about tasks, todos, calendar, schedules)
+            - WELLNESS (if about health, mood, breathing, meditation)
+            - GENERAL_COMPANION (anything else)
+            
+            User message: "$userQuery"
+            Category:
+        """.trimIndent()
+
+        try {
+            // Re-use or init inference
+            if (llmInference == null) {
+                val activeSpec = downloadManager?.getActiveModelSpec() ?: return@withContext "GENERAL_COMPANION"
+                val modelFile = downloadManager.getModelFile(activeSpec.id)
+                val options = LlmInference.LlmInferenceOptions.builder()
+                    .setModelPath(modelFile.absolutePath)
+                    .setMaxTokens(16)
+                    .setTemperature(0.1f)
+                    .build()
+                llmInference = LlmInference.createFromOptions(context!!, options)
+                loadedModelPath = modelFile.absolutePath
+            }
+
+            val raw = llmInference?.generateResponse(prompt)?.trim() ?: "GENERAL_COMPANION"
+            
+            when {
+                raw.contains("GOOGLE_WORKSPACE") -> "GOOGLE_WORKSPACE"
+                raw.contains("GITHUB") -> "GITHUB"
+                raw.contains("SLACK") -> "SLACK"
+                raw.contains("LIFE_ORGANIZER") -> "LIFE_ORGANIZER"
+                raw.contains("WELLNESS") -> "WELLNESS"
+                else -> "GENERAL_COMPANION"
+            }
+        } catch (e: Exception) {
+            "GENERAL_COMPANION"
+        }
+    }
 }

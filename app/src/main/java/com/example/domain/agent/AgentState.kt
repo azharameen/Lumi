@@ -25,8 +25,11 @@ data class AgentState(
     val history: List<Pair<String, String>> = emptyList(),
     val imageAttachment: ByteArray? = null,
     
+    // UX & Thought Streaming
+    val currentThought: String? = null,
+    
     // Planning & Execution
-    val currentNodeName: String = "INTENT_ROUTING",
+    val currentNodeName: String = "START",
     val status: AgentStatus = AgentStatus.RUNNING,
     val selectedSkillName: String? = null,
     val isLocalExecution: Boolean = false,

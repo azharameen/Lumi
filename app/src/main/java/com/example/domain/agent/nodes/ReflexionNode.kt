@@ -26,7 +26,8 @@ class ReflexionNode : AgentNode {
         return state.copy(
             contentsList = updatedContents,
             pendingToolName = null,
-            pendingToolArgs = null
+            pendingToolArgs = null,
+            currentThought = "Analyzing error and attempting self-correction: $errorMsg"
         )
     }
 }

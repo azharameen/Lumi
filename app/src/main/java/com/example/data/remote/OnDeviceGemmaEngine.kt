@@ -130,9 +130,13 @@ class OnDeviceGemmaEngine(
                 llmInference = try {
                     LlmInference.createFromOptions(context, optionsBuilder.build())
                 } catch (e: Exception) {
-                    crashlyticsManager?.logBreadcrumb("OnDeviceGemmaEngine", "GPU Init failed, falling back to CPU: ${e.message}")
-                    // In a real TFLite scenario, you'd change the delegate here. 
-                    // For MediaPipe LlmInference, it usually auto-selects, but we retry.
+                    val msg = e.message ?: ""
+                    if (msg.contains("model identifier") || msg.contains("TFL3") || msg.contains("initialize session") || msg.contains("RET_CHECK")) {
+                        modelFile.delete()
+                        loadedModelPath = null
+                        throw OnDeviceInferenceException.ModelNotFound(activeSpec.id, "Corrupted model detected during load and removed.")
+                    }
+                    crashlyticsManager?.logBreadcrumb("OnDeviceGemmaEngine", "GPU Init failed, falling back to CPU: $msg")
                     LlmInference.createFromOptions(context, optionsBuilder.build())
                 }
                 loadedModelPath = modelFile.absolutePath

@@ -41,7 +41,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.framework.AppShortcutsManager
 import com.example.framework.PetOverlayService
-import com.example.presentation.components.LumiNavigationBar
 import com.example.presentation.components.BreathingExerciseModal
 import com.example.presentation.components.CameraVisionDialog
 import com.example.presentation.components.OverlayPermissionDialog
@@ -291,18 +290,7 @@ fun LumiApp(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = Color.Transparent,
-            contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
-            bottomBar = {
-                if (uiState.selectedTab != NavDestination.Assistant.tabIndex && !uiState.showWardrobeScreen) {
-                    LumiNavigationBar(
-                        haptics = haptics,
-                        selectedTab = uiState.selectedTab,
-                        onTabSelected = { index -> viewModel.setSelectedTab(index) },
-                        pendingTasksCount = tasks.count { !it.isCompleted },
-                        modifier = Modifier.navigationBarsPadding()
-                    )
-                }
-            }
+            contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
         ) { innerPadding ->
             Box(
                 modifier = Modifier

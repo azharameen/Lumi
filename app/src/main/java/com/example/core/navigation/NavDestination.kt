@@ -36,9 +36,11 @@ sealed class NavDestination(
     object Account : NavDestination(4, "Account", Icons.Default.AccountCircle, LumiMint, "nav_account")
 
     companion object {
-        val allDestinations: List<NavDestination> = listOf(
+        fun getDestinations(): List<NavDestination> = listOf(
             PetCompanion, Assistant, LifeHub, Wellness, Account
         )
+        
+        val allDestinations: List<NavDestination> by lazy { getDestinations() }
     }
 }
 

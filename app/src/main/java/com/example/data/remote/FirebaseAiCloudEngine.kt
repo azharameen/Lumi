@@ -174,8 +174,14 @@ class FirebaseAiCloudEngine {
             responseText
         } catch (e: Exception) {
             Log.e(TAG, "Error executing Firebase AI cloud turn", e)
-            crashlyticsManager?.logBreadcrumb("FirebaseAiCloudEngine", "Cloud generation failed: ${e.message}")
-            "I'm right here with you! I experienced a momentary cloud sync hiccup, but I'm ready to keep going. ✨"
+            val errorMessage = e.message ?: ""
+            val response = when {
+                errorMessage.contains("prepayment credits", ignoreCase = true) -> 
+                    "My cloud reasoning engine is currently offline due to a project billing status. Please check your AI Studio dashboard to restore full capabilities! ✨"
+                else -> "I'm right here with you! I experienced a momentary cloud sync hiccup, but I'm ready to keep going. ✨"
+            }
+            crashlyticsManager?.logBreadcrumb("FirebaseAiCloudEngine", "Cloud generation failed: $errorMessage")
+            response
         }
     }
 

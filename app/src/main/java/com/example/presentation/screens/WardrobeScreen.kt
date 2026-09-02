@@ -117,7 +117,10 @@ fun WardrobeScreen(
     }
 
     val unlockedAccessories = remember(petStatus.unlockedAccessoriesCsv) {
-        petStatus.unlockedAccessoriesCsv.split(",").toSet()
+        petStatus.unlockedAccessoriesCsv.split(",")
+            .map { it.trim().uppercase() }
+            .filter { it.isNotBlank() }
+            .toSet()
     }
 
     Box(
@@ -387,8 +390,12 @@ fun WardrobeScreen(
                             items = PetAccessory.entries,
                             key = { it.id }
                         ) { acc ->
-                            val isUnlocked = acc.id == "NONE" || unlockedAccessories.contains(acc.id)
-                            val isEquipped = petStatus.activeAccessory == acc.id
+                            val isUnlocked = acc.id.equals("NONE", ignoreCase = true) ||
+                                acc.name.equals("NONE", ignoreCase = true) ||
+                                unlockedAccessories.contains(acc.id.uppercase()) ||
+                                unlockedAccessories.contains(acc.name.uppercase())
+                            val isEquipped = petStatus.activeAccessory.equals(acc.id, ignoreCase = true) ||
+                                petStatus.activeAccessory.equals(acc.name, ignoreCase = true)
 
                             Surface(
                                 color = when {
@@ -401,15 +408,24 @@ fun WardrobeScreen(
                                 modifier = Modifier
                                     .width(130.dp)
                                     .clickable {
-                                        if (isUnlocked) {
+                                        if (isEquipped && !acc.id.equals("NONE", ignoreCase = true)) {
+                                            petViewModel.equipAccessory("NONE")
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar("Unequipped ${acc.displayName}")
+                                            }
+                                        } else if (isUnlocked) {
                                             petViewModel.equipAccessory(acc.id)
+                                            scope.launch {
+                                                val msg = if (acc.id.equals("NONE", ignoreCase = true)) "Unequipped accessories" else "Equipped ${acc.displayName}!"
+                                                snackbarHostState.showSnackbar(msg)
+                                            }
                                         } else {
                                             petViewModel.buyAccessory(acc) { success ->
                                                 scope.launch {
                                                     if (success) {
-                                                        snackbarHostState.showSnackbar("Unlocked ${acc.displayName}!")
+                                                        snackbarHostState.showSnackbar("Unlocked & equipped ${acc.displayName}!")
                                                     } else {
-                                                        snackbarHostState.showSnackbar("Not enough coins/gems to unlock!")
+                                                        snackbarHostState.showSnackbar("Not enough coins/gems to unlock ${acc.displayName}!")
                                                     }
                                                 }
                                             }
@@ -532,13 +548,20 @@ fun WardrobeScreen(
                             items = BloubShape.entries,
                             key = { it.name }
                         ) { shape ->
-                            val isSelected = petStatus.bloubShape == shape
+                            val isSelected = petStatus.bloubShape == shape ||
+                                petStatus.bloubShape.name.equals(shape.name, ignoreCase = true) ||
+                                petStatus.bloubShape.id.equals(shape.id, ignoreCase = true)
                             Surface(
                                 color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) else SurfaceDarkVariant,
                                 shape = RoundedCornerShape(14.dp),
                                 border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
                                 modifier = Modifier
-                                    .clickable { petViewModel.setBloubShape(shape) }
+                                    .clickable {
+                                        petViewModel.setBloubShape(shape)
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Morphed into ${shape.displayName}!")
+                                        }
+                                    }
                                     .testTag("shape_${shape.name}")
                             ) {
                                 Column(
@@ -582,13 +605,20 @@ fun WardrobeScreen(
                             items = BloubSkinColor.entries,
                             key = { it.name }
                         ) { skin ->
-                            val isSelected = petStatus.bloubSkinColor == skin
+                            val isSelected = petStatus.bloubSkinColor == skin ||
+                                petStatus.bloubSkinColor.name.equals(skin.name, ignoreCase = true) ||
+                                petStatus.bloubSkinColor.id.equals(skin.id, ignoreCase = true)
                             Surface(
                                 color = if (isSelected) Color(skin.primaryHex).copy(alpha = 0.25f) else SurfaceDarkVariant,
                                 shape = RoundedCornerShape(14.dp),
                                 border = if (isSelected) BorderStroke(1.5.dp, Color(skin.primaryHex)) else null,
                                 modifier = Modifier
-                                    .clickable { petViewModel.setBloubSkinColor(skin) }
+                                    .clickable {
+                                        petViewModel.setBloubSkinColor(skin)
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("Applied ${skin.displayName} skin!")
+                                        }
+                                    }
                                     .testTag("skin_${skin.name}")
                             ) {
                                 Row(

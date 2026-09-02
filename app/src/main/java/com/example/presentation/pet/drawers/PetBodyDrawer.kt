@@ -271,7 +271,7 @@ fun DrawScope.drawPetAccessory(
     baseRadius: Float,
     accessoryId: String
 ) {
-    when (accessoryId) {
+    when (accessoryId.trim().uppercase()) {
         "SPROUT" -> {
             val stemTopY = cy - (baseRadius * 0.95f)
             val stemBaseY = cy - (baseRadius * 0.78f)
@@ -309,7 +309,7 @@ fun DrawScope.drawPetAccessory(
             drawPath(rightLeaf, color = Color(0xFF81C784))
         }
 
-        "CROWN" -> {
+        "CROWN", "GOLD_CROWN" -> {
             val crownY = cy - (baseRadius * 0.88f)
             val crownW = baseRadius * 0.7f
             val crownH = baseRadius * 0.4f

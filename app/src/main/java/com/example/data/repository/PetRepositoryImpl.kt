@@ -22,6 +22,15 @@ class PetRepositoryImpl(
     private val _speechBubbleText = MutableStateFlow<String?>("Hi! I'm Lumi, your personal AI friend ✨")
     private val _isOverlayActive = MutableStateFlow(false)
 
+    init {
+        scope.launch(Dispatchers.IO) {
+            val current = database.petEvolutionDao().getPetEvolutionDirect()
+            if (current == null) {
+                database.petEvolutionDao().insertOrUpdate(PetEvolutionEntity())
+            }
+        }
+    }
+
     override val currentEmotion: Flow<PetEmotion> = _currentEmotion.asStateFlow()
     override val isSpeaking: Flow<Boolean> = _isSpeaking.asStateFlow()
     override val isListening: Flow<Boolean> = _isListening.asStateFlow()
@@ -40,8 +49,13 @@ class PetRepositoryImpl(
         }
     ) { (evo, emotion, speaking), (listening, thinking, bubbleText) ->
         val entity = evo ?: PetEvolutionEntity()
-        val shape = try { BloubShape.valueOf(entity.bloubShape) } catch (e: Exception) { BloubShape.SPHERE }
-        val skinColor = try { BloubSkinColor.valueOf(entity.bloubSkinColor) } catch (e: Exception) { BloubSkinColor.ELECTRIC_CYAN }
+        val shape = BloubShape.entries.find {
+            it.name.equals(entity.bloubShape, ignoreCase = true) || it.id.equals(entity.bloubShape, ignoreCase = true)
+        } ?: BloubShape.SPHERE
+
+        val skinColor = BloubSkinColor.entries.find {
+            it.name.equals(entity.bloubSkinColor, ignoreCase = true) || it.id.equals(entity.bloubSkinColor, ignoreCase = true)
+        } ?: BloubSkinColor.ELECTRIC_CYAN
 
         PetStatus(
             name = entity.name,
@@ -111,7 +125,7 @@ class PetRepositoryImpl(
         )
 
         _currentEmotion.value = PetEmotion.LOVING
-        _speechBubbleText.value = "*Purrrrr* So warm!" // Simplified for now, will use UseCase for AI reaction
+        _speechBubbleText.value = "*Purrrrr* So warm!"
     }
 
     override suspend fun feedPet(foodName: String) {
@@ -155,12 +169,14 @@ class PetRepositoryImpl(
             newGems += 5
         }
 
-        database.petEvolutionDao().updateProgression(
-            exp = newExp,
-            level = newLevel,
-            expToNextLevel = expNeeded,
-            coins = newCoins,
-            gems = newGems
+        database.petEvolutionDao().insertOrUpdate(
+            current.copy(
+                exp = newExp,
+                level = newLevel,
+                expToNextLevel = expNeeded,
+                coins = newCoins,
+                gems = newGems
+            )
         )
 
         if (leveledUp) {
@@ -174,7 +190,7 @@ class PetRepositoryImpl(
     override suspend fun earnGems(gems: Int, reason: String) {
         val current = database.petEvolutionDao().getPetEvolutionDirect() ?: PetEvolutionEntity()
         val newGems = current.gems + gems
-        database.petEvolutionDao().updateCurrencies(current.coins, newGems)
+        database.petEvolutionDao().insertOrUpdate(current.copy(gems = newGems))
         _currentEmotion.value = PetEmotion.HAPPY
         _speechBubbleText.value = "+$gems Starlight Gems! 💎"
     }
@@ -184,8 +200,12 @@ class PetRepositoryImpl(
         if (current.coins < accessory.coinCost || current.gems < accessory.gemCost) {
             return false
         }
-        val unlockedList = current.unlockedAccessoriesCsv.split(",").toMutableSet()
-        unlockedList.add(accessory.id)
+        val unlockedList = current.unlockedAccessoriesCsv.split(",")
+            .map { it.trim().uppercase() }
+            .filter { it.isNotBlank() }
+            .toMutableSet()
+        unlockedList.add(accessory.id.uppercase())
+        unlockedList.add(accessory.name.uppercase())
         val newCsv = unlockedList.joinToString(",")
         val newCoins = current.coins - accessory.coinCost
         val newGems = current.gems - accessory.gemCost
@@ -204,24 +224,28 @@ class PetRepositoryImpl(
     }
 
     override suspend fun equipAccessory(accessoryId: String) {
-        database.petEvolutionDao().setActiveAccessory(accessoryId)
+        val current = database.petEvolutionDao().getPetEvolutionDirect() ?: PetEvolutionEntity()
+        database.petEvolutionDao().insertOrUpdate(current.copy(activeAccessory = accessoryId))
         _currentEmotion.value = PetEmotion.HAPPY
-        _speechBubbleText.value = "Changed look! ✨ Looking sharp!"
+        _speechBubbleText.value = if (accessoryId.equals("NONE", ignoreCase = true)) "Unequipped accessory ✨" else "Changed look! ✨ Looking sharp!"
     }
 
     override suspend fun updatePetName(name: String) {
-        database.petEvolutionDao().updatePetName(name)
+        val current = database.petEvolutionDao().getPetEvolutionDirect() ?: PetEvolutionEntity()
+        database.petEvolutionDao().insertOrUpdate(current.copy(name = name))
         _speechBubbleText.value = "My new name is $name! I love it!"
     }
 
     override suspend fun setBloubShape(shape: BloubShape) {
-        database.petEvolutionDao().setBloubShape(shape.name)
+        val current = database.petEvolutionDao().getPetEvolutionDirect() ?: PetEvolutionEntity()
+        database.petEvolutionDao().insertOrUpdate(current.copy(bloubShape = shape.name))
         _currentEmotion.value = PetEmotion.HAPPY
         _speechBubbleText.value = "Transformed into ${shape.displayName}! ${shape.iconEmoji} How do I look?"
     }
 
     override suspend fun setBloubSkinColor(skinColor: BloubSkinColor) {
-        database.petEvolutionDao().setBloubSkinColor(skinColor.name)
+        val current = database.petEvolutionDao().getPetEvolutionDirect() ?: PetEvolutionEntity()
+        database.petEvolutionDao().insertOrUpdate(current.copy(bloubSkinColor = skinColor.name))
         _currentEmotion.value = PetEmotion.ENERGETIC
         _speechBubbleText.value = "Ooh, new ${skinColor.displayName} clay skin! ✨ Glowing!"
     }

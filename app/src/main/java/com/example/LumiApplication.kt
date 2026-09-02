@@ -27,11 +27,7 @@ class LumiApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         
-        // Set App Check debug token as early as possible
-        setupAppCheckDebugToken()
-        
-        initializeFirebase()
-
+        // Start Koin immediately as it's needed for many components
         if (org.koin.core.context.GlobalContext.getOrNull() == null) {
             startKoin {
                 androidLogger()
@@ -40,15 +36,17 @@ class LumiApplication : Application() {
             }
         }
         
-        // Move heavy registration to background with a small delay to let UI breathe
+        // Offload all other heavy services to background
         kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-            delay(1500) // Wait for MainActivity to settle
+            setupAppCheckDebugToken()
+            initializeFirebase()
+            
+            delay(1200) // Wait for UI to stabilize
 
             val koin = org.koin.core.context.GlobalContext.get()
             val database: LumiDatabase = koin.get()
             val modelManager = com.example.data.remote.ModelDownloadManager.getInstance(this@LumiApplication)
 
-            // Run Bulletproof Integrity Check
             IntegrityOrchestrator.runFullIntegrityCheck(this@LumiApplication, database, modelManager)
 
             registerTools()

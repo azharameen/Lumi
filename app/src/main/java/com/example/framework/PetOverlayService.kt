@@ -154,6 +154,7 @@ class PetOverlayService : Service() {
                         context = this@PetOverlayService,
                         repository = repository,
                         isDockedPeeking = isDockedPeeking,
+                        windowY = windowLayoutParams.y,
                         onDragStart = { rawX, rawY ->
                             cancelAutoHideTimer()
                             glideAnimator?.cancel()

@@ -102,8 +102,17 @@ class LumiRepositoryImpl private constructor(
     override suspend fun toggleMemoryPin(memoryId: Long) = database.petMemoryDao().togglePin(memoryId)
 
     override suspend fun getDailyBriefing(): DailyBriefing {
-        // Implementation details omitted for brevity, would call briefingEngine.generateBriefing(...)
-        return briefingEngine.generateBriefing(null, petStatus = com.example.domain.model.PetStatus(), petEvolution = null, tasks = emptyList(), events = emptyList(), wellnessLogs = emptyList())
+        val tasks = database.taskDao().getAllTasksDirect()
+        val events = database.calendarEventDao().getAllEventsDirect()
+        val logs = database.wellnessLogDao().getAllLogsDirect()
+        val petEvol = database.petEvolutionDao().getPetEvolutionDirect()
+        return briefingEngine.generateBriefing(
+            petStatus = com.example.domain.model.PetStatus(),
+            petEvolution = petEvol,
+            tasks = tasks,
+            events = events,
+            wellnessLogs = logs
+        )
     }
 
     override val soundscapeState: StateFlow<SoundscapeState> get() = soundscapeEngine.state

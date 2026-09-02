@@ -89,19 +89,21 @@ class FirebaseAiCloudEngine {
      * Gets or creates a cached GenerativeModel instance with specified configurations.
      */
     fun getModel(
-        modelName: String = DEFAULT_MODEL,
+        modelName: String? = null,
         temperature: Float? = null,
         topP: Float = 0.95f,
         systemPrompt: String? = null
     ): GenerativeModel {
+        val resolvedModelName = modelName 
+            ?: (remoteConfigManager?.config?.value?.defaultCloudModelName ?: DEFAULT_MODEL)
         val resolvedTemp = temperature 
-            ?: (remoteConfigManager?.config?.value?.aiCreativityTemperature ?: 0.7).toFloat()
+            ?: (remoteConfigManager?.config?.value?.aiCreativityTemperature ?: 0.75).toFloat()
         val resolvedSystemPrompt = systemPrompt ?: baseCompanionSystemPrompt
-        val cacheKey = "$modelName-$resolvedTemp-$resolvedSystemPrompt"
+        val cacheKey = "$resolvedModelName-$resolvedTemp-$resolvedSystemPrompt"
 
         return modelCache.getOrPut(cacheKey) {
             Firebase.ai.generativeModel(
-                modelName = modelName,
+                modelName = resolvedModelName,
                 generationConfig = generationConfig {
                     this.temperature = resolvedTemp
                     this.topP = topP

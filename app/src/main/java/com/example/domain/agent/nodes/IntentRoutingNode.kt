@@ -17,13 +17,10 @@ class IntentRoutingNode(
         val queryLower = state.userQuery.lowercase()
 
         // 1. Semantic Skill Classification (On-Device LLM preferred)
-        val skill = onDeviceGemmaEngine?.classifyIntent(state.userQuery) ?: detectSkillHeuristically(queryLower)
+        val skill = onDeviceGemmaEngine?.classifyIntent(state.userQuery) ?: detectSkillViaAi(state.userQuery)
 
-        // 2. Local execution preference (Hardware & offline telemetry)
-        val isLocal = queryLower.contains("battery") ||
-                      queryLower.contains("time") ||
-                      queryLower.contains("offline") ||
-                      onDeviceGemmaEngine?.isModelReady() == true
+        // 2. Local execution preference (Hardware & model readiness)
+        val isLocal = onDeviceGemmaEngine?.isModelReady() == true || state.imageAttachment == null
 
         val contentsList = mutableListOf<GeminiContent>()
 
@@ -67,26 +64,12 @@ class IntentRoutingNode(
         )
     }
 
-    private fun detectSkillHeuristically(queryLower: String): String {
-        return when {
-            queryLower.contains("email") || queryLower.contains("sheet") || queryLower.contains("doc") || 
-            queryLower.contains("slide") || queryLower.contains("keep") || queryLower.contains("drive") || 
-            queryLower.contains("presentation") -> "GOOGLE_WORKSPACE"
-
-            queryLower.contains("github") || queryLower.contains("issue") || queryLower.contains("repo") || 
-            queryLower.contains("commit") || queryLower.contains("pull request") || queryLower.contains("pr") -> "GITHUB"
-
-            queryLower.contains("slack") || queryLower.contains("channel") || queryLower.contains("dnd") || 
-            queryLower.contains("status") -> "SLACK"
-
-            queryLower.contains("task") || queryLower.contains("todo") || queryLower.contains("schedule") || 
-            queryLower.contains("event") || queryLower.contains("calendar") || queryLower.contains("remind") || 
-            queryLower.contains("routine") -> "LIFE_ORGANIZER"
-
-            queryLower.contains("breathe") || queryLower.contains("wellness") || queryLower.contains("mood") || 
-            queryLower.contains("stress") || queryLower.contains("hydrate") || queryLower.contains("gratitude") || 
-            queryLower.contains("health") || queryLower.contains("calm") -> "WELLNESS"
-
+    private fun detectSkillViaAi(query: String): String {
+        val category = com.example.domain.ai.SemanticIntentClassifier.classifyTask(query)
+        return when (category) {
+            com.example.domain.ai.AiTaskCategory.WELLNESS_MOOD -> "WELLNESS"
+            com.example.domain.ai.AiTaskCategory.TIMELINE_PLANNING -> "LIFE_ORGANIZER"
+            com.example.domain.ai.AiTaskCategory.QUICK_DEVICE_ACTION -> "LIFE_ORGANIZER"
             else -> "GENERAL_COMPANION"
         }
     }

@@ -1,0 +1,20 @@
+{
+  "ai_creativity_temperature": 0.75,
+  "default_cloud_model_name": "gemini-2.5-flash",
+  "enable_pet_accessories": true,
+  "enable_local_gemma_fallback": true,
+  "max_agent_execution_steps": 10,
+  "hitl_default_security_mode": "SMART_RISK",
+  "vector_embedding_similarity_threshold": 0.55,
+  "voice_speech_rate": 1.02,
+  "voice_pitch": 1.15,
+  "enable_onboarding_model_download": true,
+  "enable_gemini_nano_aicore": true,
+  "enable_mcp_client": false,
+  "seasonal_theme_name": "",
+  "daily_tip": "",
+  "enable_google_workspace": false,
+  "enable_slack_integration": false,
+  "enable_github_integration": true,
+  "enable_purchase_buttons": false
+}

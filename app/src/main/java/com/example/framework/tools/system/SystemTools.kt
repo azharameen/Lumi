@@ -19,6 +19,8 @@ object SystemToolsModule {
         registry.registerTool(HapticFeedbackTool(context))
         registry.registerTool(PostPetNotificationTool(context))
         registry.registerTool(NetworkStatusTool(context))
+        registry.registerTool(com.example.framework.tools.security.BiometricCheckTool(context))
+        registry.registerTool(com.example.framework.tools.location.RealLocationTool(context))
     }
 }
 

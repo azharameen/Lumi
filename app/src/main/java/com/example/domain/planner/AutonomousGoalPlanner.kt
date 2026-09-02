@@ -50,7 +50,8 @@ data class PlannedMilestone(
 class AutonomousGoalPlanner(
     private val database: LumiDatabase,
     private val toolDispatcher: AgentToolDispatcher,
-    private val integrationService: IntegrationService
+    private val integrationService: IntegrationService,
+    private val connectorRepository: com.example.domain.connectors.ConnectorRepository? = null
 ) {
 
     /**
@@ -192,10 +193,11 @@ class AutonomousGoalPlanner(
                 }
 
                 "GITHUB" -> {
+                    val repo = connectorRepository?.githubUser?.value?.takeIf { it.isNotBlank() }?.let { "$it/lumi-companion" } ?: "lumi-workspace"
                     val (res, report) = toolDispatcher.executeTool(
                         "github_create_issue",
                         mapOf(
-                            "repo" to "azharameen/lumi-companion",
+                            "repo" to repo,
                             "title" to milestone.stepTitle,
                             "body" to milestone.stepDescription
                         )
@@ -204,10 +206,11 @@ class AutonomousGoalPlanner(
                 }
 
                 "SLACK" -> {
+                    val channel = connectorRepository?.slackChannel?.value?.takeIf { it.isNotBlank() } ?: "general"
                     val (res, report) = toolDispatcher.executeTool(
                         "slack_post_message",
                         mapOf(
-                            "channel" to "#standup",
+                            "channel" to channel,
                             "message" to "🚀 Starting Milestone: ${milestone.stepTitle} - ${milestone.stepDescription}"
                         )
                     )

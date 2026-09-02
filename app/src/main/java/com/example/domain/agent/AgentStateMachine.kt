@@ -14,7 +14,12 @@ import java.util.concurrent.ConcurrentHashMap
  * Supports both sequential and parallel node execution.
  */
 class AgentStateMachine(
-    private val checkpointDao: AgentCheckpointDao? = null
+    private val checkpointDao: AgentCheckpointDao? = null,
+    private val hooks: List<com.example.domain.agent.hooks.AgentNodeHook> = listOf(
+        com.example.domain.agent.hooks.TelemetryHook(),
+        com.example.domain.agent.hooks.SensorContextHook(),
+        com.example.domain.agent.hooks.SecurityAuditHook()
+    )
 ) {
 
     private val nodes = ConcurrentHashMap<String, AgentNode>()
@@ -62,7 +67,25 @@ class AgentStateMachine(
                 val deferredResults = activeNodes.map { nodeName ->
                     val node = nodes[nodeName]
                     if (node == null) throw IllegalStateException("Node $nodeName not found")
-                    async { node.execute(currentState) }
+                    async {
+                        var nodeState = currentState
+                        for (hook in hooks) {
+                            nodeState = hook.onBeforeNode(nodeName, nodeState)
+                        }
+                        try {
+                            var result = node.execute(nodeState)
+                            for (hook in hooks) {
+                                result = hook.onAfterNode(nodeName, result)
+                            }
+                            result
+                        } catch (e: Throwable) {
+                            var errorState = nodeState
+                            for (hook in hooks) {
+                                errorState = hook.onNodeError(nodeName, errorState, e)
+                            }
+                            throw e
+                        }
+                    }
                 }
                 
                 // Merge results sequentially (assuming nodes modify disjoint state fields)

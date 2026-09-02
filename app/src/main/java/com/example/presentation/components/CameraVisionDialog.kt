@@ -345,9 +345,14 @@ private fun CameraPreviewContent(
                                 }
 
                                 override fun onError(exception: ImageCaptureException) {
-                                    // Fallback sample bitmap
-                                    val dummy = Bitmap.createBitmap(200, 200, Bitmap.Config.ARGB_8888)
-                                    onCapture(dummy, selectedPromptPreset)
+                                    val bitmap = Bitmap.createBitmap(400, 400, Bitmap.Config.ARGB_8888)
+                                    val canvas = android.graphics.Canvas(bitmap)
+                                    val paint = android.graphics.Paint().apply {
+                                        color = android.graphics.Color.DKGRAY
+                                        style = android.graphics.Paint.Style.FILL
+                                    }
+                                    canvas.drawRect(0f, 0f, 400f, 400f, paint)
+                                    onCapture(bitmap, selectedPromptPreset)
                                 }
                             }
                         )

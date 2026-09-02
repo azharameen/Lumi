@@ -134,7 +134,7 @@ class ModelDownloadManager private constructor(private val context: Context) {
                     contextWindowTokens = 2048,
                     memoryRequiredRam = "2.2 GB VRAM/RAM",
                     requiredRamBytes = reqRam,
-                    downloadUrl = "https://storage.googleapis.com/mediapipe-models/llm/gemma-2b-it-cpu-int4.bin",
+                    downloadUrl = "https://huggingface.co/google/gemma-2b-it-cpu-int4/resolve/main/gemma-2b-it-cpu-int4.bin",
                     description = "Official Google MediaPipe LLM format. State-of-the-art compact instruction-tuned model.",
                     recommendedFor = "Recommended for all Android 12+ devices",
                     isDeviceCompatible = isCompat,
@@ -155,7 +155,7 @@ class ModelDownloadManager private constructor(private val context: Context) {
                     contextWindowTokens = 2048,
                     memoryRequiredRam = "2.2 GB VRAM/RAM",
                     requiredRamBytes = reqRam,
-                    downloadUrl = "https://storage.googleapis.com/mediapipe-models/llm/gemma-2b-it-gpu-int4.bin",
+                    downloadUrl = "https://huggingface.co/google/gemma-2b-it-gpu-int4/resolve/main/gemma-2b-it-gpu-int4.bin",
                     description = "Official Google MediaPipe LLM format optimized for GPU acceleration. Faster token generation.",
                     recommendedFor = "Best for flagship devices with powerful GPUs",
                     isDeviceCompatible = isCompat,
@@ -176,7 +176,7 @@ class ModelDownloadManager private constructor(private val context: Context) {
                     contextWindowTokens = 2048,
                     memoryRequiredRam = "2.6 GB VRAM/RAM",
                     requiredRamBytes = reqRam,
-                    downloadUrl = "https://storage.googleapis.com/mediapipe-models/llm/phi-2-cpu-int4.bin",
+                    downloadUrl = "https://huggingface.co/microsoft/phi-2-cpu-int4/resolve/main/phi-2-cpu-int4.bin",
                     description = "Highly capable reasoning model converted officially for MediaPipe LLM Inference.",
                     recommendedFor = "Best for heavy reasoning tasks on device",
                     isDeviceCompatible = isCompat,
@@ -197,7 +197,7 @@ class ModelDownloadManager private constructor(private val context: Context) {
                     contextWindowTokens = 2048,
                     memoryRequiredRam = "5.8 GB VRAM/RAM",
                     requiredRamBytes = reqRam,
-                    downloadUrl = "https://storage.googleapis.com/mediapipe-models/llm/gemma-7b-it-cpu-int4.bin",
+                    downloadUrl = "https://huggingface.co/google/gemma-7b-it-cpu-int4/resolve/main/gemma-7b-it-cpu-int4.bin",
                     description = "Massive 7-Billion parameter edge model. Unmatched local intelligence but extreme hardware requirements.",
                     recommendedFor = "Only for ultra-premium devices (e.g. 12GB+ RAM)",
                     isDeviceCompatible = isCompat,
@@ -410,13 +410,20 @@ class ModelDownloadManager private constructor(private val context: Context) {
                     )
                 )
 
-                val request = Request.Builder().url(spec.downloadUrl).build()
+                val request = Request.Builder()
+                    .url(spec.downloadUrl)
+                    .header("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
+                    .header("Accept", "*/*")
+                    .header("Connection", "keep-alive")
+                    .build()
+
                 val response = httpClient.newCall(request).execute()
                 
-                if (!response.isSuccessful) throw Exception("Failed to download: ${response.code}")
+                if (!response.isSuccessful) throw Exception("Failed to download (${response.code}): ${response.message}")
                 val body = response.body ?: throw Exception("Empty response body")
                 
-                val targetBytes = spec.sizeBytes
+                val serverLength = body.contentLength()
+                val targetBytes = if (serverLength > 0L) serverLength else spec.sizeBytes
                 var downloaded = 0L
                 val startTime = System.currentTimeMillis()
 
@@ -519,9 +526,41 @@ class ModelDownloadManager private constructor(private val context: Context) {
         activeDownloadJobs[modelId] = job
     }
 
+    fun notifyCorruptedOrDeleted(modelId: String) {
+        val spec = catalog.find { it.id == modelId || modelId.contains(it.id) } ?: catalog.first()
+        val targetFile = getModelFile(spec.id)
+        val tempFile = getTempModelFile(spec.id)
+        if (targetFile.exists()) targetFile.delete()
+        if (tempFile.exists()) tempFile.delete()
+
+        updateProgress(
+            spec.id,
+            ModelDownloadProgress(
+                modelId = spec.id,
+                status = ModelDownloadStatus.NOT_DOWNLOADED,
+                progress = 0f,
+                bytesDownloaded = 0L,
+                totalBytes = spec.sizeBytes
+            )
+        )
+    }
+
     private suspend fun verifyFileIntegrity(file: File, spec: LocalLlmModelSpec): Boolean = withContext(Dispatchers.IO) {
-        if (!file.exists() || file.length() < 1000L) return@withContext false
+        if (!file.exists() || file.length() < 100_000L) return@withContext false
         try {
+            // Permanent Fix: Verify TFL3 Flatbuffer Magic Header (First 8 bytes check)
+            FileInputStream(file).use { fis ->
+                val header = ByteArray(8)
+                val read = fis.read(header)
+                if (read >= 4) {
+                    val headerStr = String(header, 0, read, Charsets.US_ASCII)
+                    if (!headerStr.contains("TFL3") && !headerStr.contains("TFL")) {
+                        // Header is corrupted or wrong model format (_LLM)
+                        return@withContext false
+                    }
+                }
+            }
+
             val digest = MessageDigest.getInstance("SHA-256")
             val buffer = ByteArray(64 * 1024)
             val fis = FileInputStream(file)
@@ -532,9 +571,8 @@ class ModelDownloadManager private constructor(private val context: Context) {
             fis.close()
             val computedHash = digest.digest().joinToString("") { "%02x".format(it) }
 
-            // If spec has checksum defined and not blank, strictly compare, or confirm valid computed hash
             if (spec.sha256Checksum.isNotBlank()) {
-                return@withContext computedHash.isNotBlank()
+                return@withContext computedHash.equals(spec.sha256Checksum, ignoreCase = true)
             }
             true
         } catch (_: Exception) {

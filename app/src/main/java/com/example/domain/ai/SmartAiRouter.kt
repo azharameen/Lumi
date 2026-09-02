@@ -165,31 +165,7 @@ object SmartAiRouter {
 
     fun classifyTask(message: String, image: ByteArray?): AiTaskCategory {
         if (image != null) return AiTaskCategory.VISION_MULTIMODAL
-
-        // Quick heuristic overrides for obvious tool actions
-        val lower = message.lowercase().trim()
-        if (lower.startsWith("remind me") || lower.startsWith("add task") || lower.startsWith("set a timer")) {
-            return AiTaskCategory.QUICK_DEVICE_ACTION
-        }
-
-        // Fast Semantic NLP Math (TF-IDF Cosine Similarity)
-        val isLocal = SemanticIntentClassifier.isLocalIntent(message)
-
-        return if (isLocal) {
-            // Local paradigms
-            if (lower.contains("stress") || lower.contains("anxious") || lower.contains("feel")) {
-                AiTaskCategory.WELLNESS_MOOD
-            } else {
-                AiTaskCategory.COMPANION_CHAT
-            }
-        } else {
-            // Cloud paradigms
-            if (lower.contains("optimize") && lower.contains("schedule")) {
-                AiTaskCategory.TIMELINE_PLANNING
-            } else {
-                AiTaskCategory.DEEP_REASONING
-            }
-        }
+        return SemanticIntentClassifier.classifyTask(message)
     }
 }
 

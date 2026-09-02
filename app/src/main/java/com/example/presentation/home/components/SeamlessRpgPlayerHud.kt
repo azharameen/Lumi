@@ -48,7 +48,7 @@ fun SeamlessRpgPlayerHud(
     authUser: AuthUser? = null,
     onNavigateToAccount: () -> Unit
 ) {
-    val displayName = authUser?.displayName?.takeIf { it.isNotBlank() } ?: userProfile.userName.ifBlank { "Azhar Ameen" }
+    val displayName = authUser?.displayName?.takeIf { it.isNotBlank() } ?: userProfile.userName.ifBlank { "User" }
 
     Box(
         modifier = Modifier
@@ -73,7 +73,7 @@ private fun HudAvatarSection(authUser: AuthUser?, displayName: String, level: In
             parts.size >= 2 -> "${parts[0].first().uppercaseChar()}${parts[1].first().uppercaseChar()}"
             displayName.length >= 2 -> displayName.take(2).uppercase()
             displayName.isNotEmpty() -> "${displayName.first().uppercaseChar()}N"
-            else -> "AA"
+            else -> "US"
         }
     }
 

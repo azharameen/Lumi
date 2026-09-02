@@ -82,8 +82,17 @@ class VoiceEngine(private val context: Context) : TextToSpeech.OnInitListener {
         if (availability != TextToSpeech.LANG_MISSING_DATA && availability != TextToSpeech.LANG_NOT_SUPPORTED) {
             try {
                 engine.language = selectedLocale
-                engine.setPitch(1.15f) // Warm, friendly pitch
-                engine.setSpeechRate(1.02f)
+                
+                val pitch = try {
+                    org.koin.core.context.GlobalContext.get().get<com.example.data.firebase.LumiRemoteConfigManager>().config.value.voicePitch
+                } catch (_: Exception) { 1.15f }
+                
+                val rate = try {
+                    org.koin.core.context.GlobalContext.get().get<com.example.data.firebase.LumiRemoteConfigManager>().config.value.voiceSpeechRate
+                } catch (_: Exception) { 1.02f }
+
+                engine.setPitch(pitch)
+                engine.setSpeechRate(rate)
 
                 engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) {

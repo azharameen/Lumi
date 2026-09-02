@@ -51,6 +51,21 @@ class LumiRemoteConfigManager {
         const val KEY_PROACTIVE_NUDGE_HOURS = "proactive_nudge_interval_hours"
         const val KEY_ENABLE_VOICE_AMBIENT = "enable_voice_ambient_mode"
         const val KEY_SPECIAL_BANNER = "special_event_banner_text"
+        const val KEY_DEFAULT_CLOUD_MODEL_NAME = "default_cloud_model_name"
+        const val KEY_ENABLE_PET_ACCESSORIES = "enable_pet_accessories"
+        const val KEY_ENABLE_LOCAL_GEMMA_FALLBACK = "enable_local_gemma_fallback"
+        const val KEY_MAX_AGENT_EXECUTION_STEPS = "max_agent_execution_steps"
+        const val KEY_HITL_DEFAULT_SECURITY_MODE = "hitl_default_security_mode"
+        const val KEY_VECTOR_EMBEDDING_THRESHOLD = "vector_embedding_similarity_threshold"
+        const val KEY_VOICE_SPEECH_RATE = "voice_speech_rate"
+        const val KEY_VOICE_PITCH = "voice_pitch"
+        const val KEY_ENABLE_ONBOARDING_MODEL_DOWNLOAD = "enable_onboarding_model_download"
+        const val KEY_ENABLE_GEMINI_NANO_AICORE = "enable_gemini_nano_aicore"
+        const val KEY_ENABLE_MCP_CLIENT = "enable_mcp_client"
+        const val KEY_ENABLE_GOOGLE_WORKSPACE = "enable_google_workspace"
+        const val KEY_ENABLE_SLACK_INTEGRATION = "enable_slack_integration"
+        const val KEY_ENABLE_GITHUB_INTEGRATION = "enable_github_integration"
+        const val KEY_ENABLE_PURCHASE_BUTTONS = "enable_purchase_buttons"
     }
 
     private val remoteConfigInstance: FirebaseRemoteConfig? by lazy {
@@ -67,10 +82,25 @@ class LumiRemoteConfigManager {
                     KEY_COMPANION_TIP to "Taking a 2-minute conscious breath reset revitalizes neural focus and balance.",
                     KEY_SEASONAL_THEME_ENABLED to false,
                     KEY_SEASONAL_THEME_NAME to "Obsidian Neon",
-                    KEY_AI_TEMPERATURE to 0.7,
+                    KEY_AI_TEMPERATURE to 0.75,
                     KEY_PROACTIVE_NUDGE_HOURS to 3,
                     KEY_ENABLE_VOICE_AMBIENT to true,
-                    KEY_SPECIAL_BANNER to ""
+                    KEY_SPECIAL_BANNER to "",
+                    KEY_DEFAULT_CLOUD_MODEL_NAME to "gemini-2.5-flash",
+                    KEY_ENABLE_PET_ACCESSORIES to true,
+                    KEY_ENABLE_LOCAL_GEMMA_FALLBACK to true,
+                    KEY_MAX_AGENT_EXECUTION_STEPS to 10,
+                    KEY_HITL_DEFAULT_SECURITY_MODE to "SMART_RISK",
+                    KEY_VECTOR_EMBEDDING_THRESHOLD to 0.55,
+                    KEY_VOICE_SPEECH_RATE to 1.02,
+                    KEY_VOICE_PITCH to 1.15,
+                    KEY_ENABLE_ONBOARDING_MODEL_DOWNLOAD to true,
+                    KEY_ENABLE_GEMINI_NANO_AICORE to true,
+                    KEY_ENABLE_MCP_CLIENT to false,
+                    KEY_ENABLE_GOOGLE_WORKSPACE to false,
+                    KEY_ENABLE_SLACK_INTEGRATION to false,
+                    KEY_ENABLE_GITHUB_INTEGRATION to true,
+                    KEY_ENABLE_PURCHASE_BUTTONS to false
                 )
                 setDefaultsAsync(defaults)
 
@@ -163,6 +193,10 @@ class LumiRemoteConfigManager {
         }
     }
 
+    fun updateConfig(newConfig: LumiRemoteConfig) {
+        _config.value = newConfig
+    }
+
     private fun updateLocalConfig(rc: FirebaseRemoteConfig) {
         val newConfig = LumiRemoteConfig(
             welcomeGreeting = rc.getString(KEY_WELCOME_GREETING).ifBlank { _config.value.welcomeGreeting },
@@ -172,7 +206,22 @@ class LumiRemoteConfigManager {
             aiCreativityTemperature = rc.getDouble(KEY_AI_TEMPERATURE).toFloat().coerceIn(0.1f, 1.2f),
             proactiveNudgeIntervalHours = rc.getLong(KEY_PROACTIVE_NUDGE_HOURS).toInt().coerceIn(1, 24),
             enableVoiceAmbientMode = rc.getBoolean(KEY_ENABLE_VOICE_AMBIENT),
-            specialEventBannerText = rc.getString(KEY_SPECIAL_BANNER)
+            specialEventBannerText = rc.getString(KEY_SPECIAL_BANNER),
+            defaultCloudModelName = rc.getString(KEY_DEFAULT_CLOUD_MODEL_NAME).ifBlank { "gemini-2.5-flash" },
+            enablePetAccessories = rc.getBoolean(KEY_ENABLE_PET_ACCESSORIES),
+            enableLocalGemmaFallback = rc.getBoolean(KEY_ENABLE_LOCAL_GEMMA_FALLBACK),
+            maxAgentExecutionSteps = rc.getLong(KEY_MAX_AGENT_EXECUTION_STEPS).toInt().coerceIn(1, 50),
+            hitlDefaultSecurityMode = rc.getString(KEY_HITL_DEFAULT_SECURITY_MODE).ifBlank { "SMART_RISK" },
+            vectorEmbeddingSimilarityThreshold = rc.getDouble(KEY_VECTOR_EMBEDDING_THRESHOLD).toFloat().coerceIn(0.1f, 0.99f),
+            voiceSpeechRate = rc.getDouble(KEY_VOICE_SPEECH_RATE).toFloat().coerceIn(0.5f, 2.0f),
+            voicePitch = rc.getDouble(KEY_VOICE_PITCH).toFloat().coerceIn(0.5f, 2.0f),
+            enableOnboardingModelDownload = rc.getBoolean(KEY_ENABLE_ONBOARDING_MODEL_DOWNLOAD),
+            enableGeminiNanoAiCore = rc.getBoolean(KEY_ENABLE_GEMINI_NANO_AICORE),
+            enableMcpClient = rc.getBoolean(KEY_ENABLE_MCP_CLIENT),
+            enableGoogleWorkspace = rc.getBoolean(KEY_ENABLE_GOOGLE_WORKSPACE),
+            enableSlackIntegration = rc.getBoolean(KEY_ENABLE_SLACK_INTEGRATION),
+            enableGithubIntegration = rc.getBoolean(KEY_ENABLE_GITHUB_INTEGRATION),
+            enablePurchaseButtons = rc.getBoolean(KEY_ENABLE_PURCHASE_BUTTONS)
         )
         _config.value = newConfig
     }

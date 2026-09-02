@@ -11,7 +11,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DeveloperBoard
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,14 +26,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.domain.account.LumiPersonaTone
-import com.example.presentation.utils.*
 import com.example.domain.account.UserProfileData
-import com.example.presentation.utils.*
+import com.example.domain.onboarding.DeviceCapabilityScanner
+import com.example.domain.onboarding.DeviceProfile
+import com.example.domain.onboarding.ModelRecommendationEngine
+import com.example.domain.onboarding.RecommendedDownload
 import com.example.presentation.components.LumiCard
+import com.example.presentation.utils.accentColor
+import com.example.presentation.utils.icon
 import com.example.core.theme.*
 import com.example.presentation.viewmodel.LumiViewModel
 import kotlinx.coroutines.delay
@@ -43,8 +51,11 @@ fun OnboardingScreen(
     viewModel: LumiViewModel,
     onComplete: () -> Unit
 ) {
-    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle(initialValue = com.example.domain.account.UserProfileData())
+    val userProfile by viewModel.userProfile.collectAsStateWithLifecycle(initialValue = UserProfileData())
     var currentStep by remember { mutableIntStateOf(0) }
+    val context = LocalContext.current
+    val scanner = remember { DeviceCapabilityScanner(context) }
+    var deviceProfile by remember { mutableStateOf<DeviceProfile?>(null) }
 
     // Aesthetic gradient background
     val bgGradient = Brush.verticalGradient(
@@ -82,14 +93,25 @@ fun OnboardingScreen(
                 2 -> NameAndGoalStep(
                     initialName = userProfile.userName,
                     initialGoal = userProfile.primaryFocusGoal,
-                    onComplete = { finalName, finalGoal ->
+                    onNext = { name, goal ->
                         viewModel.userProfileManager.updateField {
                             it.copy(
-                                userName = finalName.ifBlank { "Azhar Ameen" },
-                                primaryFocusGoal = finalGoal.ifBlank { "Deep Flow, Clean Code & Mindful Living" },
-                                hasCompletedOnboarding = true
+                                userName = name.ifBlank { "User" },
+                                primaryFocusGoal = goal.ifBlank { "Stay focused, balanced & mindful" }
                             )
                         }
+                        deviceProfile = scanner.scanDevice()
+                        currentStep++
+                    }
+                )
+                3 -> HardwareScanStep(
+                    profile = deviceProfile,
+                    onNext = { currentStep++ }
+                )
+                4 -> ModelDownloadStep(
+                    profile = deviceProfile,
+                    onComplete = {
+                        viewModel.userProfileManager.updateField { it.copy(hasCompletedOnboarding = true) }
                         onComplete()
                     }
                 )
@@ -109,7 +131,6 @@ fun WelcomeStep(onNext: () -> Unit) {
     ) {
         Spacer(modifier = Modifier.weight(1f))
         
-        // Abstract logo representation using Box + Gradient
         Box(
             modifier = Modifier
                 .size(120.dp)
@@ -267,7 +288,7 @@ fun PersonaStep(
 fun NameAndGoalStep(
     initialName: String,
     initialGoal: String,
-    onComplete: (String, String) -> Unit
+    onNext: (String, String) -> Unit
 ) {
     var name by remember(initialName) { mutableStateOf(initialName) }
     var goal by remember(initialGoal) { mutableStateOf(initialGoal) }
@@ -328,7 +349,7 @@ fun NameAndGoalStep(
         Spacer(modifier = Modifier.weight(1f))
         
         Button(
-            onClick = { onComplete(name, goal) },
+            onClick = { onNext(name, goal) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(54.dp),
@@ -336,10 +357,156 @@ fun NameAndGoalStep(
             shape = RoundedCornerShape(MaterialTheme.spacing.medium)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(id = R.string.text_complete_setup), fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
+                Text("Scan Hardware & Models", fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                 Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = ObsidianDark)
             }
+        }
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraLarge))
+    }
+}
+
+@Composable
+fun HardwareScanStep(
+    profile: DeviceProfile?,
+    onNext: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(MaterialTheme.spacing.large),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+        Text(
+            text = "Hardware Diagnostics",
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+            color = TextPrimary
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = "Scanning device RAM, storage, NPU, and AI acceleration capabilities",
+            style = MaterialTheme.typography.bodyMedium,
+            color = TextSecondary,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        if (profile != null) {
+            val totalRamGb = profile.totalRamBytes / (1024 * 1024 * 1024)
+            val freeStorageGb = profile.freeStorageBytes / (1024 * 1024 * 1024)
+
+            LumiCard(modifier = Modifier.fillMaxWidth()) {
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.DeveloperBoard, contentDescription = null, tint = LumiCyan)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("RAM: ${totalRamGb} GB (${if (profile.isLowRamDevice) "Low RAM State" else "Optimal"})", color = TextPrimary, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Memory, contentDescription = null, tint = LumiPink)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("Storage Available: ${freeStorageGb} GB", color = TextPrimary, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Check, contentDescription = null, tint = LumiMint)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text("Android AICore / NPU: ${if (profile.isAiCoreAvailable) "Built-in Ready (Gemini Nano)" else "Standard CPU/GPU Delegate"}", color = TextPrimary, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Button(
+            onClick = onNext,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = LumiCyan),
+            shape = RoundedCornerShape(MaterialTheme.spacing.medium)
+        ) {
+            Text("View Recommended Models", fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
+        }
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraLarge))
+    }
+}
+
+@Composable
+fun ModelDownloadStep(
+    profile: DeviceProfile?,
+    onComplete: () -> Unit
+) {
+    val engine = remember { ModelRecommendationEngine() }
+    val recommendations = remember(profile) {
+        if (profile != null) engine.getRecommendations(profile) else emptyList()
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(MaterialTheme.spacing.large)
+    ) {
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+        Text(
+            text = "Recommended Models",
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+            color = TextPrimary
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = "Optimal models selected for your hardware footprint",
+            style = MaterialTheme.typography.bodyMedium,
+            color = TextSecondary
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.weight(1f)
+        ) {
+            recommendations.forEach { rec ->
+                Surface(
+                    color = if (rec.isRecommended) LumiCyan.copy(alpha = 0.15f) else SurfaceDarkVariant,
+                    border = BorderStroke(1.dp, if (rec.isRecommended) LumiCyan else SurfaceHighlight),
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = null,
+                            tint = if (rec.isRecommended) LumiCyan else TextSecondary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(rec.displayName, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text(rec.description, color = TextSecondary, fontSize = 11.sp)
+                        }
+                        Text(rec.sizeDisplay, color = LumiCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        Button(
+            onClick = onComplete,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = LumiCyan),
+            shape = RoundedCornerShape(MaterialTheme.spacing.medium)
+        ) {
+            Text("Complete Setup & Start Lumi", fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
         }
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraLarge))
     }

@@ -17,7 +17,7 @@ interface ConnectorRepository {
     val slackChannel: StateFlow<String>
     val slackWebhook: StateFlow<String>
 
-    fun setGoogleConnection(connected: Boolean, email: String = "azharameen52@gmail.com")
+    fun setGoogleConnection(connected: Boolean, email: String = "")
     fun updateGoogleStatus(status: ConnectorSyncStatus)
 
     fun setGithubConnection(connected: Boolean, user: String, token: String)

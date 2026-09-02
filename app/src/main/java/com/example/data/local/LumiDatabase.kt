@@ -67,11 +67,19 @@ abstract class LumiDatabase : RoomDatabase() {
 
         fun getDatabase(context: Context): LumiDatabase {
             return INSTANCE ?: synchronized(this) {
-                val instance = Room.databaseBuilder(
+                val builder = Room.databaseBuilder(
                     context.applicationContext,
                     LumiDatabase::class.java,
                     "lumi_ai_companion.db"
-                ).fallbackToDestructiveMigration(dropAllTables = true).build()
+                )
+                
+                if (com.example.BuildConfig.DEBUG) {
+                    builder.fallbackToDestructiveMigration(dropAllTables = true)
+                } else {
+                    builder.fallbackToDestructiveMigrationOnDowngrade()
+                }
+
+                val instance = builder.build()
                 INSTANCE = instance
                 instance
             }

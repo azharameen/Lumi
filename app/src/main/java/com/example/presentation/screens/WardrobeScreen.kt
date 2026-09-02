@@ -98,6 +98,8 @@ fun WardrobeScreen(
     petViewModel: PetViewModel,
     wellnessViewModel: WellnessViewModel
 ) {
+    val remoteConfigManager = remember { org.koin.core.context.GlobalContext.get().get<com.example.data.firebase.LumiRemoteConfigManager>() }
+    val remoteConfig by remoteConfigManager.config.collectAsStateWithLifecycle()
     val petStatus by petViewModel.petStatus.collectAsStateWithLifecycle()
     val memories by wellnessViewModel.allMemories.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -357,163 +359,169 @@ fun WardrobeScreen(
             }
 
             // Wearable RPG Accessories Section
-            item(key = "accessory_shop") {
-                LumiCard(
-                    borderColor = LumiGold.copy(alpha = 0.4f),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.text_wearable_accessories_shop),
-                            color = LumiGold,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
-                        Icon(
-                            imageVector = Icons.Default.ShoppingBag,
-                            contentDescription = null,
-                            tint = LumiGold,
-                            modifier = Modifier.size(MaterialTheme.spacing.medium)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            if (remoteConfig.enablePetAccessories) {
+                item(key = "accessory_shop") {
+                    LumiCard(
+                        borderColor = LumiGold.copy(alpha = 0.4f),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        items(
-                            items = PetAccessory.entries,
-                            key = { it.id }
-                        ) { acc ->
-                            val isUnlocked = acc.id.equals("NONE", ignoreCase = true) ||
-                                acc.name.equals("NONE", ignoreCase = true) ||
-                                unlockedAccessories.contains(acc.id.uppercase()) ||
-                                unlockedAccessories.contains(acc.name.uppercase())
-                            val isEquipped = petStatus.activeAccessory.equals(acc.id, ignoreCase = true) ||
-                                petStatus.activeAccessory.equals(acc.name, ignoreCase = true)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.text_wearable_accessories_shop),
+                                color = LumiGold,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.sp
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ShoppingBag,
+                                contentDescription = null,
+                                tint = LumiGold,
+                                modifier = Modifier.size(MaterialTheme.spacing.medium)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(
+                                items = PetAccessory.entries,
+                                key = { it.id }
+                            ) { acc ->
+                                val isUnlocked = acc.id.equals("NONE", ignoreCase = true) ||
+                                    acc.name.equals("NONE", ignoreCase = true) ||
+                                    unlockedAccessories.contains(acc.id.uppercase()) ||
+                                    unlockedAccessories.contains(acc.name.uppercase())
+                                val isEquipped = petStatus.activeAccessory.equals(acc.id, ignoreCase = true) ||
+                                    petStatus.activeAccessory.equals(acc.name, ignoreCase = true)
 
-                            Surface(
-                                color = when {
-                                    isEquipped -> LumiGold.copy(alpha = 0.25f)
-                                    isUnlocked -> SurfaceDarkVariant
-                                    else -> SurfaceDark
-                                },
-                                shape = RoundedCornerShape(14.dp),
-                                border = if (isEquipped) BorderStroke(1.5.dp, LumiGold) else null,
-                                modifier = Modifier
-                                    .width(130.dp)
-                                    .clickable {
-                                        if (isEquipped && !acc.id.equals("NONE", ignoreCase = true)) {
-                                            petViewModel.equipAccessory("NONE")
-                                            scope.launch {
-                                                snackbarHostState.showSnackbar("Unequipped ${acc.displayName}")
-                                            }
-                                        } else if (isUnlocked) {
-                                            petViewModel.equipAccessory(acc.id)
-                                            scope.launch {
-                                                val msg = if (acc.id.equals("NONE", ignoreCase = true)) "Unequipped accessories" else "Equipped ${acc.displayName}!"
-                                                snackbarHostState.showSnackbar(msg)
-                                            }
-                                        } else {
-                                            petViewModel.buyAccessory(acc) { success ->
+                                Surface(
+                                    color = when {
+                                        isEquipped -> LumiGold.copy(alpha = 0.25f)
+                                        isUnlocked -> SurfaceDarkVariant
+                                        else -> SurfaceDark
+                                    },
+                                    shape = RoundedCornerShape(14.dp),
+                                    border = if (isEquipped) BorderStroke(1.5.dp, LumiGold) else null,
+                                    modifier = Modifier
+                                        .width(130.dp)
+                                        .clickable {
+                                            if (isEquipped && !acc.id.equals("NONE", ignoreCase = true)) {
+                                                petViewModel.equipAccessory("NONE")
                                                 scope.launch {
-                                                    if (success) {
-                                                        snackbarHostState.showSnackbar("Unlocked & equipped ${acc.displayName}!")
-                                                    } else {
-                                                        snackbarHostState.showSnackbar("Not enough coins/gems to unlock ${acc.displayName}!")
+                                                    snackbarHostState.showSnackbar("Unequipped ${acc.displayName}")
+                                                }
+                                            } else if (isUnlocked) {
+                                                petViewModel.equipAccessory(acc.id)
+                                                scope.launch {
+                                                    val msg = if (acc.id.equals("NONE", ignoreCase = true)) "Unequipped accessories" else "Equipped ${acc.displayName}!"
+                                                    snackbarHostState.showSnackbar(msg)
+                                                }
+                                            } else if (!remoteConfig.enablePurchaseButtons) {
+                                                scope.launch {
+                                                    snackbarHostState.showSnackbar("Purchases are currently disabled.")
+                                                }
+                                            } else {
+                                                petViewModel.buyAccessory(acc) { success ->
+                                                    scope.launch {
+                                                        if (success) {
+                                                            snackbarHostState.showSnackbar("Unlocked & equipped ${acc.displayName}!")
+                                                        } else {
+                                                            snackbarHostState.showSnackbar("Not enough coins/gems to unlock ${acc.displayName}!")
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
-                                    }
-                                    .testTag("accessory_${acc.id}")
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                        .testTag("accessory_${acc.id}")
                                 ) {
-                                    Text(text = acc.iconEmoji, fontSize = 28.sp)
-                                    Spacer(modifier = Modifier.height(6.dp))
-                                    Text(
-                                        text = acc.displayName,
-                                        color = if (isEquipped) LumiGold else TextPrimary,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        maxLines = 1
-                                    )
-                                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
-                                    when {
-                                        isEquipped -> {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Check,
-                                                    contentDescription = null,
-                                                    tint = LumiGold,
-                                                    modifier = Modifier.size(12.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(2.dp))
+                                    Column(
+                                        modifier = Modifier.padding(12.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(text = acc.iconEmoji, fontSize = 28.sp)
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Text(
+                                            text = acc.displayName,
+                                            color = if (isEquipped) LumiGold else TextPrimary,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            maxLines = 1
+                                        )
+                                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
+                                        when {
+                                            isEquipped -> {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = null,
+                                                        tint = LumiGold,
+                                                        modifier = Modifier.size(12.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(2.dp))
+                                                    Text(
+                                                        text = stringResource(R.string.text_equipped),
+                                                        color = LumiGold,
+                                                        fontSize = 10.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            }
+                                            isUnlocked -> {
                                                 Text(
-                                                    text = stringResource(R.string.text_equipped),
-                                                    color = LumiGold,
+                                                    text = stringResource(R.string.text_equip),
+                                                    color = MaterialTheme.colorScheme.primary,
                                                     fontSize = 10.sp,
-                                                    fontWeight = FontWeight.Bold
+                                                    fontWeight = FontWeight.SemiBold
                                                 )
                                             }
-                                        }
-                                        isUnlocked -> {
-                                            Text(
-                                                text = stringResource(R.string.text_equip),
-                                                color = MaterialTheme.colorScheme.primary,
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.SemiBold
-                                            )
-                                        }
-                                        else -> {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Lock,
-                                                    contentDescription = null,
-                                                    tint = TextSecondary,
-                                                    modifier = Modifier.size(10.dp)
-                                                )
-                                                if (acc.coinCost > 0) {
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Text(
-                                                            text = "${acc.coinCost}",
-                                                            color = LumiGold,
-                                                            fontSize = 10.sp,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                        Icon(
-                                                            imageVector = Icons.Filled.MonetizationOn,
-                                                            contentDescription = "Coins",
-                                                            tint = LumiGold,
-                                                            modifier = Modifier.size(10.dp)
-                                                        )
+                                            else -> {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Lock,
+                                                        contentDescription = null,
+                                                        tint = TextSecondary,
+                                                        modifier = Modifier.size(10.dp)
+                                                    )
+                                                    if (acc.coinCost > 0) {
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Text(
+                                                                text = "${acc.coinCost}",
+                                                                color = LumiGold,
+                                                                fontSize = 10.sp,
+                                                                fontWeight = FontWeight.Bold
+                                                            )
+                                                            Icon(
+                                                                imageVector = Icons.Filled.MonetizationOn,
+                                                                contentDescription = "Coins",
+                                                                tint = LumiGold,
+                                                                modifier = Modifier.size(10.dp)
+                                                            )
+                                                        }
                                                     }
-                                                }
-                                                if (acc.gemCost > 0) {
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Text(
-                                                            text = "${acc.gemCost}",
-                                                            color = LumiCyanLight,
-                                                            fontSize = 10.sp,
-                                                            fontWeight = FontWeight.Bold
-                                                        )
-                                                        Icon(
-                                                            imageVector = Icons.Filled.Diamond,
-                                                            contentDescription = "Gems",
-                                                            tint = LumiCyanLight,
-                                                            modifier = Modifier.size(10.dp)
-                                                        )
+                                                    if (acc.gemCost > 0) {
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Text(
+                                                                text = "${acc.gemCost}",
+                                                                color = LumiCyanLight,
+                                                                fontSize = 10.sp,
+                                                                fontWeight = FontWeight.Bold
+                                                            )
+                                                            Icon(
+                                                                imageVector = Icons.Filled.Diamond,
+                                                                contentDescription = "Gems",
+                                                                tint = LumiCyanLight,
+                                                                modifier = Modifier.size(10.dp)
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }

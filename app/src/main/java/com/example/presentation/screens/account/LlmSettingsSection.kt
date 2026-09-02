@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -257,6 +258,81 @@ fun LlmSettingsSection(
             }
         }
 
+        // HITL Security Control Card
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Security, contentDescription = null, tint = LumiCyan, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
+                        Text(
+                            text = "HITL Human-In-The-Loop Security",
+                            color = LumiCyan,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Control tool execution authorization and risk confirmation thresholds.",
+                        color = TextSecondary,
+                        fontSize = 11.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    val modes = listOf(
+                        "BALANCED_HIGH_RISK_ONLY" to "Balanced (Ask for High-Risk Tools)",
+                        "STRICT_ALWAYS_ASK" to "Strict (Confirm All Tool Calls)",
+                        "AUTONOMOUS_TRUSTED" to "Autonomous (Trust System Tools)"
+                    )
+
+                    var selectedHitlMode by remember(rcConfig?.hitlDefaultSecurityMode) {
+                        mutableStateOf(rcConfig?.hitlDefaultSecurityMode ?: "BALANCED_HIGH_RISK_ONLY")
+                    }
+
+                    modes.forEach { (modeKey, modeLabel) ->
+                        val isSelected = selectedHitlMode == modeKey
+                        Surface(
+                            color = if (isSelected) LumiCyan.copy(alpha = 0.15f) else SurfaceDarkVariant,
+                            shape = RoundedCornerShape(10.dp),
+                            border = if (isSelected) BorderStroke(1.dp, LumiCyan) else null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 3.dp)
+                                .clickable {
+                                    selectedHitlMode = modeKey
+                                    remoteConfigManager?.updateConfig(
+                                        (rcConfig ?: LumiRemoteConfig()).copy(hitlDefaultSecurityMode = modeKey)
+                                    )
+                                    Toast.makeText(context, "HITL mode updated to $modeLabel", Toast.LENGTH_SHORT).show()
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = modeLabel,
+                                    color = if (isSelected) LumiCyan else TextPrimary,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (isSelected) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = LumiCyan, modifier = Modifier.size(16.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // Active Engine Router
         item {
             Card(
@@ -379,24 +455,50 @@ fun LlmSettingsSection(
                                         Text(text = "Size: ${model.sizeDisplay} | Context: ${model.contextWindowTokens} Tokens", color = TextSecondary, fontSize = 11.sp)
                                     }
                                     
-                                    if (isActive) {
-                                        Surface(color = LumiGreen.copy(alpha = 0.15f), shape = RoundedCornerShape(4.dp)) {
-                                            Text("Active", color = LumiGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                                        }
-                                    } else if (isDownloaded) {
-                                        Surface(color = LumiCyan.copy(alpha = 0.15f), shape = RoundedCornerShape(4.dp)) {
-                                            Text("Ready", color = LumiCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                    if (isDownloaded) {
+                                        if (isActive) {
+                                            Surface(color = LumiGreen.copy(alpha = 0.15f), shape = RoundedCornerShape(4.dp)) {
+                                                Text("Active", color = LumiGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                            }
+                                        } else {
+                                            Surface(
+                                                color = LumiCyan.copy(alpha = 0.15f), 
+                                                shape = RoundedCornerShape(4.dp),
+                                                modifier = Modifier.clickable { onSetActiveLocalModel(model.id) }
+                                            ) {
+                                                Text("Activate", color = LumiCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                            }
                                         }
                                     } else if (progress != null && progress.status == com.example.data.remote.ModelDownloadStatus.DOWNLOADING) {
                                         CircularProgressIndicator(progress = { progress.progress }, modifier = Modifier.size(20.dp), color = LumiCyan, strokeWidth = 2.dp)
                                     } else {
-                                        IconButton(
-                                            onClick = { onDownloadLocalModel(model.id) },
-                                            modifier = Modifier.size(24.dp)
+                                        Button(
+                                            onClick = {
+                                                Toast.makeText(context, "Starting download for ${model.name}...", Toast.LENGTH_SHORT).show()
+                                                onDownloadLocalModel(model.id)
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = LumiCyan),
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                            shape = RoundedCornerShape(6.dp),
+                                            modifier = Modifier.height(28.dp)
                                         ) {
-                                            Icon(Icons.Default.Download, contentDescription = "Download ${model.name}", tint = LumiCyan, modifier = Modifier.size(20.dp))
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(Icons.Default.Download, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(12.dp))
+                                                Spacer(modifier = Modifier.width(3.dp))
+                                                Text("Download", color = ObsidianDark, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                            }
                                         }
                                     }
+                                }
+
+                                if (progress != null && progress.status == com.example.data.remote.ModelDownloadStatus.ERROR) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "⚠️ ${progress.errorMessage ?: "Download failed"}",
+                                        color = androidx.compose.ui.graphics.Color(0xFFFF5252),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
                                 }
                                 
                                 Spacer(modifier = Modifier.height(6.dp))

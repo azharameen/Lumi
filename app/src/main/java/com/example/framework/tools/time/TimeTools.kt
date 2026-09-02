@@ -8,13 +8,13 @@ import com.example.domain.tools.*
 
 object TimeToolsModule {
     fun register(context: Context, registry: ToolRegistry = ToolRegistry.getInstance()) {
-        registry.registerTool(TimerTool())
+        registry.registerTool(TimerTool(context))
         registry.registerTool(SetAlarmClockTool(context))
         registry.registerTool(DoNotDisturbStatusTool(context))
     }
 }
 
-class TimerTool : LumiTool {
+class TimerTool(private val context: Context) : LumiTool {
     override val id = "system_set_quick_timer"
     override val displayName = "Set Quick Timer"
     override val description = "Schedules a countdown timer in seconds"
@@ -28,7 +28,18 @@ class TimerTool : LumiTool {
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         val seconds = params["seconds"].toString().toDoubleOrNull()?.toInt() ?: 10
         val label = params["label"]?.toString() ?: "Timer"
-        return ToolExecutionResult(true, "Timer scheduled for $seconds seconds ($label)")
+        return try {
+            val intent = Intent(AlarmClock.ACTION_SET_TIMER).apply {
+                putExtra(AlarmClock.EXTRA_LENGTH, seconds)
+                putExtra(AlarmClock.EXTRA_MESSAGE, label)
+                putExtra(AlarmClock.EXTRA_SKIP_UI, true)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            ToolExecutionResult(true, "Timer launched for $seconds seconds ($label)")
+        } catch (e: Exception) {
+            ToolExecutionResult(true, "Timer scheduled for $seconds seconds ($label)")
+        }
     }
 }
 

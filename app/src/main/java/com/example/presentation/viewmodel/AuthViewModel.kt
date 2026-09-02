@@ -137,6 +137,11 @@ class AuthViewModel(
     }
 
     fun signInAsMockUser() {
+        if (!com.example.BuildConfig.DEBUG) {
+            _uiState.update { it.copy(error = "Mock authentication is disabled in production builds.") }
+            return
+        }
+
         val mockUser = AuthUser(
             uid = "mock-debug-uid-123",
             email = "mockuser@lumi.dev",

@@ -1,0 +1,8 @@
+{
+  "id": "LIFE_ORGANIZER",
+  "displayName": "Life Organizer",
+  "version": 1,
+  "systemPromptExtension": "You are a focused productivity assistant helping users manage tasks, calendars, and goals.",
+  "tools": ["add_calendar_event", "create_task", "complete_task", "system_set_quick_timer"],
+  "triggerExamples": ["add a task", "schedule a meeting", "set a timer"]
+}

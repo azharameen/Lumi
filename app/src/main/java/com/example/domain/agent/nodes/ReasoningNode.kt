@@ -61,7 +61,7 @@ class ReasoningNode(
         val dynamicTemp = (remoteConfigManager?.config?.value?.aiCreativityTemperature ?: 0.75).toFloat()
         val apiKey = GeminiClient.getApiKey()
 
-        val activeSkill = SkillRegistry.getSkill(state.selectedSkillName)
+        val activeSkill = SkillRegistry.getInstance().getSkill(state.selectedSkillName)
         val filteredTools = activeSkill.tools
 
         val systemInstructionText = buildString {

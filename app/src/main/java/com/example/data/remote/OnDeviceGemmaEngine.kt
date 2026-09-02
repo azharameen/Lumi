@@ -134,6 +134,7 @@ class OnDeviceGemmaEngine(
                     if (msg.contains("model identifier") || msg.contains("TFL3") || msg.contains("initialize session") || msg.contains("RET_CHECK")) {
                         modelFile.delete()
                         loadedModelPath = null
+                        downloadManager?.notifyCorruptedOrDeleted(activeSpec.id)
                         throw OnDeviceInferenceException.ModelNotFound(activeSpec.id, "Corrupted model detected during load and removed.")
                     }
                     crashlyticsManager?.logBreadcrumb("OnDeviceGemmaEngine", "GPU Init failed, falling back to CPU: $msg")
@@ -166,10 +167,11 @@ class OnDeviceGemmaEngine(
                     ?: throw OnDeviceInferenceException.InferenceExecutionError("Local engine returned null.")
             } catch (e: Exception) {
                 if (e.message?.contains("model identifier") == true || e.message?.contains("TFL3") == true) {
-                    // Critical Corruption Detected: Wipe model file to force re-download
+                    // Critical Corruption Detected: Wipe model file and notify download manager to show Download button in UI
                     modelFile.delete()
                     loadedModelPath = null
                     llmInference = null
+                    downloadManager?.notifyCorruptedOrDeleted(activeSpec.id)
                     throw OnDeviceInferenceException.ModelNotFound(activeSpec.id, "Corrupted model detected and removed. Please re-download.")
                 }
                 throw e

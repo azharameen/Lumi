@@ -47,7 +47,8 @@ fun PetCareFixedAnchorFab(
     onDance: () -> Unit,
     onPoke: () -> Unit,
     onSleepToggle: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics()
 ) {
     Column(
         modifier = modifier,
@@ -62,7 +63,10 @@ fun PetCareFixedAnchorFab(
             shadowElevation = MaterialTheme.spacing.small,
             modifier = Modifier
                 .size(42.dp)
-                .clickable { onToggleExpand() }
+                .clickable { 
+                    haptics.performTick()
+                    onToggleExpand() 
+                }
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
@@ -84,14 +88,15 @@ fun PetCareFixedAnchorFab(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                PetMiniActionButton(icon = androidx.compose.material.icons.Icons.Default.Restaurant, onClick = onFeed, tooltip = "Feed")
-                PetMiniActionButton(icon = androidx.compose.material.icons.Icons.Default.Favorite, onClick = onPet, tooltip = "Pet")
-                PetMiniActionButton(icon = androidx.compose.material.icons.Icons.Default.MusicNote, onClick = onDance, tooltip = "Dance")
-                PetMiniActionButton(icon = androidx.compose.material.icons.Icons.Default.Bolt, onClick = onPoke, tooltip = "Poke")
+                PetMiniActionButton(icon = androidx.compose.material.icons.Icons.Default.Restaurant, onClick = onFeed, tooltip = "Feed", haptics = haptics)
+                PetMiniActionButton(icon = androidx.compose.material.icons.Icons.Default.Favorite, onClick = onPet, tooltip = "Pet", haptics = haptics)
+                PetMiniActionButton(icon = androidx.compose.material.icons.Icons.Default.MusicNote, onClick = onDance, tooltip = "Dance", haptics = haptics)
+                PetMiniActionButton(icon = androidx.compose.material.icons.Icons.Default.Bolt, onClick = onPoke, tooltip = "Poke", haptics = haptics)
                 PetMiniActionButton(
                     icon = if (petEmotion == PetEmotion.SLEEPY) androidx.compose.material.icons.Icons.Default.WbSunny else androidx.compose.material.icons.Icons.Default.Bedtime,
                     onClick = onSleepToggle,
-                    tooltip = if (petEmotion == PetEmotion.SLEEPY) "Wake" else "Nap"
+                    tooltip = if (petEmotion == PetEmotion.SLEEPY) "Wake" else "Nap",
+                    haptics = haptics
                 )
             }
         }
@@ -136,7 +141,8 @@ fun PetRightSideActionButtons(
     pendingQuestsCount: Int,
     onShowWardrobe: () -> Unit,
     onShowQuests: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics()
 ) {
     Column(
         modifier = modifier,
@@ -151,7 +157,10 @@ fun PetRightSideActionButtons(
             shadowElevation = 6.dp,
             modifier = Modifier
                 .size(42.dp)
-                .clickable { onShowWardrobe() }
+                .clickable { 
+                    haptics.performTick()
+                    onShowWardrobe() 
+                }
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
@@ -175,7 +184,10 @@ fun PetRightSideActionButtons(
                 shadowElevation = 6.dp,
                 modifier = Modifier
                     .fillMaxSize()
-                    .clickable { onShowQuests() }
+                    .clickable { 
+                        haptics.performTick()
+                        onShowQuests() 
+                    }
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -255,7 +267,8 @@ fun PetBottomControlsRow(
     onShowCamera: () -> Unit,
     onStartVoiceListening: () -> Unit,
     onStopVoiceListening: () -> Unit,
-    onNavigateToChat: () -> Unit
+    onNavigateToChat: () -> Unit,
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics()
 ) {
     val isActiveVoice = isListening || isSpeaking
 
@@ -274,6 +287,7 @@ fun PetBottomControlsRow(
                 .size(48.dp)
                 .scale(if (isActiveVoice) voiceWavePulse else 1f)
                 .clickable {
+                    haptics.performHeavyClick()
                     if (isActiveVoice) {
                         onStopVoiceListening()
                     } else {
@@ -309,7 +323,10 @@ fun PetBottomControlsRow(
             shadowElevation = 10.dp,
             modifier = Modifier
                 .size(64.dp)
-                .clickable { onNavigateToChat() }
+                .clickable { 
+                    haptics.performSuccess()
+                    onNavigateToChat() 
+                }
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(
@@ -331,7 +348,10 @@ fun PetBottomControlsRow(
             shadowElevation = 6.dp,
             modifier = Modifier
                 .size(48.dp)
-                .clickable { onShowCamera() }
+                .clickable { 
+                    haptics.performTick()
+                    onShowCamera() 
+                }
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Icon(

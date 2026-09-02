@@ -60,6 +60,8 @@ class LumiRepositoryImpl private constructor(
 
     override val chatMessages: Flow<List<ChatMessageEntity>> get() = chatRepository.chatMessages
     override val pagedChatMessages: Flow<androidx.paging.PagingData<ChatMessageEntity>> get() = chatRepository.pagedChatMessages
+    override suspend fun clearChatHistory() = chatRepository.clearChatHistory()
+    override suspend fun deleteMessage(id: Long) = chatRepository.deleteMessage(id)
     override suspend fun sendMessage(userText: String, image: ByteArray?) = chatRepository.sendMessage(userText, image)
     override val aiExecutionLogs: Flow<List<AiExecutionLogEntity>> get() = chatRepository.aiExecutionLogs
     override val aiRoutingMode: Flow<AiRoutingMode> get() = chatRepository.aiRoutingMode

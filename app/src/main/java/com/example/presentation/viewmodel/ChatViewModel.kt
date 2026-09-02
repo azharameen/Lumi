@@ -34,11 +34,37 @@ class ChatViewModel(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
 
+    val pendingHitlActions = repository.pendingHitlActions.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
+    )
+
     init {
         viewModelScope.launch {
             voiceEngine.isSpeaking.collect { isSpeaking ->
                 repository.setSpeaking(isSpeaking)
             }
+        }
+    }
+
+    fun clearChatHistory() {
+        viewModelScope.launch {
+            repository.clearChatHistory()
+        }
+    }
+
+    fun deleteMessage(id: Long) {
+        viewModelScope.launch {
+            repository.deleteMessage(id)
+        }
+    }
+
+    fun speakMessage(text: String) {
+        voiceEngine.speak(text)
+    }
+
+    fun resolveHitlAction(stateId: String, approved: Boolean) {
+        viewModelScope.launch {
+            repository.resolveHitlAction(stateId, approved)
         }
     }
 

@@ -201,6 +201,7 @@ fun LumiApp(
 
     val isListening by chatViewModel.voiceEngine.isListening.collectAsStateWithLifecycle()
     val isSpeaking by chatViewModel.voiceEngine.isSpeaking.collectAsStateWithLifecycle()
+    val pendingHitlActions by chatViewModel.pendingHitlActions.collectAsStateWithLifecycle()
 
     val modelDownloadStates by aiSettingsViewModel.modelDownloadStates.collectAsStateWithLifecycle()
     val activeLocalModelId by aiSettingsViewModel.activeLocalModelId.collectAsStateWithLifecycle()
@@ -287,7 +288,8 @@ fun LumiApp(
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0)
+            containerColor = Color.Transparent,
+            contentWindowInsets = androidx.compose.material3.ScaffoldDefaults.contentWindowInsets
         ) { innerPadding ->
             Box(
                 modifier = Modifier
@@ -300,9 +302,11 @@ fun LumiApp(
                 ) { tab ->
                     when (tab) {
                         NavDestination.Assistant.tabIndex -> ChatScreen(
+                            haptics = haptics,
                             uiState = uiState,
                             petStatus = petStatus,
                             chatMessages = chatViewModel.pagedChatMessages.collectAsLazyPagingItems(),
+                            pendingHitlActions = pendingHitlActions,
                             isListening = isListening,
                             isSpeaking = isSpeaking,
                             onSendMessage = { text -> chatViewModel.sendMessage(text) },
@@ -311,6 +315,13 @@ fun LumiApp(
                             onStartVoiceListening = { handleStartVoiceListening() },
                             onStopVoiceListening = { chatViewModel.stopVoiceListening() },
                             onToggleVoiceOutput = { viewModel.toggleVoiceOutput() },
+                            onClearChat = { chatViewModel.clearChatHistory() },
+                            onDeleteMessage = { id -> chatViewModel.deleteMessage(id) },
+                            onSpeakMessage = { text -> chatViewModel.speakMessage(text) },
+                            onResolveHitlAction = { stateId, approved -> chatViewModel.resolveHitlAction(stateId, approved) },
+                            onDismissClipboard = { viewModel.dismissClipboardSnippet() },
+                            onProcessClipboard = { snippet -> viewModel.processClipboardWithLumi(snippet) },
+                            onOpenBreathingExercise = { viewModel.setShowBreathing(true) },
                             onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) },
                             innerPadding = innerPadding
                         )

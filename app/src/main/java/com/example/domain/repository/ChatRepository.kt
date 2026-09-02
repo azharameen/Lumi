@@ -18,6 +18,8 @@ interface ChatRepository {
     suspend fun sendMessage(userText: String, image: ByteArray? = null): ChatMessageEntity
     fun setAiRoutingMode(mode: AiRoutingMode)
     suspend fun clearAiAnalyticsLogs()
+    suspend fun clearChatHistory()
+    suspend fun deleteMessage(id: Long)
     suspend fun benchmarkOnDeviceGemma(): Pair<String, Long>
     suspend fun resolveHitlAction(stateId: String, approved: Boolean): String?
 }

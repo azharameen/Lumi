@@ -97,6 +97,14 @@ class ChatRepositoryImpl(
         database.aiExecutionLogDao().clearAllLogs()
     }
 
+    override suspend fun clearChatHistory() = withContext(Dispatchers.IO) {
+        database.chatMessageDao().clearHistory()
+    }
+
+    override suspend fun deleteMessage(id: Long) = withContext(Dispatchers.IO) {
+        database.chatMessageDao().deleteMessageById(id)
+    }
+
     override suspend fun benchmarkOnDeviceGemma(): Pair<String, Long> {
         val result = hybridAiEngine.onDeviceGemmaEngine.benchmarkOnDeviceGemma()
         // Log benchmark invocation

@@ -31,6 +31,8 @@ interface LumiRepository {
     val allMemories: Flow<List<PetMemoryEntity>>
     val chatMessages: Flow<List<ChatMessageEntity>>
     val pagedChatMessages: Flow<androidx.paging.PagingData<ChatMessageEntity>>
+    suspend fun clearChatHistory()
+    suspend fun deleteMessage(id: Long)
 
     suspend fun sendMessage(userText: String, image: ByteArray? = null): ChatMessageEntity
     suspend fun petTheCharacter()

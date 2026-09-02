@@ -54,6 +54,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
 
+private val LumiAmber = Color(0xFFFFB300)
+
 /**
  * High-performance Jetpack Compose Canvas mascot view representing Lumi / Bloub.
  * Implements 100% normalized procedural graphics, clay lighting, jelly spring physics,
@@ -68,7 +70,8 @@ fun LumiPetView(
     externalGazeX: Float = 0f,
     externalGazeY: Float = 0f,
     onPetTouched: () -> Unit = {},
-    onPetPetted: () -> Unit = {}
+    onPetPetted: () -> Unit = {},
+    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics()
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -204,6 +207,7 @@ fun LumiPetView(
         Modifier.pointerInput(Unit) {
             detectTapGestures(
                 onTap = {
+                    haptics.performTick()
                     onPetTouched()
                     coroutineScope.launch {
                         squishX.animateTo(1.24f, tween(75))
@@ -228,6 +232,37 @@ fun LumiPetView(
                     // Estimate approximate baseRadius based on size.toPx()
                     val approxRadius = size.toPx() * 0.38f
                     spawnParticles("HEART", 5, gradStart, approxRadius)
+                },
+                onDoubleTap = {
+                    haptics.performSuccess()
+                    onPetPetted()
+                    coroutineScope.launch {
+                        jumpProgress.animateTo(1.4f, tween(140))
+                        jumpProgress.animateTo(0f, spring(dampingRatio = 0.45f, stiffness = 280f))
+                    }
+                    coroutineScope.launch {
+                        rotationZ.animateTo(360f, tween(400, easing = FastOutSlowInEasing))
+                        rotationZ.snapTo(0f)
+                    }
+                    val approxRadius = size.toPx() * 0.38f
+                    spawnParticles("STAR", 8, LumiAmber, approxRadius)
+                    spawnParticles("HEART", 6, gradStart, approxRadius)
+                },
+                onLongPress = {
+                    haptics.performHeavyClick()
+                    onPetPetted()
+                    coroutineScope.launch {
+                        squishX.animateTo(0.85f, tween(100))
+                        squishX.animateTo(1.15f, tween(120))
+                        squishX.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = 380f))
+                    }
+                    coroutineScope.launch {
+                        squishY.animateTo(1.25f, tween(100))
+                        squishY.animateTo(0.9f, tween(120))
+                        squishY.animateTo(1f, spring(dampingRatio = 0.4f, stiffness = 380f))
+                    }
+                    val approxRadius = size.toPx() * 0.38f
+                    spawnParticles("SPARKLE", 10, com.example.core.theme.LumiMint, approxRadius)
                 }
             )
         }

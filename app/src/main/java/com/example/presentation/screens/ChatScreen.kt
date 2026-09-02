@@ -1,15 +1,14 @@
 package com.example.presentation.screens
-import androidx.compose.ui.res.stringResource
-import com.example.R
-import com.example.data.firebase.LumiRemoteConfigManager
-import org.koin.core.context.GlobalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,29 +21,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.itemContentType
-import androidx.paging.compose.itemKey
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.automirrored.filled.VolumeOff
-import androidx.compose.material.icons.automirrored.filled.VolumeUp
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,33 +40,61 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import com.example.domain.model.LumiRemoteConfig
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.local.entity.ChatMessageEntity
-import com.example.presentation.components.VoiceWaveformVisualizer
-import com.example.core.theme.*
-
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
+import com.example.R
+import com.example.core.theme.LumiCyan
+import com.example.core.theme.LumiPink
+import com.example.core.theme.ObsidianDark
+import com.example.core.theme.SurfaceDark
+import com.example.core.theme.SurfaceGlass
+import com.example.core.theme.SurfaceHighlight
+import com.example.core.theme.TextPrimary
+import com.example.core.theme.TextTertiary
 import com.example.core.theme.spacing
+import com.example.core.utils.LumiHaptics
+import com.example.core.utils.rememberLumiHaptics
+import com.example.data.firebase.LumiRemoteConfigManager
+import com.example.data.local.entity.ChatMessageEntity
+import com.example.domain.agent.hitl.HitlPendingAction
+import com.example.domain.model.LumiRemoteConfig
+import com.example.domain.model.PetStatus
+import com.example.presentation.screens.chat.AgentThoughtStreamCard
+import com.example.presentation.screens.chat.ChatEmptyStateView
+import com.example.presentation.screens.chat.ChatImagePreviewDialog
+import com.example.presentation.screens.chat.ChatMessageBubble
+import com.example.presentation.screens.chat.ChatTopAppBar
+import com.example.presentation.screens.chat.ClearChatConfirmDialog
+import com.example.presentation.screens.chat.ClipboardPromptBanner
+import com.example.presentation.screens.chat.HitlApprovalActionCard
+import com.example.presentation.screens.chat.PromptTemplatePickerModal
+import com.example.presentation.screens.chat.QuickPromptChipsBar
+import com.example.presentation.screens.chat.VoiceActivityOverlayBar
+import com.example.presentation.viewmodel.LumiUiState
+import org.koin.core.context.GlobalContext
 
 @Composable
 fun ChatScreen(
-    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
-    uiState: com.example.presentation.viewmodel.LumiUiState,
-    petStatus: com.example.domain.model.PetStatus,
-    chatMessages: LazyPagingItems<com.example.data.local.entity.ChatMessageEntity>,
+    haptics: LumiHaptics = rememberLumiHaptics(),
+    uiState: LumiUiState,
+    petStatus: PetStatus,
+    chatMessages: LazyPagingItems<ChatMessageEntity>,
+    pendingHitlActions: List<HitlPendingAction> = emptyList(),
     isListening: Boolean,
     isSpeaking: Boolean,
     onSendMessage: (String) -> Unit,
@@ -89,12 +103,26 @@ fun ChatScreen(
     onStartVoiceListening: () -> Unit,
     onStopVoiceListening: () -> Unit,
     onToggleVoiceOutput: () -> Unit,
+    onClearChat: () -> Unit = {},
+    onDeleteMessage: (Long) -> Unit = {},
+    onSpeakMessage: (String) -> Unit = {},
+    onResolveHitlAction: (String, Boolean) -> Unit = { _, _ -> },
+    onDismissClipboard: () -> Unit = {},
+    onProcessClipboard: (String) -> Unit = {},
+    onOpenBreathingExercise: () -> Unit = {},
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
-
     val listState = rememberLazyListState()
+    val context = LocalContext.current
+    val clipboardManager = remember { context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager }
+
+    var searchQuery by remember { mutableStateOf("") }
+    var isSearchActive by remember { mutableStateOf(false) }
+    var showClearConfirmDialog by remember { mutableStateOf(false) }
+    var showTemplatePicker by remember { mutableStateOf(false) }
+    var previewImageSource by remember { mutableStateOf<String?>(null) }
 
     val remoteConfigManager = remember {
         try {
@@ -107,144 +135,85 @@ fun ChatScreen(
 
     LaunchedEffect(chatMessages.itemCount) {
         if (chatMessages.itemCount > 0) {
-            listState.animateScrollToItem(0) // Items are reversed, newest at 0
+            listState.animateScrollToItem(0)
         }
     }
 
-    val quickStarters = listOf(
-        "Plan my day efficiently",
-        "I feel overwhelmed with work",
-        "Start 4-7-8 breathing session",
-        "Log 2 cups of water & mood",
-        "Give me personalized wellness insights",
-        "Add high priority task: Finish project"
-    )
+    val copyToClipboard: (String) -> Unit = { text ->
+        try {
+            val clip = ClipData.newPlainText("Lumi Message", text)
+            clipboardManager?.setPrimaryClip(clip)
+        } catch (_: Exception) {}
+    }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(ObsidianDark)
             .padding(innerPadding)
     ) {
-        // Top Companion Status Header
-        Surface(
-            color = SurfaceGlass,
-            border = BorderStroke(1.dp, SurfaceHighlight.copy(alpha = 0.5f)),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = MaterialTheme.spacing.medium, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.desc_back),
-                            tint = TextPrimary
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(
-                                Brush.radialGradient(
-                                    listOf(androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), Color.Transparent)
-                                ),
-                                CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Surface(
-                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
-                            shape = CircleShape,
-                            modifier = Modifier.size(34.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(text = "✨", fontSize = 16.sp)
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = stringResource(R.string.text_lumi_neural_companion),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = TextPrimary,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .background(LumiMint, CircleShape)
-                            )
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text(
-                                text = if (petStatus.isThinking) "Thinking deeply..." else petStatus.currentEmotion.displayName,
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    }
-                }
+        // Top Companion Bar
+        ChatTopAppBar(
+            petStatus = petStatus,
+            isListening = isListening,
+            isSpeaking = isSpeaking,
+            isTtsEnabled = uiState.isTtsVoiceOutputEnabled,
+            onToggleTts = onToggleVoiceOutput,
+            onNavigateBack = onNavigateBack,
+            onClearChatRequest = { showClearConfirmDialog = true },
+            onSearchToggle = { isSearchActive = !isSearchActive },
+            isSearchActive = isSearchActive,
+            searchQuery = searchQuery,
+            onSearchQueryChange = { searchQuery = it },
+            onOpenBreathing = onOpenBreathingExercise,
+            haptics = haptics
+        )
 
-                // Voice output toggle
-                IconButton(
-                    onClick = { onToggleVoiceOutput() },
-                    modifier = Modifier.testTag("toggle_voice_output")
-                ) {
-                    Icon(
-                        imageVector = if (uiState.isTtsVoiceOutputEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                        contentDescription = stringResource(id = R.string.desc_voice_toggle),
-                        tint = if (uiState.isTtsVoiceOutputEnabled) androidx.compose.material3.MaterialTheme.colorScheme.primary else TextTertiary
-                    )
-                }
-            }
+        // Pending Human-In-The-Loop Autonomous Approvals
+        pendingHitlActions.forEach { action ->
+            HitlApprovalActionCard(
+                action = action,
+                onApprove = { onResolveHitlAction(action.stateId, true) },
+                onDecline = { onResolveHitlAction(action.stateId, false) },
+                haptics = haptics
+            )
         }
 
-        // Messages List
+        // Live Chain of Thought Stream
+        if (petStatus.isThinking || uiState.agentThought != null) {
+            AgentThoughtStreamCard(
+                thoughtText = uiState.agentThought ?: "Lumi is reasoning, synthesizing context, and orchestrating response..."
+            )
+        }
+
+        // Detected Clipboard Assistant Banner
+        if (uiState.detectedClipboardText != null) {
+            ClipboardPromptBanner(
+                snippet = uiState.detectedClipboardText,
+                onAnalyze = { snippet ->
+                    onProcessClipboard(snippet)
+                    onSendMessage("Analyze and summarize this clipboard snippet: $snippet")
+                },
+                onDismiss = onDismissClipboard,
+                haptics = haptics
+            )
+        }
+
+        // Messages Flow
         if (chatMessages.itemCount == 0) {
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxWidth()
-                    .padding(MaterialTheme.spacing.medium),
+                    .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                Surface(
-                    color = SurfaceDark.copy(alpha = 0.85f),
-                    shape = RoundedCornerShape(20.dp),
-                    border = BorderStroke(1.dp, Brush.horizontalGradient(listOf(LumiCyan.copy(alpha = 0.5f), LumiPink.copy(alpha = 0.5f)))),
-                    shadowElevation = 6.dp,
-                    modifier = Modifier.fillMaxWidth(0.92f)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = "✨", fontSize = 36.sp)
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = remoteConfig?.welcomeGreeting ?: stringResource(R.string.text_lumi_neural_companion),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = TextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = remoteConfig?.companionTipOfTheDay ?: "I'm here to help manage your schedule, log wellness, and keep you company. Ask me anything!",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            lineHeight = 18.sp
-                        )
-                    }
-                }
+                ChatEmptyStateView(
+                    remoteConfig = remoteConfig,
+                    onSelectStarter = { prompt ->
+                        onSendMessage(prompt)
+                    },
+                    haptics = haptics
+                )
             }
         } else {
             LazyColumn(
@@ -254,7 +223,8 @@ fun ChatScreen(
                     .fillMaxWidth()
                     .padding(horizontal = MaterialTheme.spacing.medium),
                 contentPadding = PaddingValues(vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                reverseLayout = true
             ) {
                 items(
                     count = chatMessages.itemCount,
@@ -263,56 +233,40 @@ fun ChatScreen(
                 ) { index ->
                     val msg = chatMessages[index]
                     if (msg != null) {
-                        ChatMessageBubble(message = msg)
+                        val matchesSearch = searchQuery.isBlank() || msg.content.contains(searchQuery, ignoreCase = true)
+                        if (matchesSearch) {
+                            ChatMessageBubble(
+                                message = msg,
+                                onCopyMessage = copyToClipboard,
+                                onSpeakMessage = onSpeakMessage,
+                                onDeleteMessage = onDeleteMessage,
+                                onImageClick = { previewImageSource = it },
+                                haptics = haptics
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // Realtime waveform if voice active
-        AnimatedVisibility(visible = isListening || isSpeaking) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(SurfaceDarkVariant.copy(alpha = 0.9f))
-                    .padding(vertical = 10.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                VoiceWaveformVisualizer(
-                    isActive = true,
-                    audioLevel = 0f
-                )
-            }
-        }
+        // Voice Listening/Speaking Realtime Overlay
+        VoiceActivityOverlayBar(
+            isListening = isListening,
+            isSpeaking = isSpeaking,
+            onStopListening = onStopVoiceListening,
+            onStopSpeaking = { onSpeakMessage("") }
+        )
 
-        // Quick Starter Chips
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(SurfaceDark.copy(alpha = 0.6f))
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)
-        ) {
-            items(quickStarters) { prompt ->
-                Surface(
-                    color = SurfaceDarkVariant.copy(alpha = 0.85f),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, SurfaceHighlight.copy(alpha = 0.5f)),
-                    modifier = Modifier.clickable { haptics.performSuccess(); onSendMessage(prompt) }
-                ) {
-                    Text(
-                        text = prompt,
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                    )
-                }
-            }
-        }
+        // Quick Starter Chips Carousel
+        QuickPromptChipsBar(
+            onSelectPrompt = { prompt ->
+                onSendMessage(prompt)
+            },
+            onOpenTemplates = { showTemplatePicker = true },
+            haptics = haptics
+        )
 
-        // Bottom Input Row
+        // Bottom Input Bar Composer
         Surface(
             color = SurfaceGlass,
             border = BorderStroke(1.dp, SurfaceHighlight.copy(alpha = 0.4f)),
@@ -324,21 +278,25 @@ fun ChatScreen(
                     .padding(horizontal = 12.dp, vertical = MaterialTheme.spacing.small),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Camera Vision
+                // Camera Vision Button
                 IconButton(
-                    onClick = { onShowCamera() },
+                    onClick = {
+                        haptics.performTick()
+                        onShowCamera()
+                    },
                     modifier = Modifier.testTag("chat_camera_button")
                 ) {
                     Icon(
                         imageVector = Icons.Default.CameraAlt,
                         contentDescription = stringResource(id = R.string.desc_camera_vision),
-                        tint = androidx.compose.material3.MaterialTheme.colorScheme.primary
+                        tint = LumiCyan
                     )
                 }
 
-                // Voice Mic
+                // Voice Mic Button
                 IconButton(
                     onClick = {
+                        haptics.performTick()
                         if (isListening) onStopVoiceListening() else onStartVoiceListening()
                     },
                     modifier = Modifier
@@ -348,174 +306,114 @@ fun ChatScreen(
                     Icon(
                         imageVector = if (isListening) Icons.Default.MicOff else Icons.Default.Mic,
                         contentDescription = stringResource(id = R.string.desc_voice_input),
-                        tint = if (isListening) ObsidianDark else androidx.compose.material3.MaterialTheme.colorScheme.primary
+                        tint = if (isListening) ObsidianDark else LumiCyan
                     )
                 }
 
-                Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
+                Spacer(modifier = Modifier.width(4.dp))
 
+                // Text Input Field
                 OutlinedTextField(
                     value = uiState.inputText,
-                    onValueChange = { onSetInputText(it) },
-                    placeholder = { Text(stringResource(id = R.string.text_ask_lumi_anything), color = TextTertiary, fontSize = 13.sp) },
+                    onValueChange = onSetInputText,
+                    placeholder = {
+                        Text(
+                            text = stringResource(id = R.string.text_ask_lumi_anything),
+                            color = TextTertiary,
+                            fontSize = 13.sp
+                        )
+                    },
+                    trailingIcon = {
+                        if (uiState.inputText.isNotEmpty()) {
+                            IconButton(onClick = { onSetInputText("") }) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = null,
+                                    tint = TextTertiary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+                        focusedBorderColor = LumiCyan,
                         unfocusedBorderColor = SurfaceHighlight,
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
                     ),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(22.dp),
                     modifier = Modifier
                         .weight(1f)
                         .testTag("chat_text_input"),
-                    maxLines = 3
+                    maxLines = 4
                 )
 
                 Spacer(modifier = Modifier.width(6.dp))
 
+                val hasText = uiState.inputText.isNotBlank()
+                val sendScale by animateFloatAsState(
+                    targetValue = if (hasText) 1.05f else 0.95f,
+                    label = "SendScale"
+                )
+
+                // Send Button
                 IconButton(
                     onClick = {
-                        val text = uiState.inputText
+                        val text = uiState.inputText.trim()
                         if (text.isNotBlank()) {
                             haptics.performSuccess()
                             onSendMessage(text)
+                            onSetInputText("")
                         }
                     },
                     modifier = Modifier
-                        .size(40.dp)
-                        .background(androidx.compose.material3.MaterialTheme.colorScheme.primary, CircleShape)
+                        .size(42.dp)
+                        .scale(sendScale)
+                        .background(
+                            if (hasText) LumiCyan else SurfaceDark,
+                            CircleShape
+                        )
                         .testTag("chat_send_button")
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = stringResource(id = R.string.desc_send),
-                        tint = ObsidianDark,
+                        tint = if (hasText) ObsidianDark else TextTertiary,
                         modifier = Modifier.size(18.dp)
                     )
                 }
             }
         }
     }
-}
 
-@Composable
-fun ChatMessageBubble(message: ChatMessageEntity) {
-    val isUser = message.sender == "USER"
-    val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+    // Confirmation Dialog for Clearing Chat History
+    if (showClearConfirmDialog) {
+        ClearChatConfirmDialog(
+            onConfirm = {
+                showClearConfirmDialog = false
+                haptics.performSuccess()
+                onClearChat()
+            },
+            onDismiss = { showClearConfirmDialog = false }
+        )
+    }
 
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
-    ) {
-        if (!isUser) {
-            val isGemmaOnDevice = message.content.contains("[Gemma On-Device]")
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 5.dp, start = MaterialTheme.spacing.extraSmall)
-            ) {
-                Text(text = stringResource(R.string.text_lumi), color = androidx.compose.material3.MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Spacer(modifier = Modifier.width(6.dp))
-                message.petEmotion.let { emo ->
-                    Surface(
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
-                        shape = RoundedCornerShape(MaterialTheme.spacing.extraSmall)
-                    ) {
-                        Text(
-                            text = emo,
-                            color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.extraSmall, vertical = 1.dp)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.width(6.dp))
-                Surface(
-                    color = if (isGemmaOnDevice) LumiGreen.copy(alpha = 0.15f) else androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(MaterialTheme.spacing.extraSmall)
-                ) {
-                    Text(
-                        text = if (isGemmaOnDevice) "⚡ Gemma 2B (Local)" else "☁️ Gemini 2.5 Flash",
-                        color = if (isGemmaOnDevice) LumiGreen else androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.extraSmall, vertical = 1.dp)
-                    )
-                }
-            }
-        }
+    // Modal Prompt Template Picker
+    if (showTemplatePicker) {
+        PromptTemplatePickerModal(
+            onSelectPrompt = { prompt ->
+                onSendMessage(prompt)
+            },
+            onDismiss = { showTemplatePicker = false },
+            haptics = haptics
+        )
+    }
 
-        Surface(
-            color = if (isUser) androidx.compose.material3.MaterialTheme.colorScheme.primary else SurfaceDarkVariant.copy(alpha = 0.95f),
-            shape = RoundedCornerShape(
-                topStart = 18.dp,
-                topEnd = 18.dp,
-                bottomStart = if (isUser) 18.dp else MaterialTheme.spacing.extraSmall,
-                bottomEnd = if (isUser) MaterialTheme.spacing.extraSmall else 18.dp
-            ),
-            border = if (isUser) null else BorderStroke(1.dp, SurfaceHighlight.copy(alpha = 0.5f)),
-            shadowElevation = 2.dp,
-            modifier = Modifier.widthIn(max = 310.dp)
-        ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                if (message.imageBase64OrUri != null) {
-                    Row(
-                        modifier = Modifier
-                            .background(ObsidianDark.copy(alpha = 0.6f), RoundedCornerShape(MaterialTheme.spacing.small))
-                            .padding(horizontal = MaterialTheme.spacing.small, vertical = MaterialTheme.spacing.extraSmall),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(imageVector = Icons.Default.CameraAlt, contentDescription = null, tint = if (isUser) ObsidianDark else androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
-                        Text(text = stringResource(R.string.text_captured_image_shared), color = if (isUser) ObsidianDark else TextPrimary, fontSize = 11.sp)
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
-                }
-
-                Text(
-                    text = message.content,
-                    color = if (isUser) ObsidianDark else TextPrimary,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (isUser) FontWeight.Medium else FontWeight.Normal,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp
-                )
-
-                // Tool Execution Report Badge
-                if (message.toolUsedName != null) {
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = ObsidianDark.copy(alpha = 0.7f)),
-                        shape = RoundedCornerShape(MaterialTheme.spacing.small)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = LumiGreen,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = message.toolResultJson ?: message.toolUsedName,
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        Text(
-            text = timeFormat.format(Date(message.timestamp)),
-            color = TextTertiary,
-            fontSize = 9.sp,
-            modifier = Modifier.padding(top = 3.dp, start = MaterialTheme.spacing.extraSmall, end = MaterialTheme.spacing.extraSmall)
+    // Image Zoom Dialog
+    previewImageSource?.let { src ->
+        ChatImagePreviewDialog(
+            imageSource = src,
+            onDismiss = { previewImageSource = null }
         )
     }
 }

@@ -337,6 +337,22 @@
     <string name="text_prompt_routing_tester_desc">Test any message to see whether Hybrid mode dispatches it to Local On-Device or Cloud Gemini and why.</string>
     <string name="text_test_prompt_placeholder">Enter a prompt to analyze routing...</string>
 
+    <string name="text_clear_chat_title">Clear Conversation?</string>
+    <string name="text_clear_chat_message">This will remove all message history with Lumi from your local device. Your saved profile facts and wellness records will not be affected.</string>
+    <string name="text_clear_chat_confirm">Clear Conversation</string>
+    <string name="text_search_messages">Search conversation...</string>
+    <string name="text_copy_message">Copy message</string>
+    <string name="text_delete_message">Delete message</string>
+    <string name="text_message_copied">Copied to clipboard</string>
+    <string name="text_action_pending_approval">Autonomous Action Pending</string>
+    <string name="text_approve">Approve</string>
+    <string name="text_decline">Decline</string>
+    <string name="text_listening_now">Listening...</string>
+    <string name="text_tap_to_stop_recording">Tap to stop listening</string>
+    <string name="text_speaking_now">Speaking response...</string>
+    <string name="text_tap_to_mute">Tap to mute audio</string>
+    <string name="text_neural_thought_stream">Neural Reasoning Stream</string>
+
     <!-- Firebase App Check Static Debug Secret for Emulators -->
     <string name="com.google.firebase.appcheck.debug.DEBUG_SECRET" translatable="false">9f000300-8b15-4cf9-93e1-7004f1418b76</string>
 </resources>

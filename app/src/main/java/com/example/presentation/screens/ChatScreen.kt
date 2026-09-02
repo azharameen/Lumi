@@ -50,6 +50,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.layout.*
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -111,8 +112,7 @@ fun ChatScreen(
     onProcessClipboard: (String) -> Unit = {},
     onOpenBreathingExercise: () -> Unit = {},
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier,
-    innerPadding: PaddingValues = PaddingValues(0.dp)
+    modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
     val context = LocalContext.current
@@ -150,7 +150,7 @@ fun ChatScreen(
         modifier = modifier
             .fillMaxSize()
             .background(ObsidianDark)
-            .padding(innerPadding)
+            .navigationBarsPadding()
     ) {
         // Top Companion Bar
         ChatTopAppBar(

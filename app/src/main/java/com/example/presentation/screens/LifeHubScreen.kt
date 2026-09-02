@@ -11,18 +11,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -135,8 +124,7 @@ fun LifeHubScreen(
     getMilestonesForGoal: (Long) -> kotlinx.coroutines.flow.Flow<List<com.example.data.local.entity.GoalMilestoneEntity>>,
     soundState: com.example.data.device.SoundscapeState,
     onAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit,
-    onNavigateBack: () -> Unit,
-    innerPadding: PaddingValues = PaddingValues(0.dp)
+    onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
     
@@ -150,16 +138,18 @@ fun LifeHubScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(ObsidianDark)
-            .padding(innerPadding)
+            .navigationBarsPadding()
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
             // Segmented Tab Header
             Surface(
                 color = SurfaceDark,
                 tonalElevation = 6.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(top = 12.dp)) {
+                Column(modifier = Modifier.statusBarsPadding().padding(top = 12.dp)) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

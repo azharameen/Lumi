@@ -7,6 +7,7 @@ import android.content.Context
 import android.os.Build
 
 import com.example.core.di.appModule
+import com.example.core.utils.IntegrityOrchestrator
 import com.example.data.local.LumiDatabase
 import com.example.domain.connectors.IntegrationService
 import com.example.domain.tools.CoreToolsModule
@@ -15,6 +16,8 @@ import com.example.framework.tools.SystemToolSuite
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import android.util.Log
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -37,13 +40,27 @@ class LumiApplication : Application() {
             }
         }
         
-        registerTools()
-        createNotificationChannels()
+        // Move heavy registration to background with a small delay to let UI breathe
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            delay(1500) // Wait for MainActivity to settle
+
+            val koin = org.koin.core.context.GlobalContext.get()
+            val database: LumiDatabase = koin.get()
+            val modelManager = com.example.data.remote.ModelDownloadManager.getInstance(this@LumiApplication)
+
+            // Run Bulletproof Integrity Check
+            IntegrityOrchestrator.runFullIntegrityCheck(this@LumiApplication, database, modelManager)
+
+            registerTools()
+            createNotificationChannels()
+        }
     }
 
-    private fun registerTools() {
-        val database: LumiDatabase = org.koin.core.context.GlobalContext.get().get()
-        val integrationService: IntegrationService = org.koin.core.context.GlobalContext.get().get()
+    private suspend fun registerTools() {
+        // Access Koin on background thread
+        val koin = org.koin.core.context.GlobalContext.get()
+        val database: LumiDatabase = koin.get()
+        val integrationService: IntegrationService = koin.get()
         
         SystemToolSuite.registerAll(this)
         CoreToolsModule.register(database, integrationService)

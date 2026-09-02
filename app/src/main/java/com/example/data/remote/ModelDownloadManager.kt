@@ -232,7 +232,33 @@ class ModelDownloadManager private constructor(private val context: Context) {
 
     init {
         cleanupOrphanedTempFiles()
+        // verifyAllDownloadedModels() will be called by IntegrityOrchestrator
         checkExistingModelFiles()
+    }
+
+    /**
+     * Deeply verifies the integrity of all downloaded model weights.
+     * If a model is corrupted, it is removed to ensure system stability.
+     */
+    suspend fun verifyAllDownloadedModels(): List<String> = withContext(Dispatchers.IO) {
+        val corruptedModels = mutableListOf<String>()
+        val dir = getModelsDirectory()
+        
+        catalog.forEach { spec ->
+            val modelFile = File(dir, "${spec.id}.bin")
+            if (modelFile.exists()) {
+                val isValid = verifyFileIntegrity(modelFile, spec)
+                if (!isValid) {
+                    corruptedModels.add(spec.name)
+                    modelFile.delete()
+                }
+            }
+        }
+        
+        if (corruptedModels.isNotEmpty()) {
+            checkExistingModelFiles() // Refresh UI states
+        }
+        corruptedModels
     }
 
     fun getModelsDirectory(): File {
@@ -368,12 +394,8 @@ class ModelDownloadManager private constructor(private val context: Context) {
 
         val job = scope.launch {
             try {
-                var existingBytes = if (tempFile.exists()) tempFile.length() else 0L
-                val appendMode = existingBytes > 0L && existingBytes < spec.sizeBytes
-
-                if (!appendMode && tempFile.exists()) {
+                if (tempFile.exists()) {
                     tempFile.delete()
-                    existingBytes = 0L
                 }
 
                 updateProgress(
@@ -381,58 +403,53 @@ class ModelDownloadManager private constructor(private val context: Context) {
                     ModelDownloadProgress(
                         modelId = modelId,
                         status = ModelDownloadStatus.DOWNLOADING,
-                        progress = (existingBytes.toFloat() / spec.sizeBytes.toFloat()).coerceIn(0.01f, 0.99f),
-                        bytesDownloaded = existingBytes,
+                        progress = 0.01f,
+                        bytesDownloaded = 0L,
                         totalBytes = spec.sizeBytes,
                         localFilePath = tempFile.absolutePath
                     )
                 )
 
+                val request = Request.Builder().url(spec.downloadUrl).build()
+                val response = httpClient.newCall(request).execute()
+                
+                if (!response.isSuccessful) throw Exception("Failed to download: ${response.code}")
+                val body = response.body ?: throw Exception("Empty response body")
+                
                 val targetBytes = spec.sizeBytes
-                val chunkSize = 256 * 1024L // 256 KB per block
-                var downloaded = existingBytes
+                var downloaded = 0L
                 val startTime = System.currentTimeMillis()
 
-                val fos = FileOutputStream(tempFile, appendMode)
-                val buffer = ByteArray(chunkSize.toInt())
+                body.byteStream().use { inputStream ->
+                    FileOutputStream(tempFile).use { fos ->
+                        val buffer = ByteArray(8 * 1024)
+                        var bytesRead: Int
+                        while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                            fos.write(buffer, 0, bytesRead)
+                            downloaded += bytesRead
 
-                if (!appendMode) {
-                    val headerMarker = "LUMI_LLM_WEIGHTS_GGUF_${spec.id}\n".toByteArray()
-                    fos.write(headerMarker)
-                    downloaded += headerMarker.size
+                            val elapsedSec = (System.currentTimeMillis() - startTime) / 1000.0
+                            val speed = if (elapsedSec > 0.1) (downloaded / (1024.0 * 1024.0)) / elapsedSec else 0.0
+                            val remainingBytes = targetBytes - downloaded
+                            val eta = if (speed > 0) (remainingBytes / (speed * 1024.0 * 1024.0)).toLong() else 0L
+                            val progressFloat = (downloaded.toFloat() / targetBytes.toFloat()).coerceIn(0.01f, 0.99f)
+
+                            updateProgress(
+                                modelId,
+                                ModelDownloadProgress(
+                                    modelId = modelId,
+                                    status = ModelDownloadStatus.DOWNLOADING,
+                                    progress = progressFloat,
+                                    bytesDownloaded = downloaded,
+                                    totalBytes = targetBytes,
+                                    speedMegaBytesPerSec = speed,
+                                    etaSeconds = eta,
+                                    localFilePath = tempFile.absolutePath
+                                )
+                            )
+                        }
+                    }
                 }
-
-                while (downloaded < targetBytes) {
-                    val remaining = targetBytes - downloaded
-                    val currentChunk = minOf(chunkSize, remaining).toInt()
-                    fos.write(buffer, 0, currentChunk)
-                    downloaded += currentChunk
-
-                    val elapsedSec = (System.currentTimeMillis() - startTime) / 1000.0
-                    val speed = if (elapsedSec > 0.1) ((downloaded - existingBytes) / (1024.0 * 1024.0)) / elapsedSec else 22.0
-                    val remainingBytes = targetBytes - downloaded
-                    val eta = if (speed > 0) (remainingBytes / (speed * 1024.0 * 1024.0)).toLong() else 0L
-                    val progressFloat = (downloaded.toFloat() / targetBytes.toFloat()).coerceIn(0.01f, 0.99f)
-
-                    updateProgress(
-                        modelId,
-                        ModelDownloadProgress(
-                            modelId = modelId,
-                            status = ModelDownloadStatus.DOWNLOADING,
-                            progress = progressFloat,
-                            bytesDownloaded = downloaded,
-                            totalBytes = targetBytes,
-                            speedMegaBytesPerSec = speed,
-                            etaSeconds = eta,
-                            localFilePath = tempFile.absolutePath
-                        )
-                    )
-
-                    delay(30L)
-                }
-
-                fos.flush()
-                fos.close()
 
                 // Step 2: Verification Phase (Checksum and File Integrity)
                 updateProgress(

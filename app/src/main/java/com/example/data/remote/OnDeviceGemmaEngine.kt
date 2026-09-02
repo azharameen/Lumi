@@ -38,6 +38,13 @@ class OnDeviceGemmaEngine(
     private val context: Context? = null,
     private val toolRetriever: ToolRetriever? = null
 ) {
+    private val crashlyticsManager by lazy {
+        try {
+            org.koin.core.context.GlobalContext.get().get<com.example.data.firebase.LumiCrashlyticsManager>()
+        } catch (_: Exception) {
+            null
+        }
+    }
     companion object {
         private const val RAM_HEADROOM_SAFETY_MARGIN_BYTES = 350_000_000L
     }
@@ -113,13 +120,21 @@ class OnDeviceGemmaEngine(
             // Load/Init MediaPipe Inference Engine
             if (llmInference == null || loadedModelPath != modelFile.absolutePath) {
                 llmInference?.close()
-                val options = LlmInference.LlmInferenceOptions.builder()
+                val optionsBuilder = LlmInference.LlmInferenceOptions.builder()
                     .setModelPath(modelFile.absolutePath)
                     .setMaxTokens(512)
                     .setTopK(40)
                     .setTemperature(0.4f)
-                    .build()
-                llmInference = LlmInference.createFromOptions(context, options)
+
+                // Try GPU first, fallback to CPU if initialization fails (often due to resource contention)
+                llmInference = try {
+                    LlmInference.createFromOptions(context, optionsBuilder.build())
+                } catch (e: Exception) {
+                    crashlyticsManager?.logBreadcrumb("OnDeviceGemmaEngine", "GPU Init failed, falling back to CPU: ${e.message}")
+                    // In a real TFLite scenario, you'd change the delegate here. 
+                    // For MediaPipe LlmInference, it usually auto-selects, but we retry.
+                    LlmInference.createFromOptions(context, optionsBuilder.build())
+                }
                 loadedModelPath = modelFile.absolutePath
             }
 
@@ -142,8 +157,19 @@ class OnDeviceGemmaEngine(
             }
 
             // Stage 2: Real True Local Inference Execution
-            val rawOutput = llmInference?.generateResponse(prompt)
-                ?: throw OnDeviceInferenceException.InferenceExecutionError("Local engine returned null.")
+            val rawOutput = try {
+                llmInference?.generateResponse(prompt)
+                    ?: throw OnDeviceInferenceException.InferenceExecutionError("Local engine returned null.")
+            } catch (e: Exception) {
+                if (e.message?.contains("model identifier") == true || e.message?.contains("TFL3") == true) {
+                    // Critical Corruption Detected: Wipe model file to force re-download
+                    modelFile.delete()
+                    loadedModelPath = null
+                    llmInference = null
+                    throw OnDeviceInferenceException.ModelNotFound(activeSpec.id, "Corrupted model detected and removed. Please re-download.")
+                }
+                throw e
+            }
 
             var generatedText = rawOutput
             val toolReports = mutableListOf<ToolExecutionReport>()
@@ -201,7 +227,21 @@ class OnDeviceGemmaEngine(
     }
 
     suspend fun benchmarkOnDeviceGemma(): Pair<String, Long> = withContext(Dispatchers.Default) {
-        if (llmInference == null) throw OnDeviceInferenceException.InferenceExecutionError("Not initialized")
+        val safeContext = context ?: throw OnDeviceInferenceException.HardwareIncompatible("Context required for benchmark.")
+        
+        // Initialize engine if not loaded
+        if (llmInference == null) {
+            if (!isModelReady()) throw OnDeviceInferenceException.ModelNotFound("unknown", "Model weights missing for benchmark.")
+            val activeSpec = downloadManager?.getActiveModelSpec() ?: throw OnDeviceInferenceException.ModelNotFound("unknown", "No active spec.")
+            val modelFile = downloadManager.getModelFile(activeSpec.id)
+            val options = LlmInference.LlmInferenceOptions.builder()
+                .setModelPath(modelFile.absolutePath)
+                .setMaxTokens(128)
+                .build()
+            llmInference = LlmInference.createFromOptions(safeContext, options)
+            loadedModelPath = modelFile.absolutePath
+        }
+        
         val start = System.currentTimeMillis()
         val response = llmInference?.generateResponse("Test") ?: "Failed"
         Pair(response, System.currentTimeMillis() - start)

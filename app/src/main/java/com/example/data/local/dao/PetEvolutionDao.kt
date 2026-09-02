@@ -16,6 +16,9 @@ interface PetEvolutionDao {
     @Query("SELECT * FROM pet_evolution WHERE id = 1")
     suspend fun getPetEvolutionDirect(): PetEvolutionEntity?
 
+    @Query("SELECT COUNT(*) FROM pet_evolution")
+    suspend fun getPetCount(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(pet: PetEvolutionEntity)
 

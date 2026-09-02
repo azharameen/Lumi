@@ -40,6 +40,27 @@ abstract class LumiDatabase : RoomDatabase() {
     abstract fun agentCheckpointDao(): AgentCheckpointDao
     abstract fun toolFtsDao(): ToolFtsDao
 
+    /**
+     * Performs a deep SQLite integrity check and basic table sanity queries.
+     * Returns true if the database is healthy.
+     */
+    suspend fun performHealthCheck(): Boolean {
+        return try {
+            val cursor = query("PRAGMA integrity_check", null)
+            val result = if (cursor.moveToFirst()) cursor.getString(0) else "failed"
+            cursor.close()
+            
+            // Result should be "ok" if SQLite structure is valid
+            if (result.lowercase() != "ok") return false
+            
+            // Check if vital table is reachable
+            petEvolutionDao().getPetCount()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     companion object {
         @Volatile
         private var INSTANCE: LumiDatabase? = null

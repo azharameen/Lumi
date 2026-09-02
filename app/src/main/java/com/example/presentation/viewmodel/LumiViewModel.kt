@@ -182,9 +182,13 @@ class LumiViewModel(
     
     fun runGemmaBenchmark() {
         viewModelScope.launch {
-            _benchmarkStatus.value = "Running Benchmark..."
-            chatRepository.benchmarkOnDeviceGemma()
-            _benchmarkStatus.value = "Benchmark Complete"
+            try {
+                _benchmarkStatus.value = "Initializing engine..."
+                chatRepository.benchmarkOnDeviceGemma()
+                _benchmarkStatus.value = "Benchmark Complete"
+            } catch (e: Exception) {
+                _benchmarkStatus.value = "Benchmark Failed: ${e.localizedMessage}"
+            }
         }
     }
 

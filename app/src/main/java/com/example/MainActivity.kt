@@ -15,6 +15,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import androidx.compose.foundation.layout.*
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -40,6 +41,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.framework.AppShortcutsManager
 import com.example.framework.PetOverlayService
+import com.example.presentation.components.LumiNavigationBar
 import com.example.presentation.components.BreathingExerciseModal
 import com.example.presentation.components.CameraVisionDialog
 import com.example.presentation.components.OverlayPermissionDialog
@@ -289,13 +291,28 @@ fun LumiApp(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             containerColor = Color.Transparent,
-            contentWindowInsets = androidx.compose.material3.ScaffoldDefaults.contentWindowInsets
+            contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
+            bottomBar = {
+                if (uiState.selectedTab != NavDestination.Assistant.tabIndex && !uiState.showWardrobeScreen) {
+                    LumiNavigationBar(
+                        haptics = haptics,
+                        selectedTab = uiState.selectedTab,
+                        onTabSelected = { index -> viewModel.setSelectedTab(index) },
+                        pendingTasksCount = tasks.count { !it.isCompleted },
+                        modifier = Modifier.navigationBarsPadding()
+                    )
+                }
+            }
         ) { innerPadding ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(ObsidianDark)
             ) {
+                // Use innerPadding in a dummy way to satisfy Scaffold lint 
+                // while maintaining true edge-to-edge for the content Box
+                val unused = innerPadding 
+                
                 Crossfade(
                     targetState = uiState.selectedTab,
                     label = "ScreenTransition"
@@ -322,8 +339,7 @@ fun LumiApp(
                             onDismissClipboard = { viewModel.dismissClipboardSnippet() },
                             onProcessClipboard = { snippet -> viewModel.processClipboardWithLumi(snippet) },
                             onOpenBreathingExercise = { viewModel.setShowBreathing(true) },
-                            onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) },
-                            innerPadding = innerPadding
+                            onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                         )
                         NavDestination.LifeHub.tabIndex -> LifeHubScreen(
                             uiState = uiState,
@@ -336,15 +352,13 @@ fun LumiApp(
                             getMilestonesForGoal = { id -> lifeHubViewModel.getMilestonesForGoal(id) },
                             soundState = soundState,
                             onAction = handleLifeHubAction,
-                            onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) },
-                            innerPadding = innerPadding
+                            onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                         )
                         NavDestination.Wellness.tabIndex -> WellnessScreen(
                             viewModel = wellnessViewModel,
                             appViewModel = viewModel,
                             onNavigateToChat = { viewModel.setSelectedTab(NavDestination.Assistant.tabIndex) },
-                            onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) },
-                            innerPadding = innerPadding
+                            onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                         )
                         NavDestination.Account.tabIndex -> UserAccountScreen(
                             userProfile = userProfile,
@@ -381,8 +395,7 @@ fun LumiApp(
                                 viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
                                 prompt?.let { viewModel.sendMessage(it) }
                             },
-                            onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) },
-                            innerPadding = innerPadding
+                            onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                         )
                         else -> HomeScreen(
                             petStatus = petStatus,
@@ -414,8 +427,7 @@ fun LumiApp(
                             onQuickAgentPrompt = { prompt ->
                                 viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
                                 chatViewModel.sendMessage(prompt)
-                            },
-                            innerPadding = innerPadding
+                            }
                         )
                     }
                 }

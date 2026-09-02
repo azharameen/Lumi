@@ -3,19 +3,12 @@ import com.example.domain.model.AuthUser
 import com.example.presentation.home.components.*
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,6 +28,7 @@ import com.example.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -70,20 +64,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
-import androidx.compose.material3.MaterialTheme
 import com.example.core.theme.spacing
 
-/**
- * Gamified Agentic AI Command Center.
- * - Top: Seamless RPG Player HUD Banner:
- *     - Avatar on left with solid brown core & status beacon.
- *     - Attached dual gauge extending directly from avatar: HP Bar on top, XP Bar attached below.
- *     - Top line: User Name + Hexagonal Level Badge.
- *     - Bottom line: Location & Network status.
- * - Center: Living 3D Mascot with Care FAB (left) & Studio/Quest buttons (right).
- * - Below Pet: Balanced row with Mic/Cancel on left, Prominent Chat in the exact CENTER, and Camera on right.
- * - App Controls: Life Hub & Wellness with generous spacing.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -113,436 +95,274 @@ fun HomeScreen(
     onDancePet: () -> Unit = {},
     onPokePet: () -> Unit = {},
     onToggleTask: (Long, Boolean) -> Unit = { _, _ -> },
-    onQuickAgentPrompt: (String) -> Unit = {},
-    innerPadding: PaddingValues = PaddingValues(0.dp)
+    onQuickAgentPrompt: (String) -> Unit = {}
 ) {
-    val context = LocalContext.current
-    val haptics = com.example.core.utils.rememberLumiHaptics(isEnabled = userProfile.enableHapticFeedback)
     val coroutineScope = rememberCoroutineScope()
-
     val petPrimary = Color(petStatus.bloubSkinColor.primaryHex)
 
     var showQuestsBottomSheet by remember { mutableStateOf(false) }
     var interactionRewardEffect by remember { mutableStateOf<String?>(null) }
-    var isCareFabExpanded by remember { mutableStateOf(false) }
 
     val remoteConfigManager = remember {
-        try {
-            GlobalContext.get().get<LumiRemoteConfigManager>()
-        } catch (_: Exception) {
-            null
-        }
+        try { GlobalContext.get().get<LumiRemoteConfigManager>() } catch (_: Exception) { null }
     }
     val remoteConfig = remoteConfigManager?.config?.collectAsStateWithLifecycle(initialValue = LumiRemoteConfig())?.value
 
-    // Ambient floating background pulses
-    val infiniteTransition = rememberInfiniteTransition(label = "HomeGamifiedAura")
+    // 1. Optimized Animation Definitions
+    val infiniteTransition = rememberInfiniteTransition(label = "HomeAura")
     val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.95f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
+        initialValue = 0.95f, targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(tween(3500, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "BgPulse"
     )
-
-    val neonGlowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.22f,
-        targetValue = 0.40f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2200, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "NeonGlowAlpha"
+    val neonAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.22f, targetValue = 0.40f,
+        animationSpec = infiniteRepeatable(tween(4000, easing = LinearEasing), RepeatMode.Reverse),
+        label = "NeonAlpha"
     )
 
-    val voiceWavePulse by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.25f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(750, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "VoiceWavePulse"
-    )
-
-    fun triggerRewardToast(text: String) {
+    fun triggerReward(text: String) {
         interactionRewardEffect = text
-        coroutineScope.launch {
-            delay(1600)
-            if (interactionRewardEffect == text) {
-                interactionRewardEffect = null
-            }
-        }
+        coroutineScope.launch { delay(1600); if (interactionRewardEffect == text) interactionRewardEffect = null }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(
-                        petPrimary.copy(alpha = neonGlowAlpha),
-                        SpaceDark,
-                        ObsidianDark
-                    ),
-                    center = Offset(540f, 500f),
-                    radius = 1300f
-                )
-            )
-    ) {
-        // --- 1. AMBIENT CYBER STARS BACKGROUND ---
+    // 2. Immersive Background
+    Box(modifier = Modifier.fillMaxSize().drawWithCache {
+        onDrawBehind {
+            drawRect(Brush.radialGradient(
+                colors = listOf(petPrimary.copy(alpha = neonAlpha), SpaceDark, ObsidianDark),
+                center = Offset(size.width / 2f, size.height * 0.3f),
+                radius = size.maxDimension * 0.7f
+            ))
+        }
+    }) {
         CyberAmbientStarsBackground(primaryColor = petPrimary)
 
-        // --- 2. MAIN SCROLLABLE CONTENT ---
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = MaterialTheme.spacing.medium, vertical = 2.dp),
+                .padding(horizontal = MaterialTheme.spacing.medium)
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            // ==========================================
-            // 1. TOP RPG HUD: ATTACHED HP & XP BARS STARTING FROM USER PIC
-            // ==========================================
+            // 3. HUD Section
             SeamlessRpgPlayerHud(
-                petStatus = petStatus,
-                batteryStatus = batteryStatus,
-                networkStatus = networkStatus,
-                locationContext = locationContext,
-                userProfile = userProfile,
-                authUser = authUser,
+                petStatus = petStatus, batteryStatus = batteryStatus, networkStatus = networkStatus,
+                locationContext = locationContext, userProfile = userProfile, authUser = authUser,
                 onNavigateToAccount = onNavigateToAccount
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // ==========================================
-            // 2. MINIMAL PET SPEECH CARD (RESPONSE TEXT + MOOD)
-            // ==========================================
-            MinimalPetSpeechCard(
-                petStatus = petStatus,
-                petPrimary = petPrimary,
-                onClick = onNavigateToChat
-            )
+            // 4. Interaction Feedback Section
+            MinimalPetSpeechCard(petStatus = petStatus, petPrimary = petPrimary, onClick = onNavigateToChat)
 
-            // Dynamic Remote Config Event Banner if active
             if (remoteConfig != null && (remoteConfig.specialEventBannerText.isNotBlank() || remoteConfig.seasonalThemeEnabled)) {
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                 RemoteConfigSeasonalBanner(
                     bannerText = if (remoteConfig.specialEventBannerText.isNotBlank()) remoteConfig.specialEventBannerText else "Enjoy the ${remoteConfig.seasonalThemeName}!",
                     seasonalThemeName = if (remoteConfig.seasonalThemeEnabled) remoteConfig.seasonalThemeName else "",
-                    petPrimary = petPrimary,
-                    onClick = onNavigateToChat
+                    petPrimary = petPrimary, onClick = onNavigateToChat
                 )
             }
 
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
 
-            // ==========================================
-            // 3. CENTER: LIVING AI COMPANION WITH CARE FAB (LEFT) & STUDIO/QUESTS (RIGHT)
-            // ==========================================
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(280.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                // Holo-Stage Platform
-                HoloPedestalPlatform(
-                    petColor = petPrimary,
-                    pulseScale = pulseScale,
-                    modifier = Modifier.align(Alignment.BottomCenter).offset(y = (-6).dp)
-                )
-
-                // Living Mascot (Tap gives cute bond reward)
-                LumiPetView(
-                    petStatus = petStatus,
-                    size = 255.dp,
-                    onPetTouched = {
-                        onPetTouched()
-                        haptics.performTick()
-                        triggerRewardToast("+10 Bond ✨")
-                    },
-                    onPetPetted = {
-                        onPetPetted()
-                        haptics.performSuccess()
-                        triggerRewardToast("+25 Bond 💖")
-                    },
-                    modifier = Modifier
-                        .testTag("lumi_pet_view")
-                        .align(Alignment.Center)
-                )
-
-                // LEFT SIDE OF PET: Fixed Anchor Expandable Pet Care FAB (Opens downwards)
-                PetCareFixedAnchorFab(
-                    isExpanded = isCareFabExpanded,
-                    onToggleExpand = { isCareFabExpanded = !isCareFabExpanded },
-                    petEmotion = petStatus.currentEmotion,
-                    petPrimary = petPrimary,
-                    onFeed = {
-                        onFeedPet()
-                        haptics.performHeavyClick()
-                        triggerRewardToast("+15 Energy 🍓")
-                    },
-                    onPet = {
-                        onPetPetted()
-                        haptics.performSuccess()
-                        triggerRewardToast("+20 Bond 💖")
-                    },
-                    onDance = {
-                        onDancePet()
-                        haptics.performSuccess()
-                        triggerRewardToast("Dance Party! 🎵")
-                    },
-                    onPoke = {
-                        onPokePet()
-                        haptics.performTick()
-                        triggerRewardToast("Giggle! ⚡")
-                    },
-                    onSleepToggle = {
-                        onTogglePetSleep()
-                        val mode = if (petStatus.currentEmotion == PetEmotion.SLEEPY) "Awake! ☀️" else "Nap Mode 🌙"
-                        triggerRewardToast(mode)
-                    },
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(start = 2.dp, top = MaterialTheme.spacing.medium)
-                )
-
-                // RIGHT SIDE OF PET: Studio & Quest Buttons
-                PetRightSideActionButtons(
-                    pendingQuestsCount = tasks.count { !it.isCompleted },
-                    onShowWardrobe = onShowWardrobe,
-                    onShowQuests = { showQuestsBottomSheet = true },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(end = 2.dp, top = MaterialTheme.spacing.medium)
-                )
-
-                // Floating Reward Pop-up animation
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = interactionRewardEffect != null,
-                    enter = fadeIn() + scaleIn(),
-                    exit = fadeOut() + scaleOut(),
-                    modifier = Modifier.align(Alignment.TopCenter).offset(y = 6.dp)
-                ) {
-                    interactionRewardEffect?.let { text ->
-                        Surface(
-                            color = petPrimary.copy(alpha = 0.92f),
-                            shape = RoundedCornerShape(12.dp),
-                            shadowElevation = MaterialTheme.spacing.small
-                        ) {
-                            Text(
-                                text = text,
-                                color = Color.White,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
-
-            // ==========================================
-            // 4. ACTION BUTTONS BELOW PET: MIC (LEFT) | CHAT (CENTER) | CAMERA (RIGHT)
-            // ==========================================
-            PetBottomControlsRow(
-                isListening = isListening,
-                isSpeaking = isSpeaking,
-                petPrimary = petPrimary,
-                voiceWavePulse = voiceWavePulse,
-                onShowCamera = onShowCamera,
-                onStartVoiceListening = onStartVoiceListening,
-                onStopVoiceListening = onStopVoiceListening,
-                onNavigateToChat = onNavigateToChat
+            // 5. Mascot & Pet Care Area
+            MascotInteractionArea(
+                petStatus = petStatus, petPrimary = petPrimary, pulseScale = pulseScale,
+                rewardEffect = interactionRewardEffect, tasksCount = tasks.count { !it.isCompleted },
+                onPetTouched = onPetTouched, onPetPetted = onPetPetted, onShowWardrobe = onShowWardrobe,
+                onShowQuests = { showQuestsBottomSheet = true }, onFeed = onFeedPet, onDance = onDancePet,
+                onPoke = onPokePet, onSleepToggle = onTogglePetSleep, triggerReward = ::triggerReward
             )
 
-            // Distinct vertical gap between pet buttons and app buttons
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
+
+            // 6. Bottom Controls
+            PetBottomControlsRow(
+                isListening = isListening, isSpeaking = isSpeaking, petPrimary = petPrimary,
+                voiceWavePulse = 1.0f, onShowCamera = onShowCamera, onStartVoiceListening = onStartVoiceListening,
+                onStopVoiceListening = onStopVoiceListening, onNavigateToChat = onNavigateToChat
+            )
+
             Spacer(modifier = Modifier.height(22.dp))
 
-            // ==========================================
-            // 5. PROMINENT APP BUTTONS: LIFE HUB & WELLNESS
-            // ==========================================
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Life Hub Button
-                Surface(
-                    color = SurfaceDark.copy(alpha = 0.88f),
-                    shape = RoundedCornerShape(MaterialTheme.spacing.medium),
-                    border = BorderStroke(1.2.dp, LumiGold.copy(alpha = 0.6f)),
-                    shadowElevation = MaterialTheme.spacing.extraSmall,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { 
-                            haptics.performTick()
-                            onNavigateToLifeHub(0) 
-                        }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            color = LumiGold.copy(alpha = 0.18f),
-                            shape = CircleShape,
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Dashboard, contentDescription = null, tint = LumiGold, modifier = Modifier.size(20.dp))
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(stringResource(id = R.string.text_life_hub), color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                            Text(stringResource(id = R.string.text_goals_schedule), color = TextSecondary, fontSize = 10.sp)
-                        }
-                    }
-                }
-
-                // Wellness Button
-                Surface(
-                    color = SurfaceDark.copy(alpha = 0.88f),
-                    shape = RoundedCornerShape(MaterialTheme.spacing.medium),
-                    border = BorderStroke(1.2.dp, LumiPink.copy(alpha = 0.6f)),
-                    shadowElevation = MaterialTheme.spacing.extraSmall,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { 
-                            haptics.performTick()
-                            onNavigateToWellness() 
-                        }
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            color = LumiPink.copy(alpha = 0.18f),
-                            shape = CircleShape,
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.SelfImprovement, contentDescription = null, tint = LumiPink, modifier = Modifier.size(20.dp))
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(stringResource(id = R.string.text_wellness), color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                            Text(stringResource(id = R.string.text_zen_vitality), color = TextSecondary, fontSize = 10.sp)
-                        }
-                    }
-                }
-            }
+            // 7. Core App Destinations
+            CoreAppGridSection(onNavigateToLifeHub, onNavigateToWellness)
 
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
         }
 
-        // ==========================================
-        // QUESTS MODAL BOTTOM SHEET
-        // ==========================================
+        // 8. Quests Overlay
         if (showQuestsBottomSheet) {
-            ModalBottomSheet(
-                onDismissRequest = { showQuestsBottomSheet = false },
-                containerColor = SurfaceDark,
-                contentColor = TextPrimary,
-                scrimColor = Color.Black.copy(alpha = 0.65f),
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.MilitaryTech, contentDescription = null, tint = LumiGold, modifier = Modifier.size(MaterialTheme.spacing.large))
-                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                            Text(stringResource(id = R.string.text_active_quests_bounties), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = TextPrimary)
-                        }
-                        Surface(
-                            color = SurfaceHighlight.copy(alpha = 0.5f),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text(
-                                "${tasks.count { !it.isCompleted }} Active",
-                                color = LumiCyan,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.extraSmall)
-                            )
-                        }
-                    }
+            QuestsBottomSheet(
+                tasks = tasks, petPrimary = petPrimary,
+                onDismiss = { showQuestsBottomSheet = false }, onToggleTask = onToggleTask,
+                onNavigateToLifeHub = { onNavigateToLifeHub(1); showQuestsBottomSheet = false },
+                triggerReward = ::triggerReward
+            )
+        }
+    }
+}
 
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+@Composable
+private fun MascotInteractionArea(
+    petStatus: PetStatus,
+    petPrimary: Color,
+    pulseScale: Float,
+    rewardEffect: String?,
+    tasksCount: Int,
+    onPetTouched: () -> Unit,
+    onPetPetted: () -> Unit,
+    onShowWardrobe: () -> Unit,
+    onShowQuests: () -> Unit,
+    onFeed: () -> Unit,
+    onDance: () -> Unit,
+    onPoke: () -> Unit,
+    onSleepToggle: () -> Unit,
+    triggerReward: (String) -> Unit
+) {
+    val haptics = com.example.core.utils.rememberLumiHaptics()
+    var isCareFabExpanded by remember { mutableStateOf(false) }
 
-                    val pending = tasks.filter { !it.isCompleted }
-                    if (pending.isEmpty()) {
-                        Surface(
-                            color = SurfaceDarkVariant.copy(alpha = 0.6f),
-                            shape = RoundedCornerShape(MaterialTheme.spacing.medium),
-                            modifier = Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.large)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(MaterialTheme.spacing.large),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = LumiGreen, modifier = Modifier.size(48.dp))
-                                Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-                                Text(stringResource(id = R.string.text_all_quests_cleared), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                                Text(stringResource(id = R.string.text_your_companion_is_thrilled_che), color = TextSecondary, fontSize = 13.sp, textAlign = TextAlign.Center)
-                            }
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.heightIn(max = 380.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            items(pending) { task ->
-                                QuestItemRow(
-                                    task = task,
-                                    onToggle = { isChecked ->
-                                        onToggleTask(task.id, isChecked)
-                                        if (isChecked) triggerRewardToast("+50 XP Claimed! 🏆")
-                                    }
-                                )
-                            }
-                        }
-                    }
+    Box(modifier = Modifier.fillMaxWidth().height(280.dp), contentAlignment = Alignment.Center) {
+        HoloPedestalPlatform(petColor = petPrimary, pulseScale = pulseScale, modifier = Modifier.align(Alignment.BottomCenter).offset(y = (-6).dp))
 
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+        LumiPetView(
+            petStatus = petStatus, size = 255.dp,
+            onPetTouched = { onPetTouched(); haptics.performTick(); triggerReward("+10 Bond ✨") },
+            onPetPetted = { onPetPetted(); haptics.performSuccess(); triggerReward("+25 Bond 💖") },
+            modifier = Modifier.testTag("lumi_pet_view").align(Alignment.Center)
+        )
 
-                    Button(
-                        onClick = {
-                            showQuestsBottomSheet = false
-                            onNavigateToLifeHub(1)
-                        },
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceDarkVariant),
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, petPrimary.copy(alpha = 0.4f))
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null, tint = petPrimary, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                        Text(stringResource(id = R.string.text_create_new_quest_in_life_hub), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                    }
+        PetCareFixedAnchorFab(
+            isExpanded = isCareFabExpanded, onToggleExpand = { isCareFabExpanded = !isCareFabExpanded },
+            petEmotion = petStatus.currentEmotion, petPrimary = petPrimary,
+            onFeed = { onFeed(); haptics.performHeavyClick(); triggerReward("+15 Energy 🍓") },
+            onPet = { onPetPetted(); haptics.performSuccess(); triggerReward("+20 Bond 💖") },
+            onDance = { onDance(); haptics.performSuccess(); triggerReward("Dance Party! 🎵") },
+            onPoke = { onPoke(); haptics.performTick(); triggerReward("Giggle! ⚡") },
+            onSleepToggle = { onSleepToggle(); val mode = if (petStatus.currentEmotion == PetEmotion.SLEEPY) "Awake! ☀️" else "Nap Mode 🌙"; triggerReward(mode) },
+            modifier = Modifier.align(Alignment.TopStart).padding(start = 2.dp, top = MaterialTheme.spacing.medium)
+        )
 
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+        PetRightSideActionButtons(
+            pendingQuestsCount = tasksCount, onShowWardrobe = onShowWardrobe, onShowQuests = onShowQuests,
+            modifier = Modifier.align(Alignment.TopEnd).padding(end = 2.dp, top = MaterialTheme.spacing.medium)
+        )
+
+        AnimatedVisibility(visible = rewardEffect != null, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut(), modifier = Modifier.align(Alignment.TopCenter).offset(y = 6.dp)) {
+            rewardEffect?.let { text ->
+                Surface(color = petPrimary.copy(alpha = 0.92f), shape = RoundedCornerShape(12.dp), shadowElevation = MaterialTheme.spacing.small) {
+                    Text(text = text, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
                 }
             }
         }
     }
 }
 
+@Composable
+private fun CoreAppGridSection(onNavigateToLifeHub: (Int) -> Unit, onNavigateToWellness: () -> Unit) {
+    val haptics = com.example.core.utils.rememberLumiHaptics()
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        AppButton(
+            title = stringResource(R.string.text_life_hub), subtitle = stringResource(R.string.text_goals_schedule),
+            icon = Icons.Default.Dashboard, color = LumiGold, onClick = { haptics.performTick(); onNavigateToLifeHub(0) },
+            modifier = Modifier.weight(1f)
+        )
+        AppButton(
+            title = stringResource(R.string.text_wellness), subtitle = stringResource(R.string.text_zen_vitality),
+            icon = Icons.Default.SelfImprovement, color = LumiPink, onClick = { haptics.performTick(); onNavigateToWellness() },
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun AppButton(title: String, subtitle: String, icon: androidx.compose.ui.graphics.vector.ImageVector, color: Color, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(
+        color = SurfaceDark.copy(alpha = 0.88f), shape = RoundedCornerShape(MaterialTheme.spacing.medium),
+        border = BorderStroke(1.2.dp, color.copy(alpha = 0.6f)), shadowElevation = MaterialTheme.spacing.extraSmall,
+        modifier = modifier.clickable { onClick() }
+    ) {
+        Row(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(color = color.copy(alpha = 0.18f), shape = CircleShape, modifier = Modifier.size(36.dp)) {
+                Box(contentAlignment = Alignment.Center) { Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp)) }
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Column {
+                Text(title, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(subtitle, color = TextSecondary, fontSize = 10.sp)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QuestsBottomSheet(
+    tasks: List<TaskEntity>,
+    petPrimary: Color,
+    onDismiss: () -> Unit,
+    onToggleTask: (Long, Boolean) -> Unit,
+    onNavigateToLifeHub: () -> Unit,
+    triggerReward: (String) -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss, containerColor = SurfaceDark, contentColor = TextPrimary,
+        scrimColor = Color.Black.copy(alpha = 0.65f), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.MilitaryTech, contentDescription = null, tint = LumiGold, modifier = Modifier.size(MaterialTheme.spacing.large))
+                    Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
+                    Text(stringResource(R.string.text_active_quests_bounties), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = TextPrimary)
+                }
+                Surface(color = SurfaceHighlight.copy(alpha = 0.5f), shape = RoundedCornerShape(10.dp)) {
+                    Text("${tasks.count { !it.isCompleted }} Active", color = LumiCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.extraSmall))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+
+            val pending = tasks.filter { !it.isCompleted }
+            if (pending.isEmpty()) {
+                EmptyQuestsPlaceholder()
+            } else {
+                LazyColumn(modifier = Modifier.heightIn(max = 380.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(pending) { task ->
+                        QuestItemRow(task = task, onToggle = { isChecked -> onToggleTask(task.id, isChecked); if (isChecked) triggerReward("+50 XP Claimed! 🏆") })
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+
+            Button(
+                onClick = onNavigateToLifeHub, modifier = Modifier.fillMaxWidth().height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = SurfaceDarkVariant),
+                shape = RoundedCornerShape(14.dp), border = BorderStroke(1.dp, petPrimary.copy(alpha = 0.4f))
+            ) {
+                Icon(Icons.Default.Add, contentDescription = null, tint = petPrimary, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
+                Text(stringResource(R.string.text_create_new_quest_in_life_hub), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            }
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+        }
+    }
+}
+
+@Composable
+private fun EmptyQuestsPlaceholder() {
+    Surface(color = SurfaceDarkVariant.copy(alpha = 0.6f), shape = RoundedCornerShape(MaterialTheme.spacing.medium), modifier = Modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.large)) {
+        Column(modifier = Modifier.padding(MaterialTheme.spacing.large), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = LumiGreen, modifier = Modifier.size(48.dp))
+            Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
+            Text(stringResource(R.string.text_all_quests_cleared), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            Text(stringResource(R.string.text_your_companion_is_thrilled_che), color = TextSecondary, fontSize = 13.sp, textAlign = TextAlign.Center)
+        }
+    }
+}

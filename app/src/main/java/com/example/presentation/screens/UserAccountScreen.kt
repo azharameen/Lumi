@@ -97,6 +97,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
@@ -193,8 +194,7 @@ fun UserAccountScreen(
     onToggleOverlay: (Boolean) -> Unit,
     onNavigateToChat: ((String?) -> Unit)? = null,
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier,
-    innerPadding: PaddingValues = PaddingValues(0.dp)
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
 
@@ -209,7 +209,7 @@ fun UserAccountScreen(
         modifier = modifier
             .fillMaxSize()
             .background(ObsidianDark)
-            .padding(innerPadding)
+            .navigationBarsPadding()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // 1. Top Account Hero Header
@@ -221,6 +221,7 @@ fun UserAccountScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .statusBarsPadding()
                         .padding(horizontal = MaterialTheme.spacing.medium, vertical = 12.dp)
                 ) {
                     Row(

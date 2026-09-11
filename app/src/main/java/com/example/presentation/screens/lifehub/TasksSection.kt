@@ -135,7 +135,7 @@ fun TasksSection(
                 }
             } else {
                 items(filteredTasks, key = { it.id }) { task ->
-                    val priorityColor = when (task.priority.uppercase()) {
+                    val priorityColor = when (task.priority.uppercase(java.util.Locale.ROOT)) {
                         "HIGH" -> LumiCoral
                         "MEDIUM" -> LumiGold
                         else -> LumiGreen
@@ -176,7 +176,7 @@ fun TasksSection(
                                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     LumiBadge(
-                                        text = task.priority.uppercase(),
+                                        text = task.priority.uppercase(java.util.Locale.ROOT),
                                         accentColor = priorityColor
                                     )
                                     Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))

@@ -154,25 +154,31 @@ fun ConnectorsControlSection(
 ) {
     val context = LocalContext.current
     val coroutineScope = androidx.compose.runtime.rememberCoroutineScope()
-    val connectorManager = remember { ConnectorRepositoryImpl(context) }
+    val connectorManager: ConnectorRepository = remember {
+        try {
+            GlobalContext.get().get<ConnectorRepository>()
+        } catch (_: Exception) {
+            ConnectorRepositoryImpl(context)
+        }
+    }
 
     val remoteConfigManager = remember {
         try {
-            GlobalContext.get().get<LumiRemoteConfigManager>()
+            GlobalContext.get().getOrNull<LumiRemoteConfigManager>() ?: LumiRemoteConfigManager()
         } catch (_: Exception) {
             LumiRemoteConfigManager()
         }
     }
     val analyticsManager = remember {
         try {
-            GlobalContext.get().get<LumiAnalyticsManager>()
+            GlobalContext.get().getOrNull<LumiAnalyticsManager>() ?: LumiAnalyticsManager(context)
         } catch (_: Exception) {
             LumiAnalyticsManager(context)
         }
     }
     val crashlyticsManager = remember {
         try {
-            GlobalContext.get().get<LumiCrashlyticsManager>()
+            GlobalContext.get().getOrNull<LumiCrashlyticsManager>() ?: LumiCrashlyticsManager()
         } catch (_: Exception) {
             LumiCrashlyticsManager()
         }

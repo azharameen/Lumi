@@ -23,8 +23,8 @@ object WordEmbeddingSimilarity {
         }
         
         // Jaccard similarity fallback if embedder uninitialized
-        val setA = textA.lowercase().split(Regex("\\s+")).toSet()
-        val setB = textB.lowercase().split(Regex("\\s+")).toSet()
+        val setA = textA.lowercase(java.util.Locale.ROOT).split(Regex("\\s+")).toSet()
+        val setB = textB.lowercase(java.util.Locale.ROOT).split(Regex("\\s+")).toSet()
         val intersection = setA.intersect(setB).size
         val union = setA.union(setB).size
         return if (union > 0) intersection.toFloat() / union.toFloat() else 0f

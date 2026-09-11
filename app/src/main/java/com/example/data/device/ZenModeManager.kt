@@ -20,7 +20,6 @@ data class ZenModeStatus(
  * When DND is active, Lumi automatically goes into Quiet/Zen mode and softens speech volume.
  */
 class ZenModeManager(private val context: Context) {
-
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
 
     private val _zenStatus = MutableStateFlow(getCurrentStatus())
@@ -36,24 +35,20 @@ class ZenModeManager(private val context: Context) {
 
     fun startListening(onChanged: ((ZenModeStatus) -> Unit)? = null) {
         this.onZenChanged = onChanged
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val filter = IntentFilter(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED)
-            try {
-                context.registerReceiver(dndReceiver, filter)
-            } catch (e: Exception) {
-                // Ignored
-            }
+        val filter = IntentFilter(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED)
+        try {
+            context.registerReceiver(dndReceiver, filter)
+        } catch (e: Exception) {
+            // Ignored
         }
         updateStatus()
     }
 
     fun stopListening() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            try {
-                context.unregisterReceiver(dndReceiver)
-            } catch (e: Exception) {
-                // Ignored
-            }
+        try {
+            context.unregisterReceiver(dndReceiver)
+        } catch (e: Exception) {
+            // Ignored
         }
     }
 
@@ -64,15 +59,12 @@ class ZenModeManager(private val context: Context) {
     }
 
     private fun getCurrentStatus(): ZenModeStatus {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val filter = notificationManager?.currentInterruptionFilter ?: NotificationManager.INTERRUPTION_FILTER_ALL
-            return when (filter) {
-                NotificationManager.INTERRUPTION_FILTER_NONE -> ZenModeStatus(true, "Total Silence")
-                NotificationManager.INTERRUPTION_FILTER_ALARMS -> ZenModeStatus(true, "Alarms Only")
-                NotificationManager.INTERRUPTION_FILTER_PRIORITY -> ZenModeStatus(true, "Priority Only")
-                else -> ZenModeStatus(false, "Normal Mode")
-            }
+        val filter = notificationManager?.currentInterruptionFilter ?: NotificationManager.INTERRUPTION_FILTER_ALL
+        return when (filter) {
+            NotificationManager.INTERRUPTION_FILTER_NONE -> ZenModeStatus(true, "Total Silence")
+            NotificationManager.INTERRUPTION_FILTER_ALARMS -> ZenModeStatus(true, "Alarms Only")
+            NotificationManager.INTERRUPTION_FILTER_PRIORITY -> ZenModeStatus(true, "Priority Only")
+            else -> ZenModeStatus(false, "Normal Mode")
         }
-        return ZenModeStatus(false, "Normal Mode")
     }
 }

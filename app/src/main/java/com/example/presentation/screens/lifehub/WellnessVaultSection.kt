@@ -423,7 +423,7 @@ fun WellnessVaultSection(
                                                 horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
                                                 Text(
-                                                    text = mem.category.uppercase(),
+                                                    text = mem.category.uppercase(java.util.Locale.ROOT),
                                                     color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                                                     fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold

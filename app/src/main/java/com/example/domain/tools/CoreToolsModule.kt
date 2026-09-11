@@ -95,7 +95,7 @@ class CreateTaskTool(private val database: LumiDatabase) : LumiTool {
 
         val task = TaskEntity(
             title = title,
-            priority = priority.uppercase(),
+            priority = priority.uppercase(java.util.Locale.ROOT),
             category = cat,
             estimatedMinutes = mins,
             notes = notes,

@@ -28,14 +28,14 @@ class OpenInstalledAppTool(private val context: Context) : LumiTool {
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {
-            val targetName = params["appName"]?.toString()?.lowercase() ?: ""
+            val targetName = params["appName"]?.toString()?.lowercase(java.util.Locale.ROOT) ?: ""
             val pm = context.packageManager
             @Suppress("DEPRECATION")
             val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
             
             val matchedApp = packages.find { app ->
-                val label = pm.getApplicationLabel(app).toString().lowercase()
-                label.contains(targetName) || app.packageName.lowercase().contains(targetName)
+                val label = pm.getApplicationLabel(app).toString().lowercase(java.util.Locale.ROOT)
+                label.contains(targetName) || app.packageName.lowercase(java.util.Locale.ROOT).contains(targetName)
             }
 
             if (matchedApp != null) {

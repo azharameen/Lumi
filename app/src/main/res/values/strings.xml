@@ -1,8 +1,16 @@
 <?xml version="1.0" ?>
 
 <resources>
+    <string name="gcm_defaultSenderId">663377968514</string>
+    <string name="project_id">studio-8325749739-eefac</string>
+    <string name="firebase_database_url">https://studio-8325749739-eefac-default-rtdb.asia-southeast1.firebasedatabase.app</string>
 
     <string name="app_name">Lumi AI Friend</string>
+    <string name="widget_title">Lumi Companion</string>
+    <string name="widget_subtitle">Lv.1 • Happy</string>
+    <string name="widget_focus_task">🎯 Top Focus Task</string>
+    <string name="widget_water_btn">+1 💧 Water</string>
+    <string name="widget_pet_btn">❤️ Pet Lumi</string>
 
     <string name="shortcut_voice_short">Voice Chat</string>
 

@@ -271,7 +271,7 @@ fun DrawScope.drawPetAccessory(
     baseRadius: Float,
     accessoryId: String
 ) {
-    when (accessoryId.trim().uppercase()) {
+    when (accessoryId.trim().uppercase(java.util.Locale.ROOT)) {
         "SPROUT" -> {
             val stemTopY = cy - (baseRadius * 0.95f)
             val stemBaseY = cy - (baseRadius * 0.78f)

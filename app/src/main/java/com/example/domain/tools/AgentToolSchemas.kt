@@ -41,7 +41,7 @@ object AgentToolSchemas {
                 if (map == null) return CreateTaskArgs()
                 return CreateTaskArgs(
                     title = map["title"]?.toString() ?: "New Action Item",
-                    priority = map["priority"]?.toString()?.uppercase() ?: "MEDIUM",
+                    priority = map["priority"]?.toString()?.uppercase(java.util.Locale.ROOT) ?: "MEDIUM",
                     category = map["category"]?.toString() ?: "General",
                     estimatedMinutes = (map["estimatedMinutes"] as? Number)?.toInt() ?: 30,
                     notes = map["notes"]?.toString() ?: ""

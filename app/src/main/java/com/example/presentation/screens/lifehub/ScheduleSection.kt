@@ -131,7 +131,7 @@ fun ScheduleSection(
                     val startTimeStr = timeFormat.format(Date(event.startTimeMillis))
                     val endTimeStr = timeFormat.format(Date(event.endTimeMillis))
 
-                    val eventColor = when (event.colorHex.uppercase()) {
+                    val eventColor = when (event.colorHex.uppercase(java.util.Locale.ROOT)) {
                         "#00E5FF" -> LumiCyan
                         "#FF4081" -> LumiPink
                         "#FFD700" -> LumiGold

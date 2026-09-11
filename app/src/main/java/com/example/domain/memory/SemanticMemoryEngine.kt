@@ -111,7 +111,7 @@ class SemanticMemoryEngine(
     }
 
     private fun getTermFrequencyVector(text: String): Map<String, Int> {
-        val words = text.lowercase()
+        val words = text.lowercase(java.util.Locale.ROOT)
             .replace(Regex("[^a-zA-Z0-9 ]"), " ")
             .split(Regex("\\s+"))
             .filter { it.length > 2 }

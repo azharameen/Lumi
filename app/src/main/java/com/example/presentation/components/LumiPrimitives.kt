@@ -215,7 +215,7 @@ fun LumiStatCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = title.uppercase(),
+                text = title.uppercase(java.util.Locale.ROOT),
                 style = MaterialTheme.typography.labelSmall,
                 color = TextTertiary,
                 fontWeight = FontWeight.Bold,

@@ -51,7 +51,7 @@ abstract class LumiDatabase : RoomDatabase() {
             cursor.close()
             
             // Result should be "ok" if SQLite structure is valid
-            if (result.lowercase() != "ok") return false
+            if (result.lowercase(java.util.Locale.ROOT) != "ok") return false
             
             // Check if vital table is reachable
             petEvolutionDao().getPetCount()
@@ -76,7 +76,7 @@ abstract class LumiDatabase : RoomDatabase() {
                 if (com.example.BuildConfig.DEBUG) {
                     builder.fallbackToDestructiveMigration(dropAllTables = true)
                 } else {
-                    builder.fallbackToDestructiveMigrationOnDowngrade()
+                    builder.fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
                 }
 
                 val instance = builder.build()

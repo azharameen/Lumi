@@ -11,6 +11,7 @@ import com.example.data.repository.*
 import com.example.data.tools.FastToolIndex
 import com.example.domain.account.UserProfileRepository
 import com.example.domain.briefing.AutonomousBriefingEngine
+import com.example.domain.connectors.ConnectorRepository
 import com.example.domain.connectors.IntegrationService
 import com.example.domain.planner.AutonomousGoalPlanner
 import com.example.domain.repository.*
@@ -66,8 +67,9 @@ val appModule = module {
     single { ToolRetriever(get(), get()) }
     
     // Connectors & Tool Dispatching
-    single { ConnectorRepositoryImpl(androidContext()) }
-    single { IntegrationService(get<ConnectorRepositoryImpl>()) }
+    single<ConnectorRepository> { ConnectorRepositoryImpl(androidContext()) }
+    single { get<ConnectorRepository>() as ConnectorRepositoryImpl }
+    single { IntegrationService(get<ConnectorRepository>()) }
     single { AgentToolDispatcher(get()) }
 
     // AI Engines

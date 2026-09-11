@@ -24,7 +24,6 @@ data class AudioHeadsetStatus(
  * Monitors wired headphone and Bluetooth audio connection status.
  */
 class AudioHeadsetManager(private val context: Context) {
-
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
 
     private val _headsetStatus = MutableStateFlow(getCurrentStatus())
@@ -69,50 +68,29 @@ class AudioHeadsetManager(private val context: Context) {
 
     private fun getCurrentStatus(): AudioHeadsetStatus {
         val am = audioManager ?: return AudioHeadsetStatus()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val devices = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-            for (device in devices) {
-                when (device.type) {
-                    AudioDeviceInfo.TYPE_WIRED_HEADSET,
-                    AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
-                    AudioDeviceInfo.TYPE_USB_HEADSET -> {
-                        return AudioHeadsetStatus(
-                            isHeadsetConnected = true,
-                            deviceName = "Wired Headphones",
-                            isBluetooth = false
-                        )
-                    }
-                    AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
-                    AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
-                    AudioDeviceInfo.TYPE_BLE_HEADSET -> {
-                        return AudioHeadsetStatus(
-                            isHeadsetConnected = true,
-                            deviceName = "Bluetooth Audio",
-                            isBluetooth = true
-                        )
-                    }
+        val devices = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+        for (device in devices) {
+            when (device.type) {
+                AudioDeviceInfo.TYPE_WIRED_HEADSET,
+                AudioDeviceInfo.TYPE_WIRED_HEADPHONES,
+                AudioDeviceInfo.TYPE_USB_HEADSET -> {
+                    return AudioHeadsetStatus(
+                        isHeadsetConnected = true,
+                        deviceName = "Wired Headphones",
+                        isBluetooth = false
+                    )
+                }
+                AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+                AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+                AudioDeviceInfo.TYPE_BLE_HEADSET -> {
+                    return AudioHeadsetStatus(
+                        isHeadsetConnected = true,
+                        deviceName = "Bluetooth Audio",
+                        isBluetooth = true
+                    )
                 }
             }
-        } else {
-            @Suppress("DEPRECATION")
-            if (am.isWiredHeadsetOn) {
-                return AudioHeadsetStatus(
-                    isHeadsetConnected = true,
-                    deviceName = "Wired Headphones",
-                    isBluetooth = false
-                )
-            }
-            @Suppress("DEPRECATION")
-            if (am.isBluetoothA2dpOn || am.isBluetoothScoOn) {
-                return AudioHeadsetStatus(
-                    isHeadsetConnected = true,
-                    deviceName = "Bluetooth Audio",
-                    isBluetooth = true
-                )
-            }
         }
-
         return AudioHeadsetStatus(
             isHeadsetConnected = false,
             deviceName = "Speaker",

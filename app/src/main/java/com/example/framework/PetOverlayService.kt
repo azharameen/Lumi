@@ -12,8 +12,11 @@ import android.content.pm.ServiceInfo
 import android.content.res.Resources
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.view.Gravity
 import android.view.WindowManager
 import android.view.animation.DecelerateInterpolator
@@ -24,10 +27,10 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.MainActivity
 import com.example.R
-import com.example.data.repository.LumiRepositoryImpl
+import com.example.core.theme.MyApplicationTheme
+import com.example.domain.account.UserProfileRepository
 import com.example.domain.repository.LumiRepository
 import com.example.presentation.overlay.PetOverlayRoot
-import com.example.core.theme.MyApplicationTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -42,6 +45,7 @@ import kotlin.random.Random
 /**
  * Hardened Foreground Android Service that manages the floating Lumi Companion Overlay.
  * - Enforces Settings.canDrawOverlays(context) validation before window attachment/manipulation.
+ * - Actively watches for permission revocation or settings toggle to cleanly remove the overlay.
  * - Handles BadTokenException and SecurityException gracefully without crashing.
  * - Binds Compose lifecycle to OverlayLifecycleOwner and ensures leak-free teardown.
  */
@@ -54,9 +58,12 @@ class PetOverlayService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var roamJob: Job? = null
     private var autoHideJob: Job? = null
+    private var permissionWatcherJob: Job? = null
+    private var settingsWatcherJob: Job? = null
     private var glideAnimator: ValueAnimator? = null
 
     private lateinit var repository: LumiRepository
+    private lateinit var userProfileRepo: UserProfileRepository
 
     private var isViewAttached = false
     private var isDockedPeeking = false
@@ -77,8 +84,10 @@ class PetOverlayService : Service() {
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
-        // Initialize Shared Singleton Repository
-        repository = org.koin.core.context.GlobalContext.get().get<com.example.domain.repository.LumiRepository>()
+        // Initialize Shared Singletons
+        val koin = org.koin.core.context.GlobalContext.get()
+        repository = koin.get<LumiRepository>()
+        userProfileRepo = koin.get<UserProfileRepository>()
         repository.setOverlayActive(true)
 
         createNotificationChannel()
@@ -94,6 +103,74 @@ class PetOverlayService : Service() {
         }
         
         setupOverlayWindow()
+        startWatchers()
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_STOP) {
+            Log.i(TAG, "Received ACTION_STOP intent. Tearing down overlay.")
+            stopServiceSafely()
+            return START_NOT_STICKY
+        }
+
+        if (!canDrawOverlays()) {
+            Log.w(TAG, "Cannot draw overlays onStartCommand. Tearing down overlay.")
+            stopServiceSafely()
+            return START_NOT_STICKY
+        }
+
+        if (!isViewAttached && overlayComposeView == null) {
+            setupOverlayWindow()
+        }
+
+        return START_NOT_STICKY
+    }
+
+    private fun startWatchers() {
+        // Active watcher 1: System Overlay Permission
+        permissionWatcherJob?.cancel()
+        permissionWatcherJob = serviceScope.launch {
+            while (isActive) {
+                delay(1000L)
+                if (!canDrawOverlays()) {
+                    Log.w(TAG, "System overlay permission was revoked. Removing overlay view and stopping service.")
+                    stopServiceSafely()
+                    break
+                }
+            }
+        }
+
+        // Active watcher 2: User Settings / Profile
+        settingsWatcherJob?.cancel()
+        settingsWatcherJob = serviceScope.launch {
+            userProfileRepo.userProfile.collect { profile ->
+                if (!profile.enableOverlay) {
+                    Log.i(TAG, "Overlay disabled in user settings. Removing overlay view and stopping service.")
+                    stopServiceSafely()
+                }
+            }
+        }
+    }
+
+    private fun stopServiceSafely() {
+        if (::userProfileRepo.isInitialized) {
+            try {
+                userProfileRepo.updateField { it.copy(enableOverlay = false) }
+            } catch (_: Exception) {}
+        }
+        if (::repository.isInitialized) {
+            try {
+                repository.setOverlayActive(false)
+            } catch (_: Exception) {}
+        }
+        cleanupOverlayView()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+        stopSelf()
     }
 
     private var initialWindowX = 0
@@ -191,7 +268,7 @@ class PetOverlayService : Service() {
                             scheduleAutoHideTimer()
                         },
                         onCloseService = {
-                            stopSelf()
+                            stopServiceSafely()
                         }
                     )
                 }
@@ -205,29 +282,29 @@ class PetOverlayService : Service() {
             isViewAttached = true
             scheduleAutoHideTimer()
         } catch (e: WindowManager.BadTokenException) {
-            cleanupOverlayView()
-            stopSelf()
+            stopServiceSafely()
         } catch (e: SecurityException) {
-            cleanupOverlayView()
-            stopSelf()
+            stopServiceSafely()
         } catch (e: Exception) {
-            cleanupOverlayView()
-            stopSelf()
+            stopServiceSafely()
         }
     }
 
     private fun updateWindowLayout() {
         val view = overlayComposeView ?: return
-        if (!isViewAttached || !canDrawOverlays()) return
+        if (!canDrawOverlays()) {
+            Log.w(TAG, "canDrawOverlays is false during updateWindowLayout. Stopping overlay.")
+            stopServiceSafely()
+            return
+        }
+        if (!isViewAttached) return
 
         try {
             windowManager.updateViewLayout(view, windowLayoutParams)
         } catch (e: WindowManager.BadTokenException) {
-            cleanupOverlayView()
-            stopSelf()
+            stopServiceSafely()
         } catch (e: SecurityException) {
-            cleanupOverlayView()
-            stopSelf()
+            stopServiceSafely()
         } catch (_: IllegalArgumentException) {
             isViewAttached = false
         } catch (_: Exception) {}
@@ -375,32 +452,64 @@ class PetOverlayService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val stopIntent = Intent(this, PetOverlayService::class.java).apply {
+            action = ACTION_STOP
+        }
+        val stopPendingIntent = PendingIntent.getService(
+            this,
+            1,
+            stopIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Lumi Companion Active")
             .setContentText("Your AI pet is floating by your side 🌸")
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingIntent)
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                "Turn Off",
+                stopPendingIntent
+            )
             .setOngoing(true)
             .build()
     }
 
     private fun cleanupOverlayView() {
-        val view = overlayComposeView
-        overlayComposeView = null
-        if (view != null && isViewAttached) {
-            try {
-                windowManager.removeView(view)
-            } catch (_: WindowManager.BadTokenException) {
-            } catch (_: SecurityException) {
-            } catch (_: IllegalArgumentException) {
-            } catch (_: Exception) {
-            } finally {
+        val runCleanup = {
+            val view = overlayComposeView
+            overlayComposeView = null
+            if (view != null) {
+                try {
+                    if (isViewAttached || view.isAttachedToWindow) {
+                        try {
+                            windowManager.removeViewImmediate(view)
+                        } catch (_: Exception) {
+                            try {
+                                windowManager.removeView(view)
+                            } catch (_: Exception) {}
+                        }
+                    }
+                } catch (_: Exception) {
+                } finally {
+                    isViewAttached = false
+                }
+                try {
+                    view.disposeComposition()
+                } catch (_: Exception) {}
+            } else {
                 isViewAttached = false
             }
         }
-        try {
-            view?.disposeComposition()
-        } catch (_: Exception) {}
+
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            runCleanup()
+        } else {
+            Handler(Looper.getMainLooper()).post {
+                runCleanup()
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -409,22 +518,37 @@ class PetOverlayService : Service() {
         glideAnimator = null
         roamJob?.cancel()
         roamJob = null
+        permissionWatcherJob?.cancel()
+        permissionWatcherJob = null
+        settingsWatcherJob?.cancel()
+        settingsWatcherJob = null
 
         lifecycleOwner.onDestroy()
         serviceScope.cancel()
 
         cleanupOverlayView()
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+
         if (::repository.isInitialized) {
-            repository.setOverlayActive(false)
+            try {
+                repository.setOverlayActive(false)
+            } catch (_: Exception) {}
         }
         super.onDestroy()
     }
 
     companion object {
+        const val ACTION_STOP = "com.example.framework.PetOverlayService.ACTION_STOP"
         private const val CHANNEL_ID = "lumi_overlay_channel"
         private const val NOTIFICATION_ID = 2001
         private const val AUTO_HIDE_IDLE_DELAY_MS = 5000L
+        private const val TAG = "PetOverlayService"
     }
 }
 

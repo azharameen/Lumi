@@ -128,6 +128,11 @@ class LumiViewModel(
             }
         }
         viewModelScope.launch {
+            petRepository.isOverlayActive.collect { active ->
+                _uiState.update { it.copy(isOverlayEnabled = active) }
+            }
+        }
+        viewModelScope.launch {
             chatRepository.agentThoughts.collect { thought ->
                 _uiState.update { it.copy(agentThought = thought) }
             }
@@ -146,6 +151,7 @@ class LumiViewModel(
     fun setShowOverlayPermission(show: Boolean) { _uiState.value = _uiState.value.copy(showOverlayPermissionDialog = show) }
     fun setOverlayEnabled(enabled: Boolean) { 
         _uiState.value = _uiState.value.copy(isOverlayEnabled = enabled) 
+        petRepository.setOverlayActive(enabled)
         viewModelScope.launch {
             userProfileManager.updateField { it.copy(enableOverlay = enabled) }
         }

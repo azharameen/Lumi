@@ -100,7 +100,7 @@ class AutonomousBriefingEngine(private val context: Any) {
         val dateString = dateFormat.format(Date())
 
         val pendingTasks = tasks.filter { !it.isCompleted }
-        val highPriorityTasks = pendingTasks.filter { it.priority.uppercase() == "HIGH" || it.priority.uppercase() == "URGENT" }
+        val highPriorityTasks = pendingTasks.filter { it.priority.uppercase(java.util.Locale.ROOT) == "HIGH" || it.priority.uppercase(java.util.Locale.ROOT) == "URGENT" }
         val completedTasksToday = tasks.filter { it.isCompleted }
 
         val todayEvents = events.filter {

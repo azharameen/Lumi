@@ -166,7 +166,7 @@ class AutonomousGoalPlanner(
         var executionOutput = ""
 
         try {
-            when (milestone.suggestedTool.uppercase()) {
+            when (milestone.suggestedTool.uppercase(java.util.Locale.ROOT)) {
                 "CALENDAR" -> {
                     val (res, report) = toolDispatcher.executeTool(
                         "add_calendar_event",
@@ -302,8 +302,8 @@ class AutonomousGoalPlanner(
                 val phaseTitle = item.optString("phaseTitle", "Phase $phaseNum")
                 val stepTitle = item.optString("stepTitle", "Milestone ${i + 1}")
                 val stepDesc = item.optString("stepDescription", "Action step")
-                val tool = when (item.optString("suggestedTool", "TASK").uppercase()) {
-                    "CALENDAR", "DOC", "GITHUB", "SLACK", "TASK" -> item.optString("suggestedTool", "TASK").uppercase()
+                val tool = when (item.optString("suggestedTool", "TASK").uppercase(java.util.Locale.ROOT)) {
+                    "CALENDAR", "DOC", "GITHUB", "SLACK", "TASK" -> item.optString("suggestedTool", "TASK").uppercase(java.util.Locale.ROOT)
                     else -> "TASK"
                 }
                 list.add(PlannedMilestone(phaseNum, phaseTitle, stepTitle, stepDesc, tool))

@@ -56,7 +56,7 @@ class GeminiNanoEngine(
         """.trimIndent()
 
         try {
-            val responseText = generateLocalText(prompt).trim().uppercase()
+            val responseText = generateLocalText(prompt).trim().uppercase(java.util.Locale.ROOT)
             when {
                 responseText.contains("QUICK_DEVICE_ACTION") -> AiTaskCategory.QUICK_DEVICE_ACTION
                 responseText.contains("WELLNESS_MOOD") -> AiTaskCategory.WELLNESS_MOOD

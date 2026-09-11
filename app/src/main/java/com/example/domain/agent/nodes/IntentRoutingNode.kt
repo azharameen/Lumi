@@ -14,7 +14,7 @@ class IntentRoutingNode(
     override val name: String = "INTENT_ROUTING"
 
     override suspend fun execute(state: AgentState): AgentState = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-        val queryLower = state.userQuery.lowercase()
+        val queryLower = state.userQuery.lowercase(java.util.Locale.ROOT)
 
         // 1. Semantic Skill Classification (On-Device LLM preferred)
         val skill = onDeviceGemmaEngine?.classifyIntent(state.userQuery) ?: detectSkillViaAi(state.userQuery)

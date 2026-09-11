@@ -71,7 +71,7 @@ private fun HudAvatarSection(authUser: AuthUser?, displayName: String, level: In
         val parts = displayName.trim().split("\\s+".toRegex()).filter { it.isNotBlank() }
         when {
             parts.size >= 2 -> "${parts[0].first().uppercaseChar()}${parts[1].first().uppercaseChar()}"
-            displayName.length >= 2 -> displayName.take(2).uppercase()
+            displayName.length >= 2 -> displayName.take(2).uppercase(java.util.Locale.ROOT)
             displayName.isNotEmpty() -> "${displayName.first().uppercaseChar()}N"
             else -> "US"
         }

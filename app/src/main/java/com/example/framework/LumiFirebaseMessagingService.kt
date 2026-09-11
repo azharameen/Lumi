@@ -60,6 +60,18 @@ class LumiFirebaseMessagingService : FirebaseMessagingService() {
                     return
                 }
 
+                val hasApps = try {
+                    com.google.firebase.FirebaseApp.getInstance()
+                    true
+                } catch (e: Exception) {
+                    false
+                }
+
+                if (!hasApps) {
+                    Log.w(TAG, "Firebase not initialized, skipping topic subscription")
+                    return
+                }
+
                 FirebaseMessaging.getInstance().subscribeToTopic("companion_proactive_alerts")
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {

@@ -13,7 +13,7 @@ class LumiRemoteConfigTest {
         val defaultConfig = LumiRemoteConfig()
 
         assertEquals("Ready for a mindful, productive day with Lumi? ✨", defaultConfig.welcomeGreeting)
-        assertEquals(0.7f, defaultConfig.aiCreativityTemperature)
+        assertEquals(0.75f, defaultConfig.aiCreativityTemperature)
         assertEquals(3, defaultConfig.proactiveNudgeIntervalHours)
         assertFalse(defaultConfig.seasonalThemeEnabled)
         assertEquals("Obsidian Neon", defaultConfig.seasonalThemeName)

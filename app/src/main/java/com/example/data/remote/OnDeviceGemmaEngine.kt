@@ -214,7 +214,7 @@ class OnDeviceGemmaEngine(
                 }
             }
 
-            val lowerText = generatedText.lowercase()
+            val lowerText = generatedText.lowercase(java.util.Locale.ROOT)
             val emotion = when {
                 lowerText.contains("schedule") || lowerText.contains("calendar") -> PetEmotion.ENERGETIC
                 lowerText.contains("task") || lowerText.contains("todo") -> PetEmotion.HAPPY

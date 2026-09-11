@@ -76,29 +76,42 @@ class LumiApplication : Application() {
 
     private fun initializeFirebase() {
         try {
-            if (FirebaseApp.getApps(this).isEmpty()) {
-                val app = FirebaseApp.initializeApp(this)
+            var isFirebaseInitialized = false
+            if (com.google.firebase.FirebaseApp.getApps(this).isEmpty()) {
+                val app = com.google.firebase.FirebaseApp.initializeApp(this)
                 if (app == null) {
-                    val options = FirebaseOptions.Builder()
-                        .setApplicationId("1:663377968514:android:bac0ab54e860f4ed40639b")
-                        .setApiKey(getApiKey())
-                        .setProjectId("studio-8325749739-eefac")
-                        .setDatabaseUrl("https://studio-8325749739-eefac-default-rtdb.asia-southeast1.firebasedatabase.app")
-                        .setStorageBucket("studio-8325749739-eefac.firebasestorage.app")
-                        .setGcmSenderId("663377968514")
-                        .build()
-                    FirebaseApp.initializeApp(this, options)
-                    Log.i("LumiApp", "Firebase initialized with explicit fallback options")
+                    val apiKey = getApiKey()
+                    if (apiKey.isNotEmpty()) {
+                        val options = com.google.firebase.FirebaseOptions.Builder()
+                            .setApplicationId("1:663377968514:android:bac0ab54e860f4ed40639b")
+                            .setApiKey(apiKey)
+                            .setProjectId("studio-8325749739-eefac")
+                            .setDatabaseUrl("https://studio-8325749739-eefac-default-rtdb.asia-southeast1.firebasedatabase.app")
+                            .setStorageBucket("studio-8325749739-eefac.firebasestorage.app")
+                            .setGcmSenderId("663377968514")
+                            .build()
+                        com.google.firebase.FirebaseApp.initializeApp(this, options)
+                        android.util.Log.i("LumiApp", "Firebase initialized with explicit fallback options")
+                        isFirebaseInitialized = true
+                    } else {
+                        android.util.Log.w("LumiApp", "Firebase not initialized automatically and no API key found. Firebase features will be disabled.")
+                    }
                 } else {
-                    Log.i("LumiApp", "Firebase initialized automatically from google-services")
+                    android.util.Log.i("LumiApp", "Firebase initialized automatically from string resources")
+                    isFirebaseInitialized = true
                 }
+            } else {
+                android.util.Log.i("LumiApp", "Firebase initialized automatically from google-services")
+                isFirebaseInitialized = true
             }
-            // Initialize Firebase App Check with Play Integrity provider
-            com.example.data.firebase.LumiAppCheckManager.getInstance().initialize()
             
-            setupFcmSkipping()
-        } catch (_: Exception) {
-            // Log omitted
+            if (isFirebaseInitialized) {
+                // Initialize Firebase App Check with Play Integrity provider
+                com.example.data.firebase.LumiAppCheckManager.getInstance().initialize()
+                setupFcmSkipping()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("LumiApp", "Error during Firebase initialization", e)
         }
     }
 
@@ -147,7 +160,6 @@ class LumiApplication : Application() {
     }
 
     private fun createNotificationChannels() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 "lumi_companion_service",
                 "Lumi Companion Service",
@@ -177,8 +189,6 @@ class LumiApplication : Application() {
             manager.createNotificationChannel(channel)
             manager.createNotificationChannel(reminderChannel)
             manager.createNotificationChannel(fcmChannel)
-        }
-        
         // Subscribe to companion notification topics
         val isEmulator = (android.os.Build.BRAND.startsWith("generic") && android.os.Build.DEVICE.startsWith("generic"))
                 || android.os.Build.FINGERPRINT.startsWith("generic")

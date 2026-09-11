@@ -191,7 +191,7 @@ class ReasoningNode(
     }
 
     private fun shouldExecuteLocally(state: AgentState): Boolean {
-        val query = state.userQuery.lowercase()
+        val query = state.userQuery.lowercase(java.util.Locale.ROOT)
         
         // Local Vision Gate (Point 4 in plan)
         if (state.imageAttachment != null) {

@@ -1,0 +1,32 @@
+Starting a Gradle Daemon, 1 busy Daemon could not be reused, use --status for details
+Calculating task graph as no cached configuration is available for tasks: :app:lintDebug
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:processDebugGoogleServices UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:injectCrashlyticsMappingFileIdDebug UP-TO-DATE
+> Task :app:generateDebugResources
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:packageDebugResources
+> Task :app:mapDebugSourceSetPaths
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugNavigationResources
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:parseDebugLocalResources
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:generateDebugRFile
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:extractProguardFiles
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:processDebugManifestForPackage
+> Task :app:mergeDebugResources
+> Task :app:kspDebugKotlin
+> Task :app:processDebugResources
+
+> Task :app:kspDebugKotlin FAILED
+e: [ksp] java.nio.file.NoSuchFileException: /app/applet/app/build/kspCaches/debug/backups/kotlin/com/example/data/remote
+21 actionable tasks: 11 executed, 10 up-to-date
+Configuration cache entry stored.

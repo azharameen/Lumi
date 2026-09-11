@@ -69,9 +69,14 @@ class FirebaseAuthRepositoryImpl(
             if (FirebaseApp.getApps(context).isEmpty()) {
                 val app = FirebaseApp.initializeApp(context)
                 if (app == null) {
+                    val apiKey = getApiKey()
+                    if (apiKey.isEmpty()) {
+                        Log.e(TAG, "No valid Firebase API Key available to initialize Auth")
+                        return false
+                    }
                     val options = FirebaseOptions.Builder()
                         .setApplicationId("1:663377968514:android:bac0ab54e860f4ed40639b")
-                        .setApiKey(getApiKey())
+                        .setApiKey(apiKey)
                         .setProjectId("studio-8325749739-eefac")
                         .setDatabaseUrl("https://studio-8325749739-eefac-default-rtdb.asia-southeast1.firebasedatabase.app")
                         .setStorageBucket("studio-8325749739-eefac.firebasestorage.app")
@@ -82,15 +87,19 @@ class FirebaseAuthRepositoryImpl(
             }
             true
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to initialize Firebase", e)
+            Log.e(TAG, "Firebase initialization failed", e)
             false
         }
     }
 
     private fun getFirebaseAuthSafe(): FirebaseAuth? {
         return try {
-            ensureFirebaseInitialized()
-            FirebaseAuth.getInstance()
+            if (ensureFirebaseInitialized() && FirebaseApp.getApps(context).isNotEmpty()) {
+                FirebaseAuth.getInstance()
+            } else {
+                Log.w(TAG, "FirebaseApp is not initialized, bypassing FirebaseAuth.")
+                null
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error getting FirebaseAuth instance", e)
             null
@@ -99,8 +108,12 @@ class FirebaseAuthRepositoryImpl(
 
     private fun getFirestoreSafe(): FirebaseFirestore? {
         return try {
-            ensureFirebaseInitialized()
-            FirebaseFirestore.getInstance()
+            if (ensureFirebaseInitialized() && FirebaseApp.getApps(context).isNotEmpty()) {
+                FirebaseFirestore.getInstance()
+            } else {
+                Log.w(TAG, "FirebaseApp is not initialized, bypassing FirebaseFirestore.")
+                null
+            }
         } catch (e: Exception) {
             Log.e(TAG, "Error getting FirebaseFirestore instance", e)
             null

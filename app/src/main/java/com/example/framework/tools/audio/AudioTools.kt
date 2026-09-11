@@ -127,7 +127,7 @@ class RingerModeTool(private val context: Context) : LumiTool {
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {
-            val modeStr = params["mode"].toString().uppercase()
+            val modeStr = params["mode"].toString().uppercase(java.util.Locale.ROOT)
             val am = context.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
                 ?: return ToolExecutionResult(false, "Audio service unavailable")
             when (modeStr) {

@@ -1,4 +1,6 @@
 package com.example.presentation.screens.account
+import android.os.Build
+import android.provider.Settings
 import androidx.compose.ui.res.stringResource
 import com.example.R
 
@@ -179,6 +181,10 @@ fun PrivacyAndVaultSection(
 
                     Spacer(modifier = Modifier.height(10.dp))
 
+                    val hasSystemOverlayPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        Settings.canDrawOverlays(context)
+                    } else true
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -189,14 +195,19 @@ fun PrivacyAndVaultSection(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(stringResource(id = R.string.text_lumi_floating_pet), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text(stringResource(id = R.string.text_keep_lumi_active_on_screen_ove), color = TextSecondary, fontSize = 12.sp)
+                                Text(
+                                    if (!hasSystemOverlayPermission) "Permission needed (tap to configure)"
+                                    else stringResource(id = R.string.text_keep_lumi_active_on_screen_ove),
+                                    color = if (!hasSystemOverlayPermission) LumiYellow else TextSecondary,
+                                    fontSize = 12.sp
+                                )
                             }
                         }
 
                         Switch(
-                            checked = isOverlayEnabled,
+                            checked = isOverlayEnabled && hasSystemOverlayPermission,
                             onCheckedChange = { 
-                                if(it) haptics.performSuccess() else haptics.performTick()
+                                if (it) haptics.performSuccess() else haptics.performTick()
                                 onToggleOverlay(it)
                             },
                             colors = SwitchDefaults.colors(

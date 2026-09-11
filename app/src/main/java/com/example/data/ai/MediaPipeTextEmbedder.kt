@@ -43,7 +43,7 @@ class MediaPipeTextEmbedder(private val context: Context) {
 
     private fun fallbackEmbed(text: String): FloatArray {
         val vector = FloatArray(384)
-        val words = text.lowercase().split(Regex("\\s+"))
+        val words = text.lowercase(java.util.Locale.ROOT).split(Regex("\\s+"))
         for ((index, word) in words.withIndex()) {
             val hash = word.hashCode()
             val pos1 = (hash and 0x7FFFFFFF) % 384

@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Launch
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -277,6 +278,7 @@ fun PetOverlayRoot(
                                 delay(420)
                                 showFidgetPopover = !showFidgetPopover
                                 try {
+                                    @Suppress("DEPRECATION")
                                     val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator
                                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                                         vibrator?.vibrate(android.os.VibrationEffect.createOneShot(45, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
@@ -486,7 +488,23 @@ fun PetOverlayRoot(
                                     }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Launch, contentDescription = "Open App", tint = LumiViolet, modifier = Modifier.size(20.dp))
+                                    Icon(Icons.AutoMirrored.Filled.Launch, contentDescription = "Open App", tint = LumiViolet, modifier = Modifier.size(20.dp))
+                                }
+                            }
+
+                            // Turn Off Overlay Button
+                            Surface(
+                                color = LumiCoral.copy(alpha = 0.15f),
+                                shape = CircleShape,
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clickable {
+                                        showFidgetPopover = false
+                                        onCloseService()
+                                    }
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.PowerSettingsNew, contentDescription = "Turn Off Overlay", tint = LumiCoral, modifier = Modifier.size(20.dp))
                                 }
                             }
                         }

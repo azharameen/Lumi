@@ -138,7 +138,7 @@ class HapticFeedbackTool(private val context: Context) : LumiTool {
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {
-            val patternStr = params["pattern"].toString().uppercase()
+            val patternStr = params["pattern"].toString().uppercase(java.util.Locale.ROOT)
             val durationMs = when (patternStr) {
                 "LIGHT" -> 50L
                 "HEAVY" -> 300L

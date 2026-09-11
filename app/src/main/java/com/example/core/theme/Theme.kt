@@ -73,7 +73,9 @@ fun MyApplicationTheme(
         SideEffect {
             val activity = view.context as? Activity
             activity?.window?.let { window ->
+                @Suppress("DEPRECATION")
                 window.statusBarColor = Color.Transparent.toArgb()
+                @Suppress("DEPRECATION")
                 window.navigationBarColor = Color.Transparent.toArgb()
                 
                 WindowCompat.getInsetsController(window, view).apply {

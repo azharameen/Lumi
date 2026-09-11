@@ -201,11 +201,11 @@ class PetRepositoryImpl(
             return false
         }
         val unlockedList = current.unlockedAccessoriesCsv.split(",")
-            .map { it.trim().uppercase() }
+            .map { it.trim().uppercase(java.util.Locale.ROOT) }
             .filter { it.isNotBlank() }
             .toMutableSet()
-        unlockedList.add(accessory.id.uppercase())
-        unlockedList.add(accessory.name.uppercase())
+        unlockedList.add(accessory.id.uppercase(java.util.Locale.ROOT))
+        unlockedList.add(accessory.name.uppercase(java.util.Locale.ROOT))
         val newCsv = unlockedList.joinToString(",")
         val newCoins = current.coins - accessory.coinCost
         val newGems = current.gems - accessory.gemCost

@@ -68,12 +68,12 @@ class FastToolIndex(
     }
 
     private fun fallbackKeywordSearch(query: String, topK: Int): List<LumiTool> {
-        val lowerQuery = query.lowercase()
+        val lowerQuery = query.lowercase(java.util.Locale.ROOT)
         return toolRegistry.getAllTools()
             .filter { tool ->
-                tool.displayName.lowercase().contains(lowerQuery) ||
-                tool.description.lowercase().contains(lowerQuery) ||
-                tool.id.lowercase().contains(lowerQuery)
+                tool.displayName.lowercase(java.util.Locale.ROOT).contains(lowerQuery) ||
+                tool.description.lowercase(java.util.Locale.ROOT).contains(lowerQuery) ||
+                tool.id.lowercase(java.util.Locale.ROOT).contains(lowerQuery)
             }
             .take(topK)
     }

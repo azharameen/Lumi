@@ -1,87 +1,35 @@
 package com.example.presentation.screens
-import androidx.compose.ui.res.stringResource
-import com.example.R
 
-
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.itemContentType
-import androidx.paging.compose.itemKey
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Air
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
-import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.SelfImprovement
-import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-import com.example.core.theme.LumiGold
-import com.example.core.theme.LumiGreen
-import com.example.core.theme.LumiMint
-import com.example.core.theme.LumiPink
-
-import com.example.core.theme.LumiYellow
-import com.example.core.theme.ObsidianDark
-import com.example.core.theme.SurfaceDark
-import com.example.core.theme.SurfaceDarkVariant
-import com.example.core.theme.SurfaceHighlight
-import com.example.core.theme.TextPrimary
-import com.example.core.theme.TextSecondary
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
+import androidx.paging.compose.itemKey
+import com.example.R
+import com.example.core.theme.*
+import com.example.core.utils.LumiHaptics
+import com.example.core.utils.rememberLumiHaptics
+import com.example.presentation.screens.wellness.*
 import com.example.presentation.viewmodel.LumiViewModel
+import com.example.presentation.viewmodel.WellnessViewModel
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
-import androidx.compose.material3.MaterialTheme
-import com.example.core.theme.spacing
 
 @Composable
 fun WellnessScreen(
-    haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
-    viewModel: com.example.presentation.viewmodel.WellnessViewModel,
-    appViewModel: com.example.presentation.viewmodel.LumiViewModel,
+    haptics: LumiHaptics = rememberLumiHaptics(),
+    viewModel: WellnessViewModel,
+    appViewModel: LumiViewModel,
     onNavigateToChat: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
@@ -95,10 +43,7 @@ fun WellnessScreen(
     var gratitudeText by remember { mutableStateOf("") }
     var isSubmittedToday by remember { mutableStateOf(false) }
 
-    val moodEmojis = listOf("😔", "😕", "😐", "🙂", "😊", "🤩")
-    val selectedEmojiIndex = ((moodScore - 1) / 1.8f).toInt().coerceIn(0, moodEmojis.size - 1)
-
-    val dateFormat = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault())
+    val dateFormat = remember { SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()) }
 
     LazyColumn(
         modifier = Modifier
@@ -111,352 +56,53 @@ fun WellnessScreen(
     ) {
         // Top Header
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.desc_back),
-                            tint = TextPrimary
-                        )
-                    }
-                    Column {
-                        Text(
-                            text = stringResource(R.string.text_holistic_wellness),
-                            style = androidx.compose.material3.MaterialTheme.typography.headlineLarge,
-                            color = TextPrimary,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = stringResource(R.string.text_mindfulness_hydration_energy_balance),
-                            color = LumiPink,
-                            style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                            fontSize = 12.5.sp
-                        )
-                    }
-                }
-
-                IconButton(
-                    onClick = { appViewModel.setShowBreathing(true) },
-                    modifier = Modifier
-                        .size(42.dp)
-                        .background(LumiGreen.copy(alpha = 0.18f), CircleShape)
-                        .testTag("wellness_breathing_btn")
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Air,
-                        contentDescription = stringResource(id = R.string.desc_breathing_exercise),
-                        tint = LumiGreen,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
+            WellnessHeader(
+                onNavigateBack = onNavigateBack,
+                onOpenBreathing = { appViewModel.setShowBreathing(true) }
+            )
         }
 
         // Daily Check-In Interactive Card
         item {
-            com.example.presentation.components.LumiCard(
-                borderColor = LumiPink.copy(alpha = 0.35f),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            color = LumiPink.copy(alpha = 0.18f),
-                            shape = CircleShape,
-                            modifier = Modifier.size(34.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(Icons.Default.Favorite, contentDescription = null, tint = LumiPink, modifier = Modifier.size(18.dp))
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = stringResource(R.string.text_daily_wellness_checkin),
-                            style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
-                            color = TextPrimary,
-                            fontWeight = FontWeight.Bold
-                        )
+            DailyCheckInCard(
+                moodScore = moodScore,
+                onMoodChange = { moodScore = it },
+                energyLevel = energyLevel,
+                onEnergyChange = { energyLevel = it },
+                hydrationCups = hydrationCups,
+                onHydrationChange = { hydrationCups = it },
+                gratitudeText = gratitudeText,
+                onGratitudeChange = { gratitudeText = it },
+                isSubmittedToday = isSubmittedToday,
+                onSubmit = {
+                    val moodLabel = when {
+                        moodScore >= 8 -> "Joyful & Centered"
+                        moodScore >= 6 -> "Balanced & Calm"
+                        moodScore >= 4 -> "Neutral"
+                        else -> "Needs Rejuvenation"
                     }
-                    Text(
-                        text = moodEmojis[selectedEmojiIndex],
-                        fontSize = 24.sp
+                    viewModel.logWellness(
+                        moodScore = moodScore.toInt(),
+                        moodLabel = moodLabel,
+                        energyLevel = energyLevel.toInt(),
+                        hydrationCups = hydrationCups,
+                        gratitude = gratitudeText
                     )
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Mood Slider
-                Text(
-                    text = "Mood State: ${moodScore.toInt()}/10",
-                    color = TextSecondary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Slider(
-                    value = moodScore,
-                    onValueChange = { 
-                        if (moodScore != it) haptics.performTick()
-                        moodScore = it 
-                    },
-                    valueRange = 1f..10f,
-                    steps = 8,
-                    colors = SliderDefaults.colors(
-                        thumbColor = LumiPink,
-                        activeTrackColor = LumiPink,
-                        inactiveTrackColor = SurfaceHighlight
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-
-                // Energy Level Slider
-                Text(
-                    text = "Energy Battery: ${energyLevel.toInt()}/10",
-                    color = TextSecondary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Slider(
-                    value = energyLevel,
-                    onValueChange = { 
-                        if (energyLevel != it) haptics.performTick()
-                        energyLevel = it 
-                    },
-                    valueRange = 1f..10f,
-                    steps = 8,
-                    colors = SliderDefaults.colors(
-                        thumbColor = LumiYellow,
-                        activeTrackColor = LumiYellow,
-                        inactiveTrackColor = SurfaceHighlight
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Hydration Stepper
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = Icons.Default.WaterDrop, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Hydration: $hydrationCups cups (Goal: 8)",
-                            color = TextPrimary,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-
-                    Row {
-                        IconButton(
-                            onClick = { if (hydrationCups > 0) hydrationCups-- },
-                            modifier = Modifier.size(MaterialTheme.spacing.extraLarge).background(SurfaceHighlight, CircleShape)
-                        ) {
-                            Text(stringResource(id = R.string.text_minus), color = TextPrimary, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                        IconButton(
-                            onClick = { hydrationCups++ },
-                            modifier = Modifier.size(MaterialTheme.spacing.extraLarge).background(androidx.compose.material3.MaterialTheme.colorScheme.primary, CircleShape)
-                        ) {
-                            Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(id = R.string.desc_add_cup), tint = ObsidianDark, modifier = Modifier.size(MaterialTheme.spacing.medium))
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Gratitude Note
-                    OutlinedTextField(
-                        value = gratitudeText,
-                        onValueChange = { gratitudeText = it },
-                        placeholder = { Text(stringResource(id = R.string.text_what_are_you_grateful_for_toda), color = TextSecondary, fontSize = 12.sp) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = LumiPink,
-                            unfocusedBorderColor = SurfaceHighlight,
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary
-                        ),
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("gratitude_input")
-                    )
-
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    Button(
-                        onClick = {
-                            val moodLabel = when {
-                                moodScore >= 8 -> "Joyful & Centered"
-                                moodScore >= 6 -> "Balanced & Calm"
-                                moodScore >= 4 -> "Neutral"
-                                else -> "Needs Rejuvenation"
-                            }
-                            viewModel.logWellness(
-                                moodScore = moodScore.toInt(),
-                                moodLabel = moodLabel,
-                                energyLevel = energyLevel.toInt(),
-                                hydrationCups = hydrationCups,
-                                gratitude = gratitudeText
-                            )
-                            isSubmittedToday = true
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = LumiPink, contentColor = ObsidianDark),
-                        shape = RoundedCornerShape(MaterialTheme.spacing.medium),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(46.dp)
-                            .testTag("save_wellness_button")
-                    ) {
-                        Text(
-                            text = if (isSubmittedToday) "Logged! ✨" else "Save Daily Check-In (+25 Pet XP)",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            }
+                    isSubmittedToday = true
+                },
+                haptics = haptics
+            )
         }
 
         // Biometric Secured Private Memory & Reflection Vault
         item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(22.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(18.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = if (uiState.isMemoryVaultUnlocked) Icons.Default.LockOpen else Icons.Default.Lock,
-                                contentDescription = stringResource(id = R.string.desc_vault_security),
-                                tint = if (uiState.isMemoryVaultUnlocked) LumiGreen else LumiGold,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                            Text(
-                                text = stringResource(R.string.text_biometric_memory_vault),
-                                color = TextPrimary,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        if (uiState.isMemoryVaultUnlocked) {
-                            Button(
-                                onClick = { appViewModel.lockMemoryVault() },
-                                colors = ButtonDefaults.buttonColors(containerColor = SurfaceHighlight, contentColor = TextSecondary),
-                                shape = RoundedCornerShape(10.dp),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = MaterialTheme.spacing.extraSmall),
-                                modifier = Modifier.height(30.dp)
-                            ) {
-                                Text(stringResource(id = R.string.text_lock), fontSize = 11.sp)
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-
-                    if (!uiState.isMemoryVaultUnlocked) {
-                        Text(
-                            text = stringResource(R.string.text_lumis_longterm_memory_bank_and_confidential),
-                            color = TextSecondary,
-                            fontSize = 12.sp
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(
-                            onClick = { appViewModel.unlockMemoryVault() },
-                            colors = ButtonDefaults.buttonColors(containerColor = LumiGold, contentColor = ObsidianDark),
-                            shape = RoundedCornerShape(14.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(44.dp)
-                                .testTag("unlock_biometric_vault_btn")
-                        ) {
-                            Icon(imageVector = Icons.Default.Fingerprint, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                            Text(stringResource(id = R.string.text_unlock_with_fingerprint_pin), fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        }
-
-                        uiState.vaultAuthError?.let { err ->
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(text = err, color = LumiPink, fontSize = 11.sp)
-                        }
-                    } else {
-                        // Unlocked State: Show Lumi's Learned Memory Bank
-                        Text(
-                            text = "Unlocked: Lumi's Persistent Memory Bank (${memories.size} items stored)",
-                            color = LumiGreen,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        if (memories.isEmpty()) {
-                            Text(
-                                text = stringResource(R.string.text_lumi_hasnt_learned_memories_yet_chat),
-                                color = TextSecondary,
-                                fontSize = 12.sp
-                            )
-                        } else {
-                            memories.forEach { memory ->
-                                Surface(
-                                    color = SurfaceDarkVariant,
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = MaterialTheme.spacing.extraSmall)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Psychology,
-                                            contentDescription = null,
-                                            tint = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                                        Column {
-                                            Text(
-                                                text = memory.category.uppercase(),
-                                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                            Text(
-                                                text = memory.memoryText,
-                                                color = TextPrimary,
-                                                fontSize = 12.sp
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            BiometricMemoryVaultCard(
+                isUnlocked = uiState.isMemoryVaultUnlocked,
+                vaultAuthError = uiState.vaultAuthError,
+                memories = memories,
+                onUnlock = { appViewModel.unlockMemoryVault() },
+                onLock = { appViewModel.lockMemoryVault() }
+            )
         }
 
         // Wellness Log History
@@ -485,60 +131,12 @@ fun WellnessScreen(
             ) { index ->
                 val log = logs[index]
                 if (log != null) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = SurfaceDarkVariant),
-                    shape = RoundedCornerShape(MaterialTheme.spacing.medium),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = log.moodLabel,
-                                    color = LumiPink,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                                Text(
-                                    text = "Mood ${log.moodScore}/10 • Energy ${log.energyLevel}/10",
-                                    color = TextSecondary,
-                                    fontSize = 11.sp
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
-                            Text(
-                                text = "💧 ${log.hydrationCups} cups water • ${dateFormat.format(Date(log.timestamp))}",
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                fontSize = 11.sp
-                            )
-                            if (!log.gratitudeNote.isNullOrBlank()) {
-                                Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
-                                Text(
-                                    text = "\"${log.gratitudeNote}\"",
-                                    color = TextPrimary.copy(alpha = 0.85f),
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-
-                        IconButton(
-                            onClick = { viewModel.incrementHydration(log.id) },
-                            modifier = Modifier
-                                .size(34.dp)
-                                .background(androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), CircleShape)
-                        ) {
-                            Icon(imageVector = Icons.Default.WaterDrop, contentDescription = stringResource(id = R.string.desc_add_water), tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(MaterialTheme.spacing.medium))
-                        }
-                    }
+                    WellnessLogItemCard(
+                        log = log,
+                        dateFormat = dateFormat,
+                        onIncrementHydration = { viewModel.incrementHydration(it) }
+                    )
                 }
-            }
             }
         }
     }

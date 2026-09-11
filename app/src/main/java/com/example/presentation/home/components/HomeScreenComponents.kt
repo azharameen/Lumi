@@ -138,7 +138,7 @@ fun RemoteConfigSeasonalBanner(
             Column(modifier = Modifier.weight(1f)) {
                 if (seasonalThemeName.isNotBlank()) {
                     Text(
-                        text = seasonalThemeName.uppercase(),
+                        text = seasonalThemeName.uppercase(java.util.Locale.ROOT),
                         color = LumiGold,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Black,
@@ -196,13 +196,13 @@ fun QuestItemRow(task: TaskEntity, onToggle: (Boolean) -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    val priorityColor = when (task.priority.uppercase()) {
+                    val priorityColor = when (task.priority.uppercase(java.util.Locale.ROOT)) {
                         "HIGH", "CRITICAL" -> LumiCoral
                         "MEDIUM" -> LumiYellow
                         else -> LumiMint
                     }
                     Text(
-                        text = task.priority.uppercase(),
+                        text = task.priority.uppercase(java.util.Locale.ROOT),
                         color = priorityColor,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.ExtraBold

@@ -235,24 +235,69 @@ fun PetOverlayRoot(
 
     val isNearTopEdge = windowY < 200
 
-    Box(
+    var prevRawX by remember { mutableFloatStateOf(0f) }
+    var longPressJob by remember { mutableStateOf<Job?>(null) }
+    var didLongPressTrigger by remember { mutableStateOf(false) }
+    val density = LocalDensity.current
+    val petCenterPx = with(density) { 46.dp.toPx() }
+
+    val petAlpha by animateFloatAsState(
+        targetValue = if (isDockedPeeking && !isListening) 0.88f else 1f,
+        animationSpec = tween(350),
+        label = "petAlpha"
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .width(220.dp)
-            .wrapContentHeight(),
-        contentAlignment = Alignment.Center
+            .width(230.dp)
+            .wrapContentHeight()
     ) {
-        // 1. Anchored Floating Lum Pet (Position NEVER shifts when popups open)
-        var prevRawX by remember { mutableFloatStateOf(0f) }
-        var longPressJob by remember { mutableStateOf<Job?>(null) }
-        val density = LocalDensity.current
-        val petCenterPx = with(density) { 46.dp.toPx() }
+        // Render Popover & Speech Bubble ABOVE Pet when not near the top edge
+        if (!isNearTopEdge) {
+            OverlayPopoverAndSpeechContent(
+                context = context,
+                showFidgetPopover = showFidgetPopover,
+                onClosePopover = { showFidgetPopover = false },
+                activeSpeechBubble = activeSpeechBubble,
+                showSpeechBubble = showSpeechBubble,
+                isListening = isListening,
+                isThinking = petStatus.isThinking,
+                onBubbleClicked = { if (isListening) stopListening() else showSpeechBubble = false },
+                onPetClicked = {
+                    coroutineScope.launch {
+                        repository.petTheCharacter()
+                        petScale.animateTo(1.25f, tween(100))
+                        petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
+                    }
+                },
+                onFeedClicked = {
+                    coroutineScope.launch {
+                        repository.feedPet("Sweet Berry")
+                        petScale.animateTo(1.2f, tween(100))
+                        petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
+                    }
+                },
+                onVoiceClicked = {
+                    showFidgetPopover = false
+                    if (isListening) stopListening() else startListening()
+                },
+                onAppClicked = {
+                    showFidgetPopover = false
+                    val launchIntent = Intent(context, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
+                    context.startActivity(launchIntent)
+                },
+                onCloseOverlayClicked = {
+                    showFidgetPopover = false
+                    onCloseService()
+                }
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+        }
 
-        val petAlpha by animateFloatAsState(
-            targetValue = if (isDockedPeeking && !isListening) 0.88f else 1f,
-            animationSpec = tween(350),
-            label = "petAlpha"
-        )
-
+        // Anchored Floating Lumi Pet View
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -268,14 +313,16 @@ fun PetOverlayRoot(
                     when (motionEvent.actionMasked) {
                         MotionEvent.ACTION_DOWN -> {
                             prevRawX = motionEvent.rawX
+                            didLongPressTrigger = false
                             onDragStart(motionEvent.rawX, motionEvent.rawY)
                             externalGazeX = ((motionEvent.x - petCenterPx) / petCenterPx).coerceIn(-1f, 1f)
                             externalGazeY = ((motionEvent.y - petCenterPx) / petCenterPx).coerceIn(-1f, 1f)
 
-                            // Schedule Long Press for Floating Fidget Popover
+                            // Schedule Long Press detection (350ms)
                             longPressJob?.cancel()
                             longPressJob = coroutineScope.launch {
-                                delay(420)
+                                delay(350)
+                                didLongPressTrigger = true
                                 showFidgetPopover = !showFidgetPopover
                                 try {
                                     @Suppress("DEPRECATION")
@@ -312,17 +359,13 @@ fun PetOverlayRoot(
 
                             onPetTapped()
 
-                            if (!wasDragging) {
-                                // SINGLE TAP: Turn on Microphone & Pet Lumi
+                            if (!wasDragging && !didLongPressTrigger) {
+                                // SINGLE TAP: Toggle Popover Menu & Pet Lumi
+                                showFidgetPopover = !showFidgetPopover
                                 coroutineScope.launch {
                                     repository.petTheCharacter()
                                     petScale.animateTo(1.22f, tween(80))
                                     petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
-                                }
-                                if (isListening) {
-                                    stopListening()
-                                } else {
-                                    startListening()
                                 }
                             }
                             true
@@ -341,7 +384,6 @@ fun PetOverlayRoot(
                     }
                 }
         ) {
-            // Voice listening glowing ripple effect
             if (isListening) {
                 Box(
                     modifier = Modifier
@@ -358,174 +400,198 @@ fun PetOverlayRoot(
                 enableInternalGestures = false,
                 externalGazeX = externalGazeX,
                 externalGazeY = externalGazeY,
-                onPetTouched = {
-                    coroutineScope.launch { repository.petTheCharacter() }
-                },
-                onPetPetted = {
-                    coroutineScope.launch { repository.petTheCharacter() }
-                }
+                onPetTouched = { coroutineScope.launch { repository.petTheCharacter() } },
+                onPetPetted = { coroutineScope.launch { repository.petTheCharacter() } }
             )
         }
 
-        // 2. Absolute Floating Speech Bubble & Popover Container (Floating above or below without affecting Pet's anchor)
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxWidth()
-                .offset(y = if (isNearTopEdge) 110.dp else (-115).dp)
+        // Render Popover & Speech Bubble BELOW Pet when near the top edge
+        if (isNearTopEdge) {
+            Spacer(modifier = Modifier.height(4.dp))
+            OverlayPopoverAndSpeechContent(
+                context = context,
+                showFidgetPopover = showFidgetPopover,
+                onClosePopover = { showFidgetPopover = false },
+                activeSpeechBubble = activeSpeechBubble,
+                showSpeechBubble = showSpeechBubble,
+                isListening = isListening,
+                isThinking = petStatus.isThinking,
+                onBubbleClicked = { if (isListening) stopListening() else showSpeechBubble = false },
+                onPetClicked = {
+                    coroutineScope.launch {
+                        repository.petTheCharacter()
+                        petScale.animateTo(1.25f, tween(100))
+                        petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
+                    }
+                },
+                onFeedClicked = {
+                    coroutineScope.launch {
+                        repository.feedPet("Sweet Berry")
+                        petScale.animateTo(1.2f, tween(100))
+                        petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
+                    }
+                },
+                onVoiceClicked = {
+                    showFidgetPopover = false
+                    if (isListening) stopListening() else startListening()
+                },
+                onAppClicked = {
+                    showFidgetPopover = false
+                    val launchIntent = Intent(context, MainActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
+                    context.startActivity(launchIntent)
+                },
+                onCloseOverlayClicked = {
+                    showFidgetPopover = false
+                    onCloseService()
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun OverlayPopoverAndSpeechContent(
+    context: Context,
+    showFidgetPopover: Boolean,
+    onClosePopover: () -> Unit,
+    activeSpeechBubble: String?,
+    showSpeechBubble: Boolean,
+    isListening: Boolean,
+    isThinking: Boolean,
+    onBubbleClicked: () -> Unit,
+    onPetClicked: () -> Unit,
+    onFeedClicked: () -> Unit,
+    onVoiceClicked: () -> Unit,
+    onAppClicked: () -> Unit,
+    onCloseOverlayClicked: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Floating Popover Card
+        AnimatedVisibility(
+            visible = showFidgetPopover,
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut()
         ) {
-            // Floating Fidget Popover Window (Long Press)
-            AnimatedVisibility(
-                visible = showFidgetPopover,
-                enter = fadeIn() + scaleIn(),
-                exit = fadeOut() + scaleOut()
+            Surface(
+                color = ObsidianDark.copy(alpha = 0.95f),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, LumiCyan),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
             ) {
-                Surface(
-                    color = ObsidianDark.copy(alpha = 0.95f),
-                    shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.5.dp, LumiCyan),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp)
+                Column(
+                    modifier = Modifier.padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Text(
+                            text = "Lumi Companion 🌸",
+                            color = LumiCyan,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = TextSecondary,
+                            modifier = Modifier
+                                .size(16.dp)
+                                .clickable { onClosePopover() }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Pet Button
+                        Surface(
+                            color = LumiPink.copy(alpha = 0.15f),
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clickable { onPetClicked() }
                         ) {
-                            Text(
-                                text = "Lumi Companion 🌸",
-                                color = LumiCyan,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                tint = TextSecondary,
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .clickable { showFidgetPopover = false }
-                            )
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Favorite, contentDescription = "Pet", tint = LumiPink, modifier = Modifier.size(20.dp))
+                            }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            modifier = Modifier.fillMaxWidth()
+                        // Feed Button
+                        Surface(
+                            color = LumiGold.copy(alpha = 0.15f),
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clickable { onFeedClicked() }
                         ) {
-                            // Pet Fidget Button
-                            Surface(
-                                color = LumiPink.copy(alpha = 0.15f),
-                                shape = CircleShape,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clickable {
-                                        coroutineScope.launch {
-                                            repository.petTheCharacter()
-                                            petScale.animateTo(1.25f, tween(100))
-                                            petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
-                                        }
-                                    }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Favorite, contentDescription = "Pet", tint = LumiPink, modifier = Modifier.size(20.dp))
-                                }
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Restaurant, contentDescription = "Feed", tint = LumiGold, modifier = Modifier.size(20.dp))
                             }
+                        }
 
-                            // Feed Fidget Button
-                            Surface(
-                                color = LumiGold.copy(alpha = 0.15f),
-                                shape = CircleShape,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clickable {
-                                        coroutineScope.launch {
-                                            repository.feedPet("Sweet Berry")
-                                            petScale.animateTo(1.2f, tween(100))
-                                            petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
-                                        }
-                                    }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Restaurant, contentDescription = "Feed", tint = LumiGold, modifier = Modifier.size(20.dp))
-                                }
+                        // Mic / Voice Talk Button
+                        Surface(
+                            color = LumiCyan.copy(alpha = 0.15f),
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clickable { onVoiceClicked() }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Mic, contentDescription = "Voice", tint = LumiCyan, modifier = Modifier.size(20.dp))
                             }
+                        }
 
-                            // Mic / Voice Talk Button
-                            Surface(
-                                color = LumiCyan.copy(alpha = 0.15f),
-                                shape = CircleShape,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clickable {
-                                        showFidgetPopover = false
-                                        if (isListening) stopListening() else startListening()
-                                    }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Mic, contentDescription = "Voice", tint = LumiCyan, modifier = Modifier.size(20.dp))
-                                }
+                        // Open App Button
+                        Surface(
+                            color = LumiViolet.copy(alpha = 0.15f),
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clickable { onAppClicked() }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.AutoMirrored.Filled.Launch, contentDescription = "Open App", tint = LumiViolet, modifier = Modifier.size(20.dp))
                             }
+                        }
 
-                            // Open App Button
-                            Surface(
-                                color = LumiViolet.copy(alpha = 0.15f),
-                                shape = CircleShape,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clickable {
-                                        showFidgetPopover = false
-                                        val launchIntent = Intent(context, MainActivity::class.java).apply {
-                                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                        }
-                                        context.startActivity(launchIntent)
-                                    }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.AutoMirrored.Filled.Launch, contentDescription = "Open App", tint = LumiViolet, modifier = Modifier.size(20.dp))
-                                }
-                            }
-
-                            // Turn Off Overlay Button
-                            Surface(
-                                color = LumiCoral.copy(alpha = 0.15f),
-                                shape = CircleShape,
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clickable {
-                                        showFidgetPopover = false
-                                        onCloseService()
-                                    }
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.PowerSettingsNew, contentDescription = "Turn Off Overlay", tint = LumiCoral, modifier = Modifier.size(20.dp))
-                                }
+                        // Turn Off Overlay Button
+                        Surface(
+                            color = LumiCoral.copy(alpha = 0.15f),
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clickable { onCloseOverlayClicked() }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.PowerSettingsNew, contentDescription = "Turn Off Overlay", tint = LumiCoral, modifier = Modifier.size(20.dp))
                             }
                         }
                     }
                 }
             }
-
-            // Floating Speech & Voice Status Bubble
-            OverlaySpeechBubble(
-                speechText = activeSpeechBubble,
-                isVisible = showSpeechBubble && !showFidgetPopover,
-                isListening = isListening,
-                isThinking = petStatus.isThinking,
-                onBubbleClicked = {
-                    if (isListening) {
-                        stopListening()
-                    } else {
-                        showSpeechBubble = false
-                    }
-                }
-            )
         }
+
+        // Floating Speech & Voice Status Bubble
+        OverlaySpeechBubble(
+            speechText = activeSpeechBubble,
+            isVisible = showSpeechBubble && !showFidgetPopover,
+            isListening = isListening,
+            isThinking = isThinking,
+            onBubbleClicked = onBubbleClicked
+        )
     }
 }

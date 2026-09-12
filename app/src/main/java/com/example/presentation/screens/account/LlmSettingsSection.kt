@@ -175,12 +175,28 @@ fun LlmSettingsSection(
     val rcConfig = remoteConfigManager?.config?.collectAsStateWithLifecycle(initialValue = LumiRemoteConfig())?.value
     var customInstructions by remember { mutableStateOf(userProfile.customAiInstructions) }
 
+    val routingModes = listOf(
+        Triple(
+            com.example.data.remote.AiRoutingMode.HYBRID_AUTO,
+            "Hybrid Smart Routing (Edge + Cloud)",
+            "Dynamic failover: uses on-device for speed & privacy, Cloud Gemini for complex tasks."
+        ),
+        Triple(
+            com.example.data.remote.AiRoutingMode.CLOUD_TURBO,
+            "Cloud Intelligence (Zero-Key Firebase AI)",
+            "Maximum multimodal reasoning with real-time tool calling and web intelligence."
+        ),
+        Triple(
+            com.example.data.remote.AiRoutingMode.STRICT_ON_DEVICE,
+            "100% Strict On-Device (Zero Cloud)",
+            "Fully offline, zero data leaves the device. Requires downloaded Gemma weights."
+        )
+    )
+
     val cloudModels = listOf(
         AiModelInfo("gemini-2.5-flash", "Gemini 2.5 Flash (Ultra Fast & Multimodal)", "Input: Text, Audio, Images, Video", "Output: Text, Code"),
-        AiModelInfo("gemini-2.5-pro", "Gemini 2.5 Pro (Deep Reasoning & Tutoring)", "Input: Text, Audio, Images, Video", "Output: Text, Code"),
-        AiModelInfo("gemini-2.5-flash-lite", "Gemini 2.5 Flash-Lite (Low Latency)", "Input: Text, Audio, Images, Video", "Output: Text, Code"),
-        AiModelInfo("hybrid-auto", "Hybrid Smart Router (Edge + Cloud)", "Input: Text, Audio, Images", "Output: Text"),
-        AiModelInfo("on-device-gemma", "On-Device Neural Engine (Offline & Private)", "Input: Text Only", "Output: Text")
+        AiModelInfo("gemini-2.5-pro", "Gemini 2.5 Pro (Deep Reasoning & Complex Workflows)", "Input: Text, Audio, Images, Video", "Output: Text, Code"),
+        AiModelInfo("gemini-2.5-flash-lite", "Gemini 2.5 Flash-Lite (Low Latency / High Throughput)", "Input: Text, Audio, Images, Video", "Output: Text, Code")
     )
 
     LazyColumn(
@@ -333,7 +349,7 @@ fun LlmSettingsSection(
             }
         }
 
-        // Active Engine Router
+        // Active Engine Router (Strictly 3 Routing Modes)
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = SurfaceDark),
@@ -345,20 +361,22 @@ fun LlmSettingsSection(
                         Icon(Icons.Default.Psychology, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                         Text(
-                            text = stringResource(R.string.text_active_llm_intelligence_engine),
+                            text = "Active Intelligence Routing Mode",
                             color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Choose how Lumi orchestrates reasoning between on-device neural weights and cloud inference.",
+                        color = TextSecondary,
+                        fontSize = 11.sp
+                    )
                     Spacer(modifier = Modifier.height(10.dp))
                     
-                    cloudModels.forEach { (modelId, label) ->
-                        val isSelected = when (modelId) {
-                            "hybrid-auto" -> aiRoutingMode == com.example.data.remote.AiRoutingMode.HYBRID_AUTO
-                            "on-device-gemma" -> aiRoutingMode == com.example.data.remote.AiRoutingMode.STRICT_ON_DEVICE
-                            else -> aiRoutingMode == com.example.data.remote.AiRoutingMode.CLOUD_TURBO && userProfile.geminiModelChoice == modelId
-                        }
+                    routingModes.forEach { (mode, title, desc) ->
+                        val isSelected = aiRoutingMode == mode
                         
                         Surface(
                             color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else SurfaceDarkVariant,
@@ -368,13 +386,9 @@ fun LlmSettingsSection(
                                 .fillMaxWidth()
                                 .padding(vertical = MaterialTheme.spacing.extraSmall)
                                 .clickable {
-                                    val newRoutingMode = when (modelId) {
-                                        "hybrid-auto" -> com.example.data.remote.AiRoutingMode.HYBRID_AUTO
-                                        "on-device-gemma" -> com.example.data.remote.AiRoutingMode.STRICT_ON_DEVICE
-                                        else -> com.example.data.remote.AiRoutingMode.CLOUD_TURBO
-                                    }
-                                    onSetAiRoutingMode(newRoutingMode)
-                                    onUpdateProfile(userProfile.copy(geminiModelChoice = modelId))
+                                    haptics.performSuccess()
+                                    onSetAiRoutingMode(mode)
+                                    android.widget.Toast.makeText(context, "Mode changed: $title", android.widget.Toast.LENGTH_SHORT).show()
                                 }
                         ) {
                             Row(
@@ -382,21 +396,102 @@ fun LlmSettingsSection(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = if (modelId.contains("on-device")) Icons.Default.Memory else Icons.Default.Cloud,
+                                    imageVector = when (mode) {
+                                        com.example.data.remote.AiRoutingMode.HYBRID_AUTO -> Icons.Default.Hub
+                                        com.example.data.remote.AiRoutingMode.CLOUD_TURBO -> Icons.Default.Cloud
+                                        com.example.data.remote.AiRoutingMode.STRICT_ON_DEVICE -> Icons.Default.Memory
+                                    },
                                     contentDescription = null,
                                     tint = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else TextSecondary,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(20.dp)
                                 )
                                 Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = label,
-                                    color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else TextPrimary,
-                                    fontSize = 13.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    modifier = Modifier.weight(1f)
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = title,
+                                        color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else TextPrimary,
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = desc,
+                                        color = TextSecondary,
+                                        fontSize = 10.sp,
+                                        lineHeight = 13.sp
+                                    )
+                                }
                                 if (isSelected) {
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Icon(Icons.Default.Check, contentDescription = stringResource(id = R.string.desc_active), tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Dedicated Cloud Model Selection (Active when Hybrid or Cloud Turbo is selected)
+        if (aiRoutingMode != com.example.data.remote.AiRoutingMode.STRICT_ON_DEVICE) {
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                    shape = RoundedCornerShape(MaterialTheme.spacing.medium),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Cloud, contentDescription = null, tint = LumiMint, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
+                            Text(
+                                text = "Cloud Intelligence Model",
+                                color = LumiMint,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Select which Gemini foundation model powers cloud responses and complex task planning.",
+                            color = TextSecondary,
+                            fontSize = 11.sp
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        cloudModels.forEach { model ->
+                            val isSelected = userProfile.geminiModelChoice == model.id
+                            Surface(
+                                color = if (isSelected) LumiMint.copy(alpha = 0.15f) else SurfaceDarkVariant,
+                                shape = RoundedCornerShape(10.dp),
+                                border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, LumiMint) else null,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 3.dp)
+                                    .clickable {
+                                        onUpdateProfile(userProfile.copy(geminiModelChoice = model.id))
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = model.label,
+                                            color = if (isSelected) LumiMint else TextPrimary,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                        )
+                                        Text(
+                                            text = "${model.inputTypes} • ${model.outputTypes}",
+                                            color = TextSecondary,
+                                            fontSize = 10.sp
+                                        )
+                                    }
+                                    if (isSelected) {
+                                        Icon(Icons.Default.Check, contentDescription = null, tint = LumiMint, modifier = Modifier.size(16.dp))
+                                    }
                                 }
                             }
                         }
@@ -431,6 +526,47 @@ fun LlmSettingsSection(
                         lineHeight = 15.sp
                     )
                     Spacer(modifier = Modifier.height(10.dp))
+
+                    val primaryAbi = android.os.Build.SUPPORTED_ABIS?.firstOrNull() ?: ""
+                    val isArmDevice = primaryAbi.contains("arm64", ignoreCase = true) || primaryAbi.contains("v7a", ignoreCase = true)
+
+                    if (!isArmDevice) {
+                        Surface(
+                            color = androidx.compose.ui.graphics.Color(0xFF2C2210),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, androidx.compose.ui.graphics.Color(0xFFFFB74D).copy(alpha = 0.5f)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = androidx.compose.ui.graphics.Color(0xFFFFB74D),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Text(
+                                        text = "Architecture Notice: $primaryAbi",
+                                        color = androidx.compose.ui.graphics.Color(0xFFFFB74D),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "MediaPipe GenAI native binaries only ship for ARM64. On x86_64 emulators, inference will gracefully route to Cloud Gemini. Test on a physical Android phone or an ARM64 system image to run 100% offline.",
+                                        color = TextSecondary,
+                                        fontSize = 10.sp,
+                                        lineHeight = 14.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
                     
                     localModelCatalog.forEach { model ->
                         val progress = modelDownloadStates[model.id]
@@ -456,21 +592,50 @@ fun LlmSettingsSection(
                                     }
                                     
                                     if (isDownloaded) {
-                                        if (isActive) {
-                                            Surface(color = LumiGreen.copy(alpha = 0.15f), shape = RoundedCornerShape(4.dp)) {
-                                                Text("Active", color = LumiGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            if (isActive) {
+                                                Surface(color = LumiGreen.copy(alpha = 0.15f), shape = RoundedCornerShape(4.dp)) {
+                                                    Text("Active", color = LumiGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                }
+                                            } else {
+                                                Surface(
+                                                    color = LumiCyan.copy(alpha = 0.15f), 
+                                                    shape = RoundedCornerShape(4.dp),
+                                                    modifier = Modifier.clickable { onSetActiveLocalModel(model.id) }
+                                                ) {
+                                                    Text("Activate", color = LumiCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                }
                                             }
-                                        } else {
-                                            Surface(
-                                                color = LumiCyan.copy(alpha = 0.15f), 
-                                                shape = RoundedCornerShape(4.dp),
-                                                modifier = Modifier.clickable { onSetActiveLocalModel(model.id) }
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            IconButton(
+                                                onClick = {
+                                                    onDeleteLocalModel(model.id)
+                                                    Toast.makeText(context, "${model.name} deleted", Toast.LENGTH_SHORT).show()
+                                                },
+                                                modifier = Modifier.size(24.dp)
                                             ) {
-                                                Text("Activate", color = LumiCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                Icon(
+                                                    Icons.Default.Delete,
+                                                    contentDescription = "Delete model weights",
+                                                    tint = TextSecondary,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
                                             }
                                         }
                                     } else if (progress != null && progress.status == com.example.data.remote.ModelDownloadStatus.DOWNLOADING) {
-                                        CircularProgressIndicator(progress = { progress.progress }, modifier = Modifier.size(20.dp), color = LumiCyan, strokeWidth = 2.dp)
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            IconButton(
+                                                onClick = { onCancelModelDownload(model.id) },
+                                                modifier = Modifier.size(24.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.Close,
+                                                    contentDescription = "Cancel download",
+                                                    tint = androidx.compose.ui.graphics.Color(0xFFFF5252),
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        }
                                     } else {
                                         Button(
                                             onClick = {
@@ -491,14 +656,63 @@ fun LlmSettingsSection(
                                     }
                                 }
 
+                                if (progress != null && progress.status == com.example.data.remote.ModelDownloadStatus.DOWNLOADING) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    LinearProgressIndicator(
+                                        progress = { progress.progress },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(6.dp)
+                                            .clip(RoundedCornerShape(3.dp)),
+                                        color = LumiCyan,
+                                        trackColor = SurfaceDark
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        val percent = (progress.progress * 100).toInt()
+                                        val downloadedMb = progress.bytesDownloaded / (1024 * 1024)
+                                        val totalMb = progress.totalBytes / (1024 * 1024)
+                                        Text(
+                                            text = "$percent% ($downloadedMb / $totalMb MB)",
+                                            color = LumiCyan,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        if (progress.speedMegaBytesPerSec > 0.0) {
+                                            Text(
+                                                text = String.format("%.1f MB/s", progress.speedMegaBytesPerSec),
+                                                color = TextSecondary,
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                    }
+                                }
+
                                 if (progress != null && progress.status == com.example.data.remote.ModelDownloadStatus.ERROR) {
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "⚠️ ${progress.errorMessage ?: "Download failed"}",
-                                        color = androidx.compose.ui.graphics.Color(0xFFFF5252),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "⚠️ ${progress.errorMessage ?: "Download failed"}",
+                                            color = androidx.compose.ui.graphics.Color(0xFFFF5252),
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        TextButton(
+                                            onClick = { onDownloadLocalModel(model.id) },
+                                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                                            modifier = Modifier.height(24.dp)
+                                        ) {
+                                            Text("Retry", color = LumiCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
                                 }
                                 
                                 Spacer(modifier = Modifier.height(6.dp))

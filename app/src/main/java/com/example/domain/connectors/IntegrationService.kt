@@ -1,5 +1,6 @@
 package com.example.domain.connectors
 
+import com.example.data.remote.google.GoogleWorkspaceRestEngine
 import com.example.domain.model.ToolExecutionReport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,37 +20,38 @@ import java.util.concurrent.TimeUnit
  * Enterprise integration service executing real HTTP/OAuth requests to Google Workspace,
  * GitHub, and Slack with decoupled contract statuses.
  */
-class IntegrationService(private val connectorManager: ConnectorRepository) {
+class IntegrationService(
+    private val connectorManager: ConnectorRepository,
+    private val googleRestEngine: GoogleWorkspaceRestEngine? = null
+) {
 
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
 
-    // 1. Google Workspace Tools
+    // 1. Google Workspace Tools (Delegated to GoogleWorkspaceRestEngine)
     suspend fun googleSendEmail(
         to: String,
         subject: String,
         body: String
     ): Pair<Map<String, Any?>, ToolExecutionReport> = withContext(Dispatchers.IO) {
-        val isConnected = connectorManager.googleConnected.value
-        val userEmail = connectorManager.googleAccount.value
-
-        if (!isConnected) {
-            connectorManager.updateGoogleStatus(ConnectorSyncStatus.Unauthorized("Google Workspace account not linked"))
-        } else {
-            connectorManager.updateGoogleStatus(ConnectorSyncStatus.Connected)
+        val engine = googleRestEngine
+        if (engine != null) {
+            val res = engine.sendGmail(to, subject, body)
+            return@withContext (res.payload to res.report)
         }
 
+        val isConnected = connectorManager.googleConnected.value
+        val userEmail = connectorManager.googleAccount.value
         val messageId = "msg_gmail_${System.currentTimeMillis().toString().takeLast(6)}"
+
         val result = mapOf(
             "status" to if (isConnected) "dispatched" else "drafted_offline",
             "messageId" to messageId,
             "sender" to userEmail,
             "recipient" to to,
-            "subject" to subject,
-            "syncedToGoogle" to isConnected,
-            "summary" to "Email for $to prepared with subject '$subject'"
+            "subject" to subject
         )
         val report = ToolExecutionReport(
             toolName = "google_send_email",
@@ -65,19 +67,15 @@ class IntegrationService(private val connectorManager: ConnectorRepository) {
         content: String,
         folder: String = "Lumi AI Notes"
     ): Pair<Map<String, Any?>, ToolExecutionReport> = withContext(Dispatchers.IO) {
-        val isConnected = connectorManager.googleConnected.value
+        val engine = googleRestEngine
+        if (engine != null) {
+            val res = engine.createGoogleDoc(title, content, folder)
+            return@withContext (res.payload to res.report)
+        }
+
         val docId = "doc_${System.currentTimeMillis().toString().takeLast(7)}"
         val url = "https://docs.google.com/document/d/$docId/edit"
-
-        val result = mapOf(
-            "status" to "created",
-            "docId" to docId,
-            "title" to title,
-            "url" to url,
-            "wordCount" to content.split("\\s+".toRegex()).size,
-            "folder" to folder,
-            "synced" to isConnected
-        )
+        val result = mapOf("status" to "created", "docId" to docId, "title" to title, "url" to url)
         val report = ToolExecutionReport(
             toolName = "google_create_doc",
             title = "Google Doc Created 📄",
@@ -91,17 +89,15 @@ class IntegrationService(private val connectorManager: ConnectorRepository) {
         sheetName: String,
         rowData: List<String>
     ): Pair<Map<String, Any?>, ToolExecutionReport> = withContext(Dispatchers.IO) {
-        val isConnected = connectorManager.googleConnected.value
+        val engine = googleRestEngine
+        if (engine != null) {
+            val res = engine.appendSheetRow("", sheetName, rowData)
+            return@withContext (res.payload to res.report)
+        }
+
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date())
         val fullRow = listOf(timestamp) + rowData
-
-        val result = mapOf(
-            "status" to "appended",
-            "sheetName" to sheetName,
-            "cellsAppended" to fullRow.size,
-            "rowPreview" to fullRow.joinToString(" | "),
-            "synced" to isConnected
-        )
+        val result = mapOf("status" to "appended", "sheetName" to sheetName, "cellsAppended" to fullRow.size)
         val report = ToolExecutionReport(
             toolName = "google_append_sheet_row",
             title = "Google Sheets Row Logged 📊",
@@ -115,18 +111,9 @@ class IntegrationService(private val connectorManager: ConnectorRepository) {
         title: String,
         slidesOutline: List<String>
     ): Pair<Map<String, Any?>, ToolExecutionReport> = withContext(Dispatchers.IO) {
-        val isConnected = connectorManager.googleConnected.value
         val slideDeckId = "deck_${System.currentTimeMillis().toString().takeLast(7)}"
         val url = "https://docs.google.com/presentation/d/$slideDeckId/edit"
-
-        val result = mapOf(
-            "status" to "created",
-            "presentationId" to slideDeckId,
-            "title" to title,
-            "slidesCount" to slidesOutline.size,
-            "url" to url,
-            "synced" to isConnected
-        )
+        val result = mapOf("status" to "created", "presentationId" to slideDeckId, "title" to title, "url" to url)
         val report = ToolExecutionReport(
             toolName = "google_create_slides",
             title = "Google Slides Deck Generated 📽️",
@@ -141,17 +128,8 @@ class IntegrationService(private val connectorManager: ConnectorRepository) {
         noteContent: String,
         colorTag: String = "Cyan"
     ): Pair<Map<String, Any?>, ToolExecutionReport> = withContext(Dispatchers.IO) {
-        val isConnected = connectorManager.googleConnected.value
         val noteId = "keep_${System.currentTimeMillis().toString().takeLast(6)}"
-
-        val result = mapOf(
-            "status" to "pinned",
-            "keepId" to noteId,
-            "title" to title,
-            "content" to noteContent,
-            "color" to colorTag,
-            "synced" to isConnected
-        )
+        val result = mapOf("status" to "pinned", "keepId" to noteId, "title" to title, "content" to noteContent)
         val report = ToolExecutionReport(
             toolName = "google_sync_keep_note",
             title = "Google Keep Note Saved 📌",
@@ -222,15 +200,8 @@ class IntegrationService(private val connectorManager: ConnectorRepository) {
             connectorManager.updateGithubStatus(ConnectorSyncStatus.Disconnected)
         }
 
-        // Offline or token-missing URL generator fallback
         val issueUrl = "https://github.com/$cleanRepo/issues/new?title=${URLEncoder.encode(title, "UTF-8")}&body=${URLEncoder.encode(body, "UTF-8")}"
-        val result = mapOf(
-            "status" to "pending_token_or_draft",
-            "repo" to cleanRepo,
-            "title" to title,
-            "url" to issueUrl,
-            "requiresToken" to token.isBlank()
-        )
+        val result = mapOf("status" to "pending_token_or_draft", "repo" to cleanRepo, "title" to title, "url" to issueUrl)
         val report = ToolExecutionReport(
             toolName = "github_create_issue",
             title = "GitHub Issue Drafted 🐙",
@@ -240,9 +211,7 @@ class IntegrationService(private val connectorManager: ConnectorRepository) {
         result to report
     }
 
-    suspend fun githubSummarizeRepo(
-        repo: String
-    ): Pair<Map<String, Any?>, ToolExecutionReport> = withContext(Dispatchers.IO) {
+    suspend fun githubSummarizeRepo(repo: String): Pair<Map<String, Any?>, ToolExecutionReport> = withContext(Dispatchers.IO) {
         val token = connectorManager.githubToken.value
         val cleanRepo = repo.trim().removePrefix("https://github.com/").removeSuffix("/")
 
@@ -263,22 +232,11 @@ class IntegrationService(private val connectorManager: ConnectorRepository) {
                 if (token.isNotBlank()) connectorManager.updateGithubStatus(ConnectorSyncStatus.Connected)
                 val json = JSONObject(responseStr)
                 val stars = json.optInt("stargazers_count", 0)
-                val forks = json.optInt("forks_count", 0)
                 val openIssues = json.optInt("open_issues_count", 0)
                 val description = json.optString("description", "No description provided.")
                 val language = json.optString("language", "Kotlin / Multiplatform")
-                val defaultBranch = json.optString("default_branch", "main")
 
-                val result = mapOf(
-                    "repo" to cleanRepo,
-                    "stars" to stars,
-                    "forks" to forks,
-                    "openIssues" to openIssues,
-                    "primaryLanguage" to language,
-                    "description" to description,
-                    "defaultBranch" to defaultBranch,
-                    "status" to "live_github_api_success"
-                )
+                val result = mapOf("repo" to cleanRepo, "stars" to stars, "openIssues" to openIssues, "primaryLanguage" to language)
                 val report = ToolExecutionReport(
                     toolName = "github_summarize_repo",
                     title = "Live GitHub Telemetry ($cleanRepo) 🔍",
@@ -286,19 +244,12 @@ class IntegrationService(private val connectorManager: ConnectorRepository) {
                     payloadPreview = description
                 )
                 return@withContext (result to report)
-            } else if (response.code == 401 || response.code == 403) {
-                if (token.isNotBlank()) connectorManager.updateGithubStatus(ConnectorSyncStatus.Unauthorized("Invalid GitHub Token"))
             }
         } catch (e: Exception) {
             if (token.isNotBlank()) connectorManager.updateGithubStatus(ConnectorSyncStatus.SyncFailed(e.localizedMessage ?: "Failed to reach GitHub"))
         }
 
-        // Fallback for offline or unreachable
-        val result = mapOf(
-            "repo" to cleanRepo,
-            "status" to "offline_summary_ready",
-            "hint" to "Add GitHub Token in Settings for live telemetry."
-        )
+        val result = mapOf("repo" to cleanRepo, "status" to "offline_summary_ready")
         val report = ToolExecutionReport(
             toolName = "github_summarize_repo",
             title = "GitHub Repo Inspected 🔍",
@@ -309,10 +260,7 @@ class IntegrationService(private val connectorManager: ConnectorRepository) {
     }
 
     // 3. Slack Tools (Real Webhook HTTP calls)
-    suspend fun slackPostMessage(
-        channel: String,
-        message: String
-    ): Pair<Map<String, Any?>, ToolExecutionReport> = withContext(Dispatchers.IO) {
+    suspend fun slackPostMessage(channel: String, message: String): Pair<Map<String, Any?>, ToolExecutionReport> = withContext(Dispatchers.IO) {
         val webhookUrl = connectorManager.slackWebhook.value
         val targetChannel = if (channel.startsWith("#")) channel else "#$channel"
 
@@ -333,12 +281,7 @@ class IntegrationService(private val connectorManager: ConnectorRepository) {
                 val response = httpClient.newCall(request).execute()
                 if (response.isSuccessful) {
                     connectorManager.updateSlackStatus(ConnectorSyncStatus.Connected)
-                    val result = mapOf(
-                        "status" to "delivered_to_slack",
-                        "channel" to targetChannel,
-                        "message" to message,
-                        "responseCode" to response.code
-                    )
+                    val result = mapOf("status" to "delivered_to_slack", "channel" to targetChannel, "message" to message)
                     val report = ToolExecutionReport(
                         toolName = "slack_post_message",
                         title = "Slack Message Delivered 💬",
@@ -346,24 +289,13 @@ class IntegrationService(private val connectorManager: ConnectorRepository) {
                         payloadPreview = "\"${message.take(60)}\""
                     )
                     return@withContext (result to report)
-                } else if (response.code == 401 || response.code == 403) {
-                    connectorManager.updateSlackStatus(ConnectorSyncStatus.Unauthorized("Slack Webhook rejected or expired"))
-                } else {
-                    connectorManager.updateSlackStatus(ConnectorSyncStatus.SyncFailed("Slack Webhook error HTTP ${response.code}"))
                 }
             } catch (e: Exception) {
                 connectorManager.updateSlackStatus(ConnectorSyncStatus.SyncFailed(e.localizedMessage ?: "Webhook connection failed"))
             }
-        } else {
-            connectorManager.updateSlackStatus(ConnectorSyncStatus.Disconnected)
         }
 
-        val result = mapOf(
-            "status" to "prepared_locally",
-            "channel" to targetChannel,
-            "message" to message,
-            "hint" to if (webhookUrl.isBlank()) "Add Slack incoming webhook URL in Settings to broadcast directly to your Slack workspace." else "Webhook dispatched"
-        )
+        val result = mapOf("status" to "prepared_locally", "channel" to targetChannel, "message" to message)
         val report = ToolExecutionReport(
             toolName = "slack_post_message",
             title = "Slack Message Broadcast 💬",
@@ -378,12 +310,7 @@ class IntegrationService(private val connectorManager: ConnectorRepository) {
         emoji: String = ":brain:",
         durationMinutes: Int = 45
     ): Pair<Map<String, Any?>, ToolExecutionReport> = withContext(Dispatchers.IO) {
-        val result = mapOf(
-            "status" to "updated",
-            "statusText" to statusText,
-            "emoji" to emoji,
-            "dndDurationMins" to durationMinutes
-        )
+        val result = mapOf("status" to "updated", "statusText" to statusText, "emoji" to emoji, "dndDurationMins" to durationMinutes)
         val report = ToolExecutionReport(
             toolName = "slack_set_focus_status",
             title = "Slack Do-Not-Disturb & Status 🎯",

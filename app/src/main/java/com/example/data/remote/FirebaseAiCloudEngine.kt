@@ -164,7 +164,10 @@ class FirebaseAiCloudEngine {
                 generativeModel.generateContent(contentList)
             }
 
-            val responseText = response.text?.trim() ?: "I'm right here beside you, friend! ✨"
+            val rawText = response.text?.trim() ?: "I'm right here beside you, friend! ✨"
+            val responseText = rawText
+                .replace(Regex("""^(?:lumi|assistant|model|ai|bot)\s*[:\-]\s*""", RegexOption.IGNORE_CASE), "")
+                .trim()
             
             analyticsManager?.logAiChatMessage(
                 mode = "FIREBASE_AI_CLOUD",

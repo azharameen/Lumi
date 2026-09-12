@@ -63,7 +63,17 @@ class OnDeviceGemmaEngine(
     }
 
 
+    fun isHardwareSupported(): Boolean {
+        // MediaPipe Tasks GenAI only provides native JNI binaries (libllm_inference_engine_jni.so) for ARM64 (arm64-v8a).
+        // On x86_64 emulators, even if arm64 is in the device translation abilist, an x86_64 app process
+        // cannot dynamically load arm64 native shared libraries directly without crashing with UnsatisfiedLinkError.
+        // Therefore, verify that the primary ABI of the running process is ARM.
+        val primaryAbi = android.os.Build.SUPPORTED_ABIS?.firstOrNull() ?: ""
+        return primaryAbi.contains("arm64", ignoreCase = true) || primaryAbi.contains("v7a", ignoreCase = true)
+    }
+
     fun isModelReady(): Boolean {
+        if (!isHardwareSupported()) return false
         val activeSpec = downloadManager?.getActiveModelSpec() ?: return false
         val modelFile = downloadManager.getModelFile(activeSpec.id)
         return modelFile.exists() && modelFile.length() > 0L
@@ -75,8 +85,11 @@ class OnDeviceGemmaEngine(
         val memoryInfo = ActivityManager.MemoryInfo()
         activityManager.getMemoryInfo(memoryInfo)
         
-        val effectiveAvailable = memoryInfo.availMem - RAM_HEADROOM_SAFETY_MARGIN_BYTES
-        return Pair(effectiveAvailable >= requiredBytes, memoryInfo.availMem)
+        // MediaPipe uses mmap memory mapping for model weights rather than Java heap allocation.
+        // Only block local execution if Android OS explicitly flags a lowMemory state
+        // or available RAM is below the critical safety margin (250MB).
+        val isCriticallyLow = memoryInfo.lowMemory || memoryInfo.availMem < 250_000_000L
+        return Pair(!isCriticallyLow, memoryInfo.availMem)
     }
 
     fun getDiagnostics(): GemmaModelStatus {
@@ -129,8 +142,13 @@ class OnDeviceGemmaEngine(
                 // Try GPU first, fallback to CPU if initialization fails (often due to resource contention)
                 llmInference = try {
                     LlmInference.createFromOptions(context, optionsBuilder.build())
-                } catch (e: Exception) {
-                    val msg = e.message ?: ""
+                } catch (t: Throwable) {
+                    if (t is LinkageError || t is UnsatisfiedLinkError) {
+                        throw OnDeviceInferenceException.HardwareIncompatible(
+                            "MediaPipe GenAI native library (libllm_inference_engine_jni.so) requires an ARM-compatible device (arm64-v8a). x86_64 emulators are not supported by MediaPipe."
+                        )
+                    }
+                    val msg = t.message ?: ""
                     if (msg.contains("model identifier") || msg.contains("TFL3") || msg.contains("initialize session") || msg.contains("RET_CHECK")) {
                         modelFile.delete()
                         loadedModelPath = null
@@ -138,35 +156,93 @@ class OnDeviceGemmaEngine(
                         throw OnDeviceInferenceException.ModelNotFound(activeSpec.id, "Corrupted model detected during load and removed.")
                     }
                     crashlyticsManager?.logBreadcrumb("OnDeviceGemmaEngine", "GPU Init failed, falling back to CPU: $msg")
-                    LlmInference.createFromOptions(context, optionsBuilder.build())
+                    try {
+                        LlmInference.createFromOptions(context, optionsBuilder.build())
+                    } catch (inner: Throwable) {
+                        if (inner is LinkageError || inner is UnsatisfiedLinkError) {
+                            throw OnDeviceInferenceException.HardwareIncompatible(
+                                "MediaPipe GenAI native library (libllm_inference_engine_jni.so) requires an ARM-compatible device (arm64-v8a). x86_64 emulators are not supported by MediaPipe."
+                            )
+                        }
+                        throw inner
+                    }
                 }
                 loadedModelPath = modelFile.absolutePath
             }
 
             val conversationHistory = recentHistory.takeLast(4).joinToString("\n") { "${it.first}: ${it.second}" }
             
-            // Stage 1: Fast Tool Retrieval (<5ms)
-            val relevantTools = toolRetriever?.getRelevantTools(userMessage, maxTools = 3) ?: emptyList()
+            // Stage 1: Fast Tool Retrieval (<5ms) with Intent Gating
+            // Only inject tool schemas if the user message signals actionable tool intent
+            val actionIntentKeywords = listOf(
+                "set", "schedule", "create", "add", "turn", "toggle", "open", "launch",
+                "check", "battery", "uptime", "alarm", "reminder", "timer", "volume",
+                "brightness", "wifi", "bluetooth", "note", "task", "event", "status"
+            )
+            val hasActionIntent = actionIntentKeywords.any { keyword ->
+                Regex("""\b${Regex.escape(keyword)}\b""", RegexOption.IGNORE_CASE).containsMatchIn(userMessage)
+            }
+
+            val relevantTools = if (hasActionIntent) {
+                toolRetriever?.getRelevantTools(userMessage, maxTools = 3) ?: emptyList()
+            } else {
+                emptyList()
+            }
+
             val toolPromptSection = if (relevantTools.isNotEmpty()) {
                 val toolsXml = relevantTools.joinToString("\n") { tool ->
                     val paramsStr = tool.parameters.joinToString(" ") { "${it.name}=\"${it.type}\"" }
                     "<tool name=\"${tool.id}\" desc=\"${tool.description}\" $paramsStr/>"
                 }
-                "\nAvailable Tools:\n$toolsXml\nIf needed, reply ONLY with: <tool_call><name>TOOL_NAME</name><args>{\"key\": \"val\"}</args></tool_call>\n"
+                "\nAvailable Tools:\n$toolsXml\nIf you need to call a tool, reply ONLY with: <tool_call><name>TOOL_NAME</name><args>{\"key\": \"val\"}</args></tool_call>\n"
             } else ""
 
-            val prompt = if (conversationHistory.isNotBlank()) {
-                "Context:\n$conversationHistory$toolPromptSection\nUser: $userMessage\nAssistant:"
-            } else {
-                "User: $userMessage$toolPromptSection\nAssistant:"
+            val systemPrompt = "You are Lumi, a friendly, loving AI companion pet. Reply warmly and concisely to your friend."
+            
+            // Build Gemma Instruction-Tuning Prompt with native alternating turns (<start_of_turn>user ... <end_of_turn><start_of_turn>model)
+            val prompt = buildString {
+                val pastTurns = recentHistory.takeLast(6)
+                if (pastTurns.isNotEmpty()) {
+                    pastTurns.forEachIndexed { index, (sender, text) ->
+                        val isUser = sender.equals("user", ignoreCase = true)
+                        val roleTag = if (isUser) "user" else "model"
+                        append("<start_of_turn>$roleTag\n")
+                        if (index == 0 && isUser) {
+                            append(systemPrompt)
+                            if (toolPromptSection.isNotBlank()) {
+                                append("\n").append(toolPromptSection)
+                            }
+                            append("\n\n")
+                        }
+                        append(text.trim())
+                        append("<end_of_turn>\n")
+                    }
+                    append("<start_of_turn>user\n")
+                    append(userMessage)
+                    append("<end_of_turn>\n<start_of_turn>model\n")
+                } else {
+                    append("<start_of_turn>user\n")
+                    append(systemPrompt)
+                    if (toolPromptSection.isNotBlank()) {
+                        append("\n").append(toolPromptSection)
+                    }
+                    append("\n\n")
+                    append(userMessage)
+                    append("<end_of_turn>\n<start_of_turn>model\n")
+                }
             }
 
             // Stage 2: Real True Local Inference Execution
             val rawOutput = try {
                 llmInference?.generateResponse(prompt)
                     ?: throw OnDeviceInferenceException.InferenceExecutionError("Local engine returned null.")
-            } catch (e: Exception) {
-                if (e.message?.contains("model identifier") == true || e.message?.contains("TFL3") == true) {
+            } catch (t: Throwable) {
+                if (t is LinkageError || t is UnsatisfiedLinkError) {
+                    throw OnDeviceInferenceException.HardwareIncompatible(
+                        "MediaPipe GenAI native library requires an ARM-compatible device (arm64-v8a)."
+                    )
+                }
+                if (t.message?.contains("model identifier") == true || t.message?.contains("TFL3") == true) {
                     // Critical Corruption Detected: Wipe model file and notify download manager to show Download button in UI
                     modelFile.delete()
                     loadedModelPath = null
@@ -174,26 +250,31 @@ class OnDeviceGemmaEngine(
                     downloadManager?.notifyCorruptedOrDeleted(activeSpec.id)
                     throw OnDeviceInferenceException.ModelNotFound(activeSpec.id, "Corrupted model detected and removed. Please re-download.")
                 }
-                throw e
+                throw t
             }
 
-            var generatedText = rawOutput
             val toolReports = mutableListOf<ToolExecutionReport>()
+            val executedToolIds = mutableSetOf<String>()
+            val executedToolSummaries = mutableListOf<String>()
 
-            // Stage 3: Parse XML Tool Calls & Local Kotlin Execution
-            val toolCallRegex = Regex("<tool_call><name>(.*?)</name><args>(.*?)</args></tool_call>", RegexOption.DOT_MATCHES_ALL)
-            val match = toolCallRegex.find(rawOutput)
-            if (match != null) {
+            // Stage 3: Parse XML Tool Calls & Local Kotlin Execution (Handle multiple or duplicated calls)
+            val toolCallRegex = Regex("<tool_call>\\s*<name>(.*?)</name>\\s*<args>(.*?)</args>\\s*</tool_call>", RegexOption.DOT_MATCHES_ALL)
+            val matches = toolCallRegex.findAll(rawOutput).toList()
+
+            for (match in matches) {
                 val toolId = match.groupValues[1].trim()
                 val argsJsonStr = match.groupValues[2].trim()
-                val tool = ToolRegistry.getInstance().getTool(toolId)
 
+                // Deduplicate repetitive tool executions in a single model turn
+                if (!executedToolIds.add(toolId)) continue
+
+                val tool = ToolRegistry.getInstance().getTool(toolId)
                 if (tool != null) {
                     val paramsMap = mutableMapOf<String, Any?>()
                     try {
                         val jsonObj = JSONObject(argsJsonStr)
                         jsonObj.keys().forEach { key -> paramsMap[key] = jsonObj.get(key) }
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         // ignore malformed json
                     }
 
@@ -210,7 +291,45 @@ class OnDeviceGemmaEngine(
                             payloadPreview = execResult.resultText.take(100)
                         )
                     )
-                    generatedText = "Executed ${tool.displayName}: ${execResult.resultText}"
+                    executedToolSummaries.add(execResult.resultText)
+                }
+            }
+
+            // Thoroughly scrub XML tags and raw tool call syntax from conversational output
+            var generatedText = rawOutput
+                .replace("<start_of_turn>model", "")
+                .replace("<end_of_turn>", "")
+                .replace("<start_of_turn>user", "")
+                .replace(Regex("<tool_call>.*?</tool_call>", RegexOption.DOT_MATCHES_ALL), "")
+                .replace(Regex("<tool.*?>.*?</tool.*?>", RegexOption.DOT_MATCHES_ALL), "")
+                .replace(Regex("</?tool_call>", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("</?tool>", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("</?args>", RegexOption.IGNORE_CASE), "")
+                .replace(Regex("</?name>", RegexOption.IGNORE_CASE), "")
+                .trim()
+
+            // Gracefully truncate hallucinated multi-turn continuations (e.g. model fabricating next "user: ... assistant: ...")
+            val nextTurnPattern = Regex("""(?:\n|<start_of_turn>)\s*(?:user|human|userl|assistant|model|lumi)\s*[:\-]""", RegexOption.IGNORE_CASE)
+            val turnCutoff = nextTurnPattern.find(generatedText)?.range?.first
+            if (turnCutoff != null && turnCutoff > 0) {
+                generatedText = generatedText.substring(0, turnCutoff).trim()
+            }
+
+            // Strip leading speaker prefixes (e.g. "Lumi:", "Assistant:", "Model:")
+            generatedText = generatedText
+                .replace(Regex("""^(?:lumi|assistant|model|ai|bot)\s*[:\-]\s*""", RegexOption.IGNORE_CASE), "")
+                .trim()
+
+            // Clean any stray "user:" or "assistant:" transcript artifacts
+            generatedText = generatedText
+                .replace(Regex("""(?i)\b(?:user|assistant|userl)\s*:\s*"""), "")
+                .trim()
+
+            // If the model produced only tool calls with no companion text, provide a natural companion response
+            if (generatedText.isBlank()) {
+                generatedText = when {
+                    executedToolSummaries.isNotEmpty() -> executedToolSummaries.joinToString("\n\n")
+                    else -> "I'm right here with you! How can I help?"
                 }
             }
 
@@ -224,40 +343,59 @@ class OnDeviceGemmaEngine(
             }
 
             AgentExecutionResult(generatedText, emotion, toolReports)
-        } catch (e: Exception) {
+        } catch (h: OnDeviceInferenceException) {
+            throw h
+        } catch (t: Throwable) {
+            if (t is LinkageError || t is UnsatisfiedLinkError) {
+                throw OnDeviceInferenceException.HardwareIncompatible(
+                    "MediaPipe GenAI native library requires an ARM-compatible device (arm64-v8a). It is not supported on x86_64 emulators."
+                )
+            }
             throw OnDeviceInferenceException.InferenceExecutionError(
-                "True Local inference error on $modelTag: ${e.localizedMessage}",
-                e
+                "True Local inference error on $modelTag: ${t.localizedMessage}",
+                t
             )
         }
     }
 
     suspend fun benchmarkOnDeviceGemma(): Pair<String, Long> = withContext(Dispatchers.Default) {
         val safeContext = context ?: throw OnDeviceInferenceException.HardwareIncompatible("Context required for benchmark.")
-        
-        // Initialize engine if not loaded
-        if (llmInference == null) {
-            if (!isModelReady()) throw OnDeviceInferenceException.ModelNotFound("unknown", "Model weights missing for benchmark.")
-            val activeSpec = downloadManager?.getActiveModelSpec() ?: throw OnDeviceInferenceException.ModelNotFound("unknown", "No active spec.")
-            val modelFile = downloadManager.getModelFile(activeSpec.id)
-            val options = LlmInference.LlmInferenceOptions.builder()
-                .setModelPath(modelFile.absolutePath)
-                .setMaxTokens(128)
-                .build()
-            llmInference = LlmInference.createFromOptions(safeContext, options)
-            loadedModelPath = modelFile.absolutePath
+        if (!isHardwareSupported()) {
+            throw OnDeviceInferenceException.HardwareIncompatible("MediaPipe GenAI native library requires ARM64 architecture.")
         }
         
-        val start = System.currentTimeMillis()
-        val response = llmInference?.generateResponse("Test") ?: "Failed"
-        Pair(response, System.currentTimeMillis() - start)
+        try {
+            // Initialize engine if not loaded
+            if (llmInference == null) {
+                if (!isModelReady()) throw OnDeviceInferenceException.ModelNotFound("unknown", "Model weights missing for benchmark.")
+                val activeSpec = downloadManager?.getActiveModelSpec() ?: throw OnDeviceInferenceException.ModelNotFound("unknown", "No active spec.")
+                val modelFile = downloadManager.getModelFile(activeSpec.id)
+                val options = LlmInference.LlmInferenceOptions.builder()
+                    .setModelPath(modelFile.absolutePath)
+                    .setMaxTokens(128)
+                    .build()
+                llmInference = LlmInference.createFromOptions(safeContext, options)
+                loadedModelPath = modelFile.absolutePath
+            }
+            
+            val start = System.currentTimeMillis()
+            val response = llmInference?.generateResponse("Test") ?: "Failed"
+            Pair(response, System.currentTimeMillis() - start)
+        } catch (h: OnDeviceInferenceException) {
+            throw h
+        } catch (t: Throwable) {
+            if (t is LinkageError || t is UnsatisfiedLinkError) {
+                throw OnDeviceInferenceException.HardwareIncompatible("MediaPipe GenAI native library requires ARM64 architecture.")
+            }
+            throw OnDeviceInferenceException.InferenceExecutionError("Benchmark failed: ${t.localizedMessage}", t)
+        }
     }
 
     /**
      * Semantically classifies a user query into a structured Intent/Skill category.
      */
     suspend fun classifyIntent(userQuery: String): String = withContext(Dispatchers.Default) {
-        if (!isModelReady()) return@withContext "GENERAL_COMPANION"
+        if (!isModelReady() || !isHardwareSupported() || context == null) return@withContext "GENERAL_COMPANION"
         
         val prompt = """
             You are a semantic classifier. Categorize the user's message into EXACTLY ONE of these categories:
@@ -282,7 +420,7 @@ class OnDeviceGemmaEngine(
                     .setMaxTokens(16)
                     .setTemperature(0.1f)
                     .build()
-                llmInference = LlmInference.createFromOptions(context!!, options)
+                llmInference = LlmInference.createFromOptions(context, options)
                 loadedModelPath = modelFile.absolutePath
             }
 
@@ -296,7 +434,7 @@ class OnDeviceGemmaEngine(
                 raw.contains("WELLNESS") -> "WELLNESS"
                 else -> "GENERAL_COMPANION"
             }
-        } catch (e: Exception) {
+        } catch (t: Throwable) {
             "GENERAL_COMPANION"
         }
     }

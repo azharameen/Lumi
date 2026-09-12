@@ -41,7 +41,10 @@ class ChatRepositoryImpl(
     override val pendingHitlActions: Flow<List<HitlPendingAction>> = hybridAiEngine.hitlApprovalManager.pendingActions
 
     override suspend fun sendMessage(userText: String, image: ByteArray?): ChatMessageEntity = withContext(Dispatchers.IO) {
-        // Save user message
+        // Fetch prior history BEFORE inserting current user message to avoid duplicate turns
+        val previousEntities = database.chatMessageDao().getRecentMessagesDirect()
+        val historyTurns = previousEntities.reversed().map { it.sender to it.content }
+
         val userEntity = ChatMessageEntity(
             sender = "USER",
             content = userText,
@@ -52,9 +55,6 @@ class ChatRepositoryImpl(
         petRepository.setThinking(true)
         petRepository.setPetEmotion(PetEmotion.THINKING)
         petRepository.setSpeechBubbleText("Thinking...")
-
-        val recentEntities = database.chatMessageDao().getRecentMessagesDirect()
-        val historyTurns = recentEntities.reversed().map { it.sender to it.content }
 
         val agentResult = try {
             hybridAiEngine.executeUserTurn(
@@ -77,11 +77,18 @@ class ChatRepositoryImpl(
         val toolName = agentResult.toolReports.firstOrNull()?.toolName
         val toolResult = agentResult.toolReports.firstOrNull()?.description
 
+        val engineTag = if (agentResult.usedEngine.contains("GEMMA")) "ON_DEVICE_GEMMA" else null
+        val finalToolName = when {
+            engineTag != null && toolName != null -> "$engineTag:$toolName"
+            engineTag != null -> engineTag
+            else -> toolName
+        }
+
         val aiEntity = ChatMessageEntity(
             sender = "LUMI",
             content = agentResult.responseText,
             petEmotion = agentResult.inferredEmotion.name,
-            toolUsedName = toolName,
+            toolUsedName = finalToolName,
             toolResultJson = toolResult
         )
         database.chatMessageDao().insertMessage(aiEntity)

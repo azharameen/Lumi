@@ -12,11 +12,18 @@ import com.example.domain.agent.hitl.HitlApprovalManager
 import com.example.domain.ai.AiModelRegistry
 import com.example.domain.ai.SmartAiRouter
 import com.example.domain.model.PetEmotion
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.example.data.preferences.dataStore
 import com.example.domain.tools.AgentToolDispatcher
 import com.example.domain.tools.ToolRetriever
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.core.context.GlobalContext
 import kotlin.math.ceil
@@ -39,8 +46,27 @@ class HybridAiEngine(
     private val geminiEngine = GeminiAgentEngine(toolDispatcher, database, hitlApprovalManager, onDeviceGemmaEngine)
     val downloadManager = context?.let { ModelDownloadManager.getInstance(it) }
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val _routingMode = MutableStateFlow(AiRoutingMode.HYBRID_AUTO)
     val routingMode = _routingMode.asStateFlow()
+
+    companion object {
+        private val KEY_AI_ROUTING_MODE = stringPreferencesKey("lumi_ai_routing_mode")
+    }
+
+    init {
+        context?.let { ctx ->
+            scope.launch {
+                try {
+                    val prefs = ctx.dataStore.data.first()
+                    val savedModeName = prefs[KEY_AI_ROUTING_MODE]
+                    if (savedModeName != null) {
+                        _routingMode.value = AiRoutingMode.valueOf(savedModeName)
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+    }
 
     private val performanceManager by lazy {
         try {
@@ -68,6 +94,15 @@ class HybridAiEngine(
 
     fun setRoutingMode(mode: AiRoutingMode) {
         _routingMode.value = mode
+        context?.let { ctx ->
+            scope.launch {
+                try {
+                    ctx.dataStore.edit { prefs ->
+                        prefs[KEY_AI_ROUTING_MODE] = mode.name
+                    }
+                } catch (_: Exception) {}
+            }
+        }
     }
 
     suspend fun clearAiAnalyticsLogs() {
@@ -100,12 +135,20 @@ class HybridAiEngine(
                     toolReports = localResult.toolReports,
                     usedEngine = "ON_DEVICE_GEMMA"
                 )
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 crashlyticsManager?.logBreadcrumb("HybridAiEngine", "On-device Gemma fallback to Cloud Gemini: ${e.message}")
                 if (currentRoutingMode == AiRoutingMode.STRICT_ON_DEVICE) {
                     // Strict On-Device Mode: Never send to cloud without user consent
+                    val errorMessage = when (e) {
+                        is OnDeviceInferenceException.HardwareIncompatible -> 
+                            "⚠️ [On-Device Mode]: MediaPipe GenAI requires an ARM-compatible Android device (arm64-v8a). x86_64 emulators do not have native inference library support. Please test on a physical Android phone or an ARM64 emulator."
+                        is LinkageError ->
+                            "⚠️ [On-Device Mode]: Native inference library error (libllm_inference_engine_jni.so). This device architecture is incompatible with MediaPipe local LLM."
+                        else ->
+                            "⚠️ [On-Device Mode]: ${e.message ?: "Local model weights are not downloaded."}\n\nTo chat 100% offline, go to Settings > LLM Settings > On-Device Local LLM Hub and download Gemma 2B."
+                    }
                     EngineTurnResult(
-                        responseText = "⚠️ [On-Device Mode]: ${e.message ?: "Local model weights are not downloaded."}\n\nTo chat 100% offline, go to Settings > LLM Settings > On-Device Local LLM Hub and download Gemma 2B.",
+                        responseText = errorMessage,
                         inferredEmotion = PetEmotion.THINKING,
                         toolReports = emptyList(),
                         usedEngine = "ON_DEVICE_GEMMA_UNREADY"

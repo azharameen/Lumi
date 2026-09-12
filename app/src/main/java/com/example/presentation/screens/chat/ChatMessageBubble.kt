@@ -1,5 +1,10 @@
 package com.example.presentation.screens.chat
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -7,12 +12,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,7 +60,10 @@ fun ChatMessageBubble(
         horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
     ) {
         if (!isUser) {
-            val isGemmaOnDevice = message.content.contains("[Gemma On-Device]") || message.petEmotion == "OFFLINE"
+            val isGemmaOnDevice = message.toolUsedName?.startsWith("ON_DEVICE_GEMMA") == true ||
+                    message.content.contains("[Gemma") ||
+                    message.content.contains("[On-Device Mode]") ||
+                    message.petEmotion == "OFFLINE"
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 5.dp, start = MaterialTheme.spacing.extraSmall)
@@ -158,39 +172,151 @@ fun ChatMessageBubble(
                     lineHeight = 21.sp
                 )
 
-                if (message.toolUsedName != null) {
+                val rawToolName = message.toolUsedName
+                val isActualToolExecution = !rawToolName.isNullOrBlank() && rawToolName != "ON_DEVICE_GEMMA"
+                if (isActualToolExecution) {
+                    val actualToolName = if (rawToolName?.startsWith("ON_DEVICE_GEMMA:") == true) {
+                        rawToolName.removePrefix("ON_DEVICE_GEMMA:")
+                    } else {
+                        rawToolName ?: "Tool"
+                    }
+
+                    val formattedToolTitle = actualToolName
+                        .replace('_', ' ')
+                        .split(' ')
+                        .joinToString(" ") { word ->
+                            word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+                        }
+
+                    val toolCategoryIcon = when {
+                        actualToolName.contains("alarm", ignoreCase = true) ||
+                        actualToolName.contains("timer", ignoreCase = true) ||
+                        actualToolName.contains("schedule", ignoreCase = true) ||
+                        actualToolName.contains("calendar", ignoreCase = true) -> Icons.Default.Schedule
+
+                        actualToolName.contains("device", ignoreCase = true) ||
+                        actualToolName.contains("system", ignoreCase = true) ||
+                        actualToolName.contains("uptime", ignoreCase = true) ||
+                        actualToolName.contains("battery", ignoreCase = true) ||
+                        actualToolName.contains("wifi", ignoreCase = true) -> Icons.Default.Tune
+
+                        actualToolName.contains("task", ignoreCase = true) ||
+                        actualToolName.contains("goal", ignoreCase = true) ||
+                        actualToolName.contains("todo", ignoreCase = true) -> Icons.Default.CheckCircle
+
+                        actualToolName.contains("memory", ignoreCase = true) ||
+                        actualToolName.contains("fact", ignoreCase = true) -> Icons.Default.Psychology
+
+                        else -> Icons.Default.AutoAwesome
+                    }
+
+                    var isToolExpanded by remember { mutableStateOf(false) }
+
                     Spacer(modifier = Modifier.height(10.dp))
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = ObsidianDark.copy(alpha = 0.8f)),
-                        shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(1.dp, LumiGreen.copy(alpha = 0.4f))
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                haptics.performTick()
+                                isToolExpanded = !isToolExpanded
+                            },
+                        colors = CardDefaults.cardColors(containerColor = ObsidianDark.copy(alpha = 0.85f)),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, LumiGreen.copy(alpha = 0.45f))
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier.padding(10.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = LumiGreen,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Column {
-                                Text(
-                                    text = "Tool Executed: ${message.toolUsedName}",
-                                    color = LumiGreen,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                if (!message.toolResultJson.isNullOrBlank()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    color = LumiGreen.copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = toolCategoryIcon,
+                                            contentDescription = null,
+                                            tint = LumiGreen,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = message.toolResultJson,
-                                        color = TextSecondary,
-                                        fontSize = 10.sp,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
+                                        text = formattedToolTitle,
+                                        color = TextPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
+                                    if (!isToolExpanded && !message.toolResultJson.isNullOrBlank()) {
+                                        Text(
+                                            text = message.toolResultJson,
+                                            color = TextTertiary,
+                                            fontSize = 10.sp,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+
+                                Surface(
+                                    color = LumiGreen.copy(alpha = 0.2f),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = "Executed",
+                                        color = LumiGreen,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(4.dp))
+
+                                Icon(
+                                    imageVector = if (isToolExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = if (isToolExpanded) "Collapse" else "Expand",
+                                    tint = TextSecondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+
+                            AnimatedVisibility(
+                                visible = isToolExpanded,
+                                enter = expandVertically() + fadeIn(),
+                                exit = shrinkVertically() + fadeOut()
+                            ) {
+                                if (!message.toolResultJson.isNullOrBlank()) {
+                                    Column(modifier = Modifier.padding(top = 8.dp)) {
+                                        HorizontalDivider(
+                                            color = SurfaceHighlight.copy(alpha = 0.5f),
+                                            thickness = 0.8.dp,
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        )
+                                        Surface(
+                                            color = SurfaceDark.copy(alpha = 0.9f),
+                                            shape = RoundedCornerShape(8.dp),
+                                            border = BorderStroke(0.5.dp, SurfaceHighlight.copy(alpha = 0.3f)),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text(
+                                                text = message.toolResultJson,
+                                                color = LumiCyan,
+                                                fontSize = 10.sp,
+                                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                                lineHeight = 14.sp,
+                                                modifier = Modifier.padding(8.dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

@@ -22,7 +22,7 @@ object LumiAgentGraph {
             .registerNode(StartNode())
             .registerNode(IntentRoutingNode(onDeviceGemmaEngine))
             .registerNode(MemoryRetrievalNode(database))
-            .registerNode(PlanningNode())
+            .registerNode(PlanningNode(onDeviceGemmaEngine))
             .registerNode(ReasoningNode(onDeviceGemmaEngine))
             .registerNode(ToolExecutionNode(toolDispatcher))
             .registerNode(ReflexionNode())

@@ -30,13 +30,14 @@ class AgentToolDispatcher(
         }
 
         // 1. Structured Argument Validation
-        val validationError = validateArgs(tool, args)
-        if (validationError != null) {
-            return@withContext handleToolError(toolName, Exception("Validation Error: $validationError"))
+        val validationResult = ToolParameterValidator.validate(tool, args ?: emptyMap())
+        if (!validationResult.isValid) {
+            return@withContext handleToolError(toolName, Exception("Validation Error: ${validationResult.errorMessage}"))
         }
+        val safeParams = validationResult.validatedParams
 
         val result = try {
-            val executionResult = tool.execute(args ?: emptyMap())
+            val executionResult = tool.execute(safeParams)
             
             val report = ToolExecutionReport(
                 toolName = tool.id,

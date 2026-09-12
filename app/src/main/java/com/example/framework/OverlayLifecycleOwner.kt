@@ -57,6 +57,10 @@ class OverlayLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner, ViewModel
     }
 
     fun onDestroy() {
+        if (lifecycleRegistry.currentState == Lifecycle.State.INITIALIZED) {
+            store.clear()
+            return
+        }
         if (lifecycleRegistry.currentState != Lifecycle.State.DESTROYED) {
             onPause()
             lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)

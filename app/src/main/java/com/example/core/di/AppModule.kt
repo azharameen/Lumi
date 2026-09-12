@@ -7,12 +7,17 @@ import com.example.data.remote.HybridAiEngine
 import com.example.data.remote.LocalVisionEngine
 import com.example.data.remote.ModelDownloadManager
 import com.example.data.remote.OnDeviceGemmaEngine
+import com.example.data.remote.google.GoogleWorkspaceAuthManager
+import com.example.data.remote.google.GoogleWorkspaceRestEngine
 import com.example.data.repository.*
 import com.example.data.tools.FastToolIndex
 import com.example.domain.account.UserProfileRepository
+import com.example.domain.billing.TokenBillingManager
 import com.example.domain.briefing.AutonomousBriefingEngine
 import com.example.domain.connectors.ConnectorRepository
 import com.example.domain.connectors.IntegrationService
+import com.example.domain.mcp.McpClientEngine
+import com.example.domain.mcp.McpJsonRpcClient
 import com.example.domain.planner.AutonomousGoalPlanner
 import com.example.domain.repository.*
 import com.example.domain.tools.AgentToolDispatcher
@@ -60,6 +65,15 @@ val appModule = module {
     single { ModelDownloadManager.getInstance(androidContext()) }
     single { AutonomousBriefingEngine(androidContext()) }
     single { ProceduralSoundscapeEngine.getInstance(androidContext()) }
+    single { TokenBillingManager(androidContext()) }
+
+    // Google Workspace OAuth & REST Engine
+    single { GoogleWorkspaceAuthManager(androidContext(), get()) }
+    single { GoogleWorkspaceRestEngine(get()) }
+
+    // MCP JSON-RPC Engine
+    single { McpJsonRpcClient() }
+    single { McpClientEngine(get()) }
 
     // 1000+ Tools & FTS Engine Singletons
     single { ToolRegistry.getInstance() }
@@ -69,7 +83,7 @@ val appModule = module {
     // Connectors & Tool Dispatching
     single<ConnectorRepository> { ConnectorRepositoryImpl(androidContext()) }
     single { get<ConnectorRepository>() as ConnectorRepositoryImpl }
-    single { IntegrationService(get<ConnectorRepository>()) }
+    single { IntegrationService(get<ConnectorRepository>(), get<GoogleWorkspaceRestEngine>()) }
     single { AgentToolDispatcher(get()) }
 
     // AI Engines
@@ -90,7 +104,7 @@ val appModule = module {
     single { PetInteractionUseCase(get()) }
     single { DecomposeGoalUseCase(get()) }
 
-    // Legacy/Facade Repository (Delegates to new ones)
+    // Legacy/Facade Repository
     single<LumiRepository> { LumiRepositoryImpl.getInstance(androidContext(), get()) }
 
     // Other repositories

@@ -14,7 +14,7 @@ object SemanticIntentClassifier {
         if (trimmed.isBlank()) return AiTaskCategory.COMPANION_CHAT
 
         // Length guard: very long prompts default to deep cloud reasoning
-        if (trimmed.length > 300) return AiTaskCategory.DEEP_REASONING
+        if (trimmed.length > 350) return AiTaskCategory.DEEP_REASONING
 
         // High-level category decision
         return if (isLocalIntent(trimmed)) {
@@ -29,10 +29,21 @@ object SemanticIntentClassifier {
      * vs. requiring cloud reasoning.
      */
     fun isLocalIntent(text: String): Boolean {
-        if (text.length > 250) return false
+        if (text.length > 300) return false
         if (text.isBlank()) return true
         
-        // Zero-shot AI heuristic: short conversational inputs default to local on-device
-        return text.length < 80
+        val lower = text.lowercase(java.util.Locale.ROOT)
+        // Complex tasks that truly need large reasoning model:
+        if (lower.contains("write code") ||
+            lower.contains("explain code") ||
+            lower.contains("debug this") ||
+            lower.contains("solve math") ||
+            lower.contains("calculate integral") ||
+            lower.contains("analyze dataset")) {
+            return false
+        }
+        
+        // Conversational chat, queries, questions, companion banter, tasks, reminders all run locally
+        return true
     }
 }

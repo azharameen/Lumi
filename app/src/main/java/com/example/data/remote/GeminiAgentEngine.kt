@@ -38,11 +38,13 @@ class GeminiAgentEngine(
         onThought: (String?) -> Unit = {},
         onStreamToken: suspend (String) -> Unit = {}
     ): AgentExecutionResult = withContext(Dispatchers.IO) {
+        val cloudModel = if (selectedModelId?.startsWith("gemini") == true) selectedModelId else null
         try {
             val initialState = AgentState(
                 userQuery = userMessage,
                 history = recentHistory,
-                imageAttachment = imageAttachment
+                imageAttachment = imageAttachment,
+                selectedModelId = selectedModelId
             )
 
             val stateMachine = LumiAgentGraph.create(database, toolDispatcher, onDeviceGemmaEngine, onStreamToken)
@@ -67,12 +69,21 @@ class GeminiAgentEngine(
             }
 
             if (finalState.status == AgentStatus.FAILED) {
-                // Fallback to direct Firebase AI generation
+                if (finalState.executedToolReports.isNotEmpty()) {
+                    val reportText = finalState.executedToolReports.last().description
+                    onStreamToken(reportText)
+                    return@withContext AgentExecutionResult(
+                        responseText = reportText,
+                        inferredEmotion = PetEmotion.HAPPY,
+                        toolReports = finalState.executedToolReports
+                    )
+                }
+                // Fallback to direct Firebase AI generation - local Gemma IDs are never sent to cloud
                 val directResponse = firebaseAiEngine.generateChatResponseStream(
                     prompt = userMessage,
                     history = recentHistory,
                     image = imageAttachment,
-                    modelName = selectedModelId,
+                    modelName = cloudModel,
                     onChunk = onStreamToken
                 )
                 return@withContext AgentExecutionResult(
@@ -85,12 +96,16 @@ class GeminiAgentEngine(
             val finalReply = if (finalState.finalResponseText != null) {
                 onStreamToken(finalState.finalResponseText!!)
                 finalState.finalResponseText!!
+            } else if (finalState.executedToolReports.isNotEmpty()) {
+                val reportText = finalState.executedToolReports.last().description
+                onStreamToken(reportText)
+                reportText
             } else {
                 firebaseAiEngine.generateChatResponseStream(
                     prompt = userMessage,
                     history = recentHistory,
                     image = imageAttachment,
-                    modelName = selectedModelId,
+                    modelName = cloudModel,
                     onChunk = onStreamToken
                 )
             }
@@ -106,7 +121,7 @@ class GeminiAgentEngine(
                 prompt = userMessage,
                 history = recentHistory,
                 image = imageAttachment,
-                modelName = selectedModelId,
+                modelName = cloudModel,
                 onChunk = onStreamToken
             )
             AgentExecutionResult(

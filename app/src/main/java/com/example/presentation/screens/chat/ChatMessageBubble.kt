@@ -17,16 +17,20 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Tune
+import com.example.domain.tools.ToolCategory
+import com.example.domain.tools.ToolRegistry
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -232,26 +236,16 @@ fun ChatMessageBubble(
                             word.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
                         }
 
-                    val toolCategoryIcon = when {
-                        actualToolName.contains("alarm", ignoreCase = true) ||
-                        actualToolName.contains("timer", ignoreCase = true) ||
-                        actualToolName.contains("schedule", ignoreCase = true) ||
-                        actualToolName.contains("calendar", ignoreCase = true) -> Icons.Default.Schedule
-
-                        actualToolName.contains("device", ignoreCase = true) ||
-                        actualToolName.contains("system", ignoreCase = true) ||
-                        actualToolName.contains("uptime", ignoreCase = true) ||
-                        actualToolName.contains("battery", ignoreCase = true) ||
-                        actualToolName.contains("wifi", ignoreCase = true) -> Icons.Default.Tune
-
-                        actualToolName.contains("task", ignoreCase = true) ||
-                        actualToolName.contains("goal", ignoreCase = true) ||
-                        actualToolName.contains("todo", ignoreCase = true) -> Icons.Default.CheckCircle
-
-                        actualToolName.contains("memory", ignoreCase = true) ||
-                        actualToolName.contains("fact", ignoreCase = true) -> Icons.Default.Psychology
-
-                        else -> Icons.Default.AutoAwesome
+                    val registeredTool = remember(actualToolName) { ToolRegistry.getInstance().getTool(actualToolName) }
+                    val toolCategoryIcon = when (registeredTool?.category) {
+                        ToolCategory.CALENDAR -> Icons.Default.Schedule
+                        ToolCategory.SYSTEM -> Icons.Default.Tune
+                        ToolCategory.COMMUNICATION -> Icons.Default.Phone
+                        ToolCategory.HEALTH -> Icons.Default.Favorite
+                        ToolCategory.CONNECTORS -> Icons.Default.Cloud
+                        ToolCategory.UTILITY -> Icons.Default.CheckCircle
+                        ToolCategory.IOT -> Icons.Default.Tune
+                        null -> Icons.Default.AutoAwesome
                     }
 
                     var isToolExpanded by remember { mutableStateOf(false) }

@@ -155,5 +155,10 @@ dependencies {
   // Koin DI
   implementation("io.insert-koin:koin-androidx-compose:3.5.3")
   implementation("androidx.health.connect:connect-client:1.1.0-alpha07")
+
+  // Pre-built official CommonMark Markdown Parser & GFM Extensions
+  implementation("org.commonmark:commonmark:0.24.0")
+  implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.24.0")
+  implementation("org.commonmark:commonmark-ext-gfm-tables:0.24.0")
 }
 

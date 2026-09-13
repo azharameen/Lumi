@@ -114,11 +114,9 @@ class TopicContextManager private constructor() {
         } else {
             // New distinct topic started
             val newTitle = extractTopicTitle(userMessage, skillName)
-            val followUps = generateFollowUpsForTopic(newTitle, skillName)
             val newFrame = TopicFrame(
                 title = newTitle,
                 domainSkill = skillName,
-                suggestedFollowUps = followUps,
                 status = TopicStatus.ACTIVE
             )
             topicFrames[newFrame.id] = newFrame
@@ -152,48 +150,12 @@ class TopicContextManager private constructor() {
     }
 
     private fun extractTopicTitle(query: String, skillName: String): String {
-        val cleaned = query.take(45).replace(Regex("""[^\w\s\-]"""), "").trim()
+        val cleaned = query.take(45).filter { it.isLetterOrDigit() || it.isWhitespace() || it == '-' }.trim()
         return when {
             cleaned.isNotBlank() -> cleaned
             skillName == "LIFE_ORGANIZER" -> "Daily Planning & Agenda"
             skillName == "WELLNESS" -> "Mindfulness & Health"
             else -> "Companion Chat"
-        }
-    }
-
-    private fun generateFollowUpsForTopic(topicTitle: String, skillName: String): List<String> {
-        val lower = topicTitle.lowercase(java.util.Locale.ROOT)
-        return when {
-            lower.contains("trip") || lower.contains("travel") || lower.contains("vacation") -> listOf(
-                "🗓️ 3-day itinerary",
-                "🎒 Packing checklist",
-                "🏨 Hotel and stay options",
-                "💰 Budget breakdown"
-            )
-            lower.contains("workout") || lower.contains("gym") || lower.contains("exercise") -> listOf(
-                "🏋️ Push-pull split",
-                "💧 Hydration & fuel",
-                "⏱️ Rest intervals",
-                "📈 Log PR weights"
-            )
-            lower.contains("study") || lower.contains("exam") || lower.contains("read") -> listOf(
-                "🍅 25-minute Pomodoro block",
-                "📝 Key summary flashcards",
-                "🎯 Practice quiz questions",
-                "🧠 Active recall recap"
-            )
-            skillName == "WELLNESS" -> listOf(
-                "🌿 2-minute breath reset",
-                "💧 Log water intake",
-                "💭 Evening gratitude journal",
-                "🌙 Sleep wind-down checklist"
-            )
-            else -> listOf(
-                "✨ Break this into 3 action steps",
-                "📅 Add to my daily schedule",
-                "💡 Brainstorm 3 alternatives",
-                "📝 Summarize key decisions"
-            )
         }
     }
 }

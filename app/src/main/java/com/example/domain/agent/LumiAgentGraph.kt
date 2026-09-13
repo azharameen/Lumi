@@ -49,7 +49,6 @@ object LumiAgentGraph {
                 }
             }
             .addEdge("REFLEXION") { "REASONING" }
-            .addEdge("FINAL_SYNTHESIS") { "FINAL_SYNTHESIS" }
 
         return stateMachine
     }

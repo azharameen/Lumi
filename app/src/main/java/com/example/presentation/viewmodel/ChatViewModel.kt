@@ -16,17 +16,22 @@ import com.example.data.device.VoiceEngine
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import androidx.paging.cachedIn
 import kotlinx.coroutines.launch
+import com.example.domain.prompt.DynamicPromptSuggester
 
 class ChatViewModel(
     val repository: LumiRepository,
     val voiceEngine: VoiceEngine,
     val userProfileManager: UserProfileRepository,
     private val analytics: LumiAnalyticsManager? = null,
-    private val performance: LumiPerformanceManager? = null
+    private val performance: LumiPerformanceManager? = null,
+    private val onDeviceGemmaEngine: com.example.data.remote.OnDeviceGemmaEngine? = null
 ) : ViewModel() {
     private val userProfile = userProfileManager.userProfile
 
@@ -39,6 +44,27 @@ class ChatViewModel(
     val streamingAiMessage: StateFlow<ChatMessageEntity?> = repository.streamingAiMessage.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), null
     )
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    val quickPrompts: StateFlow<List<String>> = kotlinx.coroutines.flow.combine(
+        repository.chatMessages,
+        repository.streamingAiMessage
+    ) { messages: List<ChatMessageEntity>, streaming: ChatMessageEntity? ->
+        if (streaming != null) messages + streaming else messages
+    }.flatMapLatest { combinedMessages ->
+        flow {
+            emit(DynamicPromptSuggester.getInitialPrompts(combinedMessages))
+            if (combinedMessages.isNotEmpty()) {
+                val aiSuggestions = DynamicPromptSuggester.getQuickPrompts(
+                    recentMessages = combinedMessages.takeLast(4),
+                    onDeviceGemmaEngine = onDeviceGemmaEngine
+                )
+                if (aiSuggestions.isNotEmpty()) {
+                    emit(aiSuggestions)
+                }
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DynamicPromptSuggester.getInitialPrompts())
 
     val pendingHitlActions = repository.pendingHitlActions.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()

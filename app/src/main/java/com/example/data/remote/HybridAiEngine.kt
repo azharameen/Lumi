@@ -140,53 +140,58 @@ class HybridAiEngine(
         )
 
         val turnResult = if (decision.isLocalOnDevice) {
-            try {
-                // Retrieve relevant semantic user memory and context for on-device turn
-                val memoryContext = try {
-                    semanticMemoryEngine.retrieveRelevantContext(userMessage, limit = 2)
-                } catch (_: Exception) { "" }
-
-                val localResult = onDeviceGemmaEngine.executeOnDeviceTurn(
-                    userMessage = userMessage,
-                    recentHistory = recentHistory,
-                    memoryContext = memoryContext,
-                    onStreamToken = onStreamToken
-                )
-
+            if (currentRoutingMode == AiRoutingMode.STRICT_ON_DEVICE && !isLocalReady) {
+                val errorMessage = "⚠️ [On-Device Mode]: Local model weights are not downloaded yet.\n\nTo chat 100% offline, go to Settings > LLM Settings > On-Device Local LLM Hub and download Gemma 2B."
+                onStreamToken(errorMessage)
                 EngineTurnResult(
-                    responseText = localResult.responseText,
-                    inferredEmotion = localResult.inferredEmotion,
-                    toolReports = localResult.toolReports,
-                    usedEngine = "ON_DEVICE_GEMMA"
+                    responseText = errorMessage,
+                    inferredEmotion = PetEmotion.THINKING,
+                    toolReports = emptyList(),
+                    usedEngine = "ON_DEVICE_GEMMA_UNREADY"
                 )
-            } catch (e: Throwable) {
-                crashlyticsManager?.logBreadcrumb("HybridAiEngine", "On-device Gemma fallback to Cloud Gemini: ${e.message}")
-                if (currentRoutingMode == AiRoutingMode.STRICT_ON_DEVICE) {
-                    // Strict On-Device Mode: Never send to cloud without user consent
-                    val errorMessage = when (e) {
-                        is OnDeviceInferenceException.HardwareIncompatible ->
-                            "⚠️ [On-Device Mode]: MediaPipe GenAI requires an ARM-compatible Android device (arm64-v8a). x86_64 emulators do not have native inference library support. Please test on a physical Android phone or an ARM64 emulator."
-                        is LinkageError ->
-                            "⚠️ [On-Device Mode]: Native inference library error (libllm_inference_engine_jni.so). This device architecture is incompatible with MediaPipe local LLM."
-                        else ->
-                            "⚠️ [On-Device Mode]: ${e.message ?: "Local model weights are not downloaded."}\n\nTo chat 100% offline, go to Settings > LLM Settings > On-Device Local LLM Hub and download Gemma 2B."
+            } else {
+                try {
+                    val graphResult = geminiEngine.executeUserTurn(
+                        userMessage = userMessage,
+                        recentHistory = recentHistory,
+                        imageAttachment = imageAttachment,
+                        selectedModelId = decision.selectedModelId,
+                        onThought = onThought,
+                        onStreamToken = onStreamToken
+                    )
+                    EngineTurnResult(
+                        responseText = graphResult.responseText,
+                        inferredEmotion = graphResult.inferredEmotion,
+                        toolReports = graphResult.toolReports,
+                        usedEngine = if (isLocalReady) "ON_DEVICE_GEMMA" else "CLOUD_GEMINI_FALLBACK"
+                    )
+                } catch (e: Throwable) {
+                    crashlyticsManager?.logBreadcrumb("HybridAiEngine", "Agent graph execution failed: ${e.message}")
+                    if (currentRoutingMode == AiRoutingMode.STRICT_ON_DEVICE) {
+                        val errorMessage = when (e) {
+                            is OnDeviceInferenceException.HardwareIncompatible ->
+                                "⚠️ [On-Device Mode]: MediaPipe GenAI requires an ARM-compatible Android device (arm64-v8a)."
+                            is LinkageError ->
+                                "⚠️ [On-Device Mode]: Native inference library error (libllm_inference_engine_jni.so)."
+                            else ->
+                                "⚠️ [On-Device Mode]: ${e.message ?: "Local execution failed."}"
+                        }
+                        onStreamToken(errorMessage)
+                        EngineTurnResult(
+                            responseText = errorMessage,
+                            inferredEmotion = PetEmotion.THINKING,
+                            toolReports = emptyList(),
+                            usedEngine = "ON_DEVICE_GEMMA_ERROR"
+                        )
+                    } else {
+                        val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment, decision.selectedModelId, onThought, onStreamToken)
+                        EngineTurnResult(
+                            responseText = cloudResult.responseText,
+                            inferredEmotion = cloudResult.inferredEmotion,
+                            toolReports = cloudResult.toolReports,
+                            usedEngine = "CLOUD_GEMINI_FALLBACK"
+                        )
                     }
-                    onStreamToken(errorMessage)
-                    EngineTurnResult(
-                        responseText = errorMessage,
-                        inferredEmotion = PetEmotion.THINKING,
-                        toolReports = emptyList(),
-                        usedEngine = "ON_DEVICE_GEMMA_UNREADY"
-                    )
-                } else {
-                    // Hybrid mode: Auto-failover to Cloud Gemini
-                    val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment, decision.selectedModelId, onThought, onStreamToken)
-                    EngineTurnResult(
-                        responseText = cloudResult.responseText,
-                        inferredEmotion = cloudResult.inferredEmotion,
-                        toolReports = cloudResult.toolReports,
-                        usedEngine = "CLOUD_GEMINI_FALLBACK"
-                    )
                 }
             }
         } else {

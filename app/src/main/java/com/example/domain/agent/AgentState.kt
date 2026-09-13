@@ -24,6 +24,7 @@ data class AgentState(
     val userQuery: String,
     val history: List<Pair<String, String>> = emptyList(),
     val imageAttachment: ByteArray? = null,
+    val selectedModelId: String? = null,
     
     // UX & Thought Streaming
     val currentThought: String? = null,

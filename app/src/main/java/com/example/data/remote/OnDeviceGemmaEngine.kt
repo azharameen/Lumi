@@ -182,17 +182,21 @@ class OnDeviceGemmaEngine(
                 emptyList()
             }
 
-            val toolPromptSection = buildString {
-                append("[Tools]\n")
-                for (t in relevantCandidates) {
-                    val paramDesc = if (t.parameters.isNotEmpty()) {
-                        "(" + t.parameters.joinToString(", ") { "${it.name}: ${it.type.lowercase(java.util.Locale.ROOT)}" } + ")"
-                    } else "()"
-                    append("- ${t.id}$paramDesc: ${t.description}\n")
-                }
-                append("\n[Format]\n")
-                append("<tool_call><name>TOOL_ID</name><args>{\"param\": \"val\"}</args></tool_call>\n")
-            }.trim()
+            val toolPromptSection = if (relevantCandidates.isNotEmpty()) {
+                buildString {
+                    append("[Tools]\n")
+                    for (t in relevantCandidates) {
+                        val paramDesc = if (t.parameters.isNotEmpty()) {
+                            "(" + t.parameters.joinToString(", ") { "${it.name}: ${it.type.lowercase(java.util.Locale.ROOT)}" } + ")"
+                        } else "()"
+                        append("- ${t.id}$paramDesc: ${t.description}\n")
+                    }
+                    append("\n[CRITICAL TOOL CALLING RULE]\n")
+                    append("If the user's message is an action or request matching any tool in [Tools], output ONLY the tool call in this exact format and nothing else:\n")
+                    append("<tool_call><name>TOOL_ID</name><args>{\"param\": \"val\"}</args></tool_call>\n")
+                    append("Do NOT output conversational chatter or explanations when executing a tool.\n")
+                }.trim()
+            } else ""
 
             val systemPrompt = "You are Lumi, a loving, helpful AI companion pet and life planner on Android. You control device hardware directly. When asked for a specific action or command, execute only that request directly and concisely. Do not drag forward or resume previous discussion topics unless the user explicitly asks to."
             
@@ -245,7 +249,7 @@ class OnDeviceGemmaEngine(
             val executedToolIds = mutableSetOf<String>()
             val executedToolSummaries = mutableListOf<String>()
 
-            // Stage 3: Multi-Format Tool Call Parser (XML & JSON with fuzzy name resolution)
+            // Stage 3: Multi-Format Tool Call Parser (XML, JSON, & Function signatures)
             data class ExtractedCall(val rawName: String, val argsJson: String)
             val extractedCalls = mutableListOf<ExtractedCall>()
 
@@ -270,6 +274,24 @@ class OnDeviceGemmaEngine(
             val jsonPattern = Regex("""\{[^{}]*?"(?:call|tool|name)"\s*:\s*"([^"]+)"[^{}]*?"(?:args|parameters)"\s*:\s*(\{[^{}]*\})[^{}]*?\}""", RegexOption.DOT_MATCHES_ALL)
             for (match in jsonPattern.findAll(rawOutput)) {
                 extractedCalls.add(ExtractedCall(match.groupValues[1].trim(), match.groupValues[2].trim()))
+            }
+
+            // Format 4: Function signature syntax e.g. system_toggle_flashlight(state: boolean) or system_toggle_flashlight(true)
+            val funcRegex = Regex("""\b((?:system_|communication_|set_)[a-z_]+)\s*\((.*?)\)""", RegexOption.IGNORE_CASE)
+            for (match in funcRegex.findAll(rawOutput)) {
+                val name = match.groupValues[1].trim()
+                val argsContent = match.groupValues[2].trim()
+                val argsMap = mutableMapOf<String, Any?>()
+                if (argsContent.contains("true", ignoreCase = true) || userMessage.contains("on", ignoreCase = true) || userMessage.contains("enable", ignoreCase = true)) {
+                    argsMap["state"] = true
+                } else if (argsContent.contains("false", ignoreCase = true) || userMessage.contains("off", ignoreCase = true) || userMessage.contains("disable", ignoreCase = true)) {
+                    argsMap["state"] = false
+                }
+                val digitMatch = Regex("""\+?\d[\d\s\-]{4,}\d""").find(argsContent)?.value ?: Regex("""\+?\d[\d\s\-]{4,}\d""").find(userMessage)?.value
+                if (digitMatch != null) {
+                    argsMap["phoneNumber"] = digitMatch.replace(Regex("""[\s\-]"""), "")
+                }
+                extractedCalls.add(ExtractedCall(name, JSONObject(argsMap as Map<*, *>).toString()))
             }
 
             for (call in extractedCalls) {
@@ -309,11 +331,13 @@ class OnDeviceGemmaEngine(
                 .replace(Regex("</?args>", RegexOption.IGNORE_CASE), "")
                 .replace(Regex("</?name>", RegexOption.IGNORE_CASE), "")
                 .replace(jsonPattern, "")
+                .replace(funcRegex, "")
                 .replace(Regex("""(?i)\[?(?:tools|available tools|format|instructions|example)\]?:?.*?(?:\n|$)"""), "")
                 .replace(Regex("""(?i)when the user asks to control.*?(?:\n|$)"""), "")
                 .replace(Regex("""(?i)you must output.*?(?:\n|$)"""), "")
-                .replace(Regex("""(?i)^\s*-\s*system_[a-z_]+.*?(?:\n|$)""", RegexOption.MULTILINE), "")
-                .replace(Regex("""(?i)^\s*-\s*set_[a-z_]+.*?(?:\n|$)""", RegexOption.MULTILINE), "")
+                .replace(Regex("""(?i)^\s*[-*]?\s*(?:system_|communication_|set_)[a-z_]+.*?(?:\n|$)""", RegexOption.MULTILINE), "")
+                .replace(Regex("""(?i)\b(?:system_|communication_|set_)[a-z_]+\s*\(.*?\).*?(?:\n|$)""", RegexOption.MULTILINE), "")
+                .replace(Regex("""(?i)^\s*(?:this command|you can use this command).*?(?:\n|$)""", RegexOption.MULTILINE), "")
                 .replace(Regex("""(?i)user\s*request\s*:?.*?(?:\n|$)"""), "")
                 .trim()
 
@@ -341,27 +365,20 @@ class OnDeviceGemmaEngine(
                     generatedText.contains("device settings", ignoreCase = true) ||
                     generatedText.contains("<name>", ignoreCase = true) ||
                     generatedText.contains("<args>", ignoreCase = true) ||
-                    generatedText.startsWith("- system_", ignoreCase = true)
+                    generatedText.contains("system_", ignoreCase = true) ||
+                    generatedText.contains("command turns", ignoreCase = true) ||
+                    generatedText.contains("use this command", ignoreCase = true)
 
-            // If the model produced only tool calls or echoed prompt instructions, provide a natural companion response
-            if (generatedText.isBlank() || isContaminatedWithInstructions) {
-                generatedText = when {
-                    executedToolSummaries.isNotEmpty() -> {
-                        val summaryText = executedToolSummaries.joinToString("\n")
-                        "I've taken care of that for you! ✨\n$summaryText"
-                    }
-                    else -> "I'm right here with you! How can I help?"
-                }
+            // If tools were executed, ALWAYS return the clean companion confirmation and tool status,
+            // avoiding any leaked tool call signatures, camera explanations, or method strings
+            if (executedToolSummaries.isNotEmpty()) {
+                val summaryText = executedToolSummaries.joinToString("\n")
+                generatedText = "$summaryText ✨"
+            } else if (generatedText.isBlank() || isContaminatedWithInstructions) {
+                generatedText = "I'm right here with you! How can I help?"
             }
 
-            val lowerText = generatedText.lowercase(java.util.Locale.ROOT)
-            val emotion = when {
-                lowerText.contains("schedule") || lowerText.contains("calendar") -> PetEmotion.ENERGETIC
-                lowerText.contains("task") || lowerText.contains("todo") -> PetEmotion.HAPPY
-                lowerText.contains("breathe") || lowerText.contains("water") -> PetEmotion.CALM
-                lowerText.contains("stress") || lowerText.contains("sorry") -> PetEmotion.CONCERNED
-                else -> PetEmotion.HAPPY
-            }
+            val emotion = PetEmotion.HAPPY
 
             // Stage 4: Real-time token streaming to the UI
             streamTokensGracefully(generatedText, onStreamToken)
@@ -381,6 +398,7 @@ class OnDeviceGemmaEngine(
             )
         }
     }
+
 
     private fun resolveTool(toolIdOrName: String): LumiTool? {
         val registry = ToolRegistry.getInstance()
@@ -449,21 +467,6 @@ class OnDeviceGemmaEngine(
         return normalized
     }
 
-    private fun splitCompoundQuery(query: String): List<String> {
-        val delimiters = listOf(" and then ", " then ", " and also ", " also ", " and ", ", ")
-        var segments = listOf(query)
-        for (del in delimiters) {
-            segments = segments.flatMap { seg ->
-                if (seg.contains(del, ignoreCase = true)) {
-                    seg.split(Regex(del, RegexOption.IGNORE_CASE))
-                } else {
-                    listOf(seg)
-                }
-            }
-        }
-        val result = segments.map { it.trim().trim(',', '.') }.filter { it.length > 3 }
-        return if (result.isNotEmpty()) result else listOf(query)
-    }
 
     private suspend fun streamTokensGracefully(text: String, onStreamToken: suspend (String) -> Unit) {
         if (text.isBlank()) return
@@ -560,6 +563,66 @@ class OnDeviceGemmaEngine(
             }
         } catch (t: Throwable) {
             "GENERAL_COMPANION"
+        }
+    }
+
+    /**
+     * Intelligently generates context-aware follow-up suggestion pills from recent dialogue turns
+     * using the on-device Gemma LLM. Zero keyword matching.
+     */
+    suspend fun generateFollowUpSuggestions(
+        recentHistory: List<Pair<String, String>>,
+        maxSuggestions: Int = 4
+    ): List<String> = withContext(Dispatchers.Default) {
+        if (!isModelReady() || !isHardwareSupported() || context == null || recentHistory.isEmpty()) {
+            return@withContext emptyList()
+        }
+
+        val dialogueContext = recentHistory.takeLast(3).joinToString("\n") { (sender, text) ->
+            val role = if (sender.equals("user", ignoreCase = true)) "User" else "Lumi"
+            "$role: ${text.take(120).trim()}"
+        }
+
+        val prompt = """
+            <start_of_turn>user
+            You are Lumi's suggestion engine. Given this recent conversation between a user and their AI companion Lumi:
+            $dialogueContext
+
+            Generate $maxSuggestions short, helpful follow-up actions or questions the user might want to say or do next.
+            Strict rules:
+            - Output each suggestion on its own line.
+            - Start each suggestion with an emoji.
+            - Keep each suggestion under 6 words.
+            - Do NOT include numbering, bullet points, asterisks, or explanations.<end_of_turn>
+            <start_of_turn>model
+        """.trimIndent()
+
+        try {
+            if (llmInference == null) {
+                val activeSpec = downloadManager?.getActiveModelSpec() ?: return@withContext emptyList()
+                val modelFile = downloadManager.getModelFile(activeSpec.id)
+                val options = LlmInference.LlmInferenceOptions.builder()
+                    .setModelPath(modelFile.absolutePath)
+                    .setMaxTokens(DEFAULT_CONTEXT_MAX_TOKENS)
+                    .setTemperature(0.3f)
+                    .build()
+                llmInference = LlmInference.createFromOptions(context, options)
+                loadedModelPath = modelFile.absolutePath
+            }
+
+            val raw = llmInference?.generateResponse(prompt)?.trim() ?: return@withContext emptyList()
+
+            raw.lines()
+                .map { line ->
+                    line.replace(Regex("""^[\d\.\-\*\s]+"""), "")
+                        .replace("<end_of_turn>", "")
+                        .replace("<start_of_turn>", "")
+                        .trim()
+                }
+                .filter { it.length in 3..50 && !it.contains("suggestion", ignoreCase = true) }
+                .take(maxSuggestions)
+        } catch (t: Throwable) {
+            emptyList()
         }
     }
 }

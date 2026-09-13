@@ -100,6 +100,7 @@ fun LumiApp(
     val selectedChatModelId by chatViewModel.selectedChatModelId.collectAsStateWithLifecycle()
     val activeLocalModelId by aiSettingsViewModel.activeLocalModelId.collectAsStateWithLifecycle()
     val selectedAccelerator by aiSettingsViewModel.selectedAccelerator.collectAsStateWithLifecycle()
+    val quickPrompts by chatViewModel.quickPrompts.collectAsStateWithLifecycle()
 
     val modelSelectionEngine = remember { org.koin.core.context.GlobalContext.get().get<com.example.domain.ai.ModelSelectionEngine>() }
     val modelDisplayName = remember(selectedChatModelId, downloadedLocalModels, availableCloudModels) {
@@ -261,6 +262,7 @@ fun LumiApp(
                             onSelectModel = { modelId -> chatViewModel.setSelectedModel(modelId) },
                             downloadedLocalModels = downloadedLocalModels,
                             availableCloudModels = availableCloudModels,
+                            quickPrompts = quickPrompts,
                             onNavigateToDownloadHub = {
                                 viewModel.setSelectedTab(NavDestination.Account.tabIndex)
                             },

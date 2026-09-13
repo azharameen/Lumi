@@ -74,6 +74,7 @@ fun ChatScreen(
     onSelectModel: (String) -> Unit = {},
     downloadedLocalModels: List<com.example.data.remote.LocalLlmModelSpec> = emptyList(),
     availableCloudModels: List<com.example.domain.ai.CloudModelSpec> = emptyList(),
+    quickPrompts: List<String> = emptyList(),
     onNavigateToDownloadHub: () -> Unit = {},
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues = PaddingValues(0.dp)
@@ -292,6 +293,7 @@ fun ChatScreen(
             // Footer Section (Antigravity & Copilot Enterprise Layout)
             Column {
                 QuickPromptChipsBar(
+                    prompts = quickPrompts,
                     onSelectPrompt = { onSendMessage(it) },
                     onOpenTemplates = { showTemplatePicker = true },
                     haptics = haptics

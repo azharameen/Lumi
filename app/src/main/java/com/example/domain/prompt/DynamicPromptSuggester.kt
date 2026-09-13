@@ -1,40 +1,40 @@
 package com.example.domain.prompt
 
+import com.example.data.local.entity.ChatMessageEntity
+import com.example.data.remote.FirebaseAiCloudEngine
+import com.example.data.remote.OnDeviceGemmaEngine
 import com.example.domain.tools.ToolCategory
 import com.example.domain.tools.ToolRegistry
 import java.util.Calendar
 
 /**
  * Generates dynamic prompt suggestions and template categories
- * based on contextual state: current time of day, active registered tools,
- * and remote configuration tips — eliminating hardcoded static lists.
+ * intelligently powered by On-Device Local LLM (or Cloud Gemini fallback)
+ * based on conversation context and recent turns — completely eliminating keyword heuristics.
  */
 object DynamicPromptSuggester {
 
     /**
-     * Generates dynamic quick prompts for the horizontal chip bar.
-     * Incorporates time of day context, registered tools, and optional tip of the day.
+     * Fast non-blocking starter prompts for initial render before LLM inference completes.
      */
-    fun getQuickPrompts(tipOfTheDay: String? = null): List<String> {
+    fun getInitialPrompts(
+        recentMessages: List<ChatMessageEntity> = emptyList(),
+        tipOfTheDay: String? = null
+    ): List<String> {
         val prompts = mutableListOf<String>()
 
-        // 0. Active Topic Contextual Follow-up Chips (Pillar 4)
-        val activeTopic = com.example.domain.ai.TopicContextManager.getInstance().getActiveTopic()
-        if (activeTopic != null && activeTopic.suggestedFollowUps.isNotEmpty()) {
-            prompts.addAll(activeTopic.suggestedFollowUps)
-            if (activeTopic.status == com.example.domain.ai.TopicStatus.SUSPENDED) {
-                prompts.add("🔙 Back to ${activeTopic.title.take(20)}")
-            }
+        // 0. Topic Resumption Pill: 1-tap resumption if a previous topic was suspended
+        val suspendedTopic = com.example.domain.ai.TopicContextManager.getInstance().getMostRecentSuspendedTopic()
+        if (suspendedTopic != null && suspendedTopic.title.isNotBlank()) {
+            prompts.add("🔙 Back to ${suspendedTopic.title.take(22)}")
         }
 
         val calendar = Calendar.getInstance()
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
-
-        // 1. Time-of-day contextual starter
         when (hour) {
             in 5..11 -> {
-                prompts.add("✨ Plan my morning focus blocks")
-                prompts.add("🎯 Prioritize top 3 daily quests")
+                prompts.add("✨ Plan morning focus blocks")
+                prompts.add("🎯 Prioritize top daily quests")
             }
             in 12..16 -> {
                 prompts.add("🌿 Quick 2-minute breath reset")
@@ -54,36 +54,106 @@ object DynamicPromptSuggester {
             org.koin.core.context.GlobalContext.getOrNull()?.getOrNull<com.example.data.firebase.LumiRemoteConfigManager>()?.config?.value?.companionTipOfTheDay
         } catch (_: Exception) { null }
 
-        // 2. Incorporate Remote Config tip if available
         if (!effectiveTip.isNullOrBlank()) {
             val shortTip = if (effectiveTip.length > 36) effectiveTip.take(33) + "..." else effectiveTip
             prompts.add("💡 $shortTip")
         }
 
-        // 3. Dynamically sample from registered tools in ToolRegistry
-        val tools = ToolRegistry.getInstance().getAllTools()
-        val healthTool = tools.firstOrNull { it.category == ToolCategory.HEALTH }
-        if (healthTool != null) {
-            prompts.add("❤️ ${healthTool.displayName}")
-        }
-        val calendarTool = tools.firstOrNull { it.category == ToolCategory.CALENDAR }
-        if (calendarTool != null) {
-            prompts.add("📅 ${calendarTool.displayName}")
-        }
-        val systemTool = tools.firstOrNull { it.category == ToolCategory.SYSTEM }
-        if (systemTool != null) {
-            prompts.add("⚙️ ${systemTool.displayName}")
-        }
-
-        return prompts.distinct()
+        return prompts.distinct().take(5)
     }
 
     /**
-     * Dynamically generates categorized prompt templates by querying registered tools
-     * and contextual domains in Lumi.
+     * Intelligently generates dynamic quick prompts for the horizontal chip bar
+     * using the On-Device Local LLM (or Cloud Gemini) to understand the recent dialogue context.
+     * Zero keyword matching.
      */
-    fun getTemplateCategories(): List<Pair<String, List<String>>> {
+    suspend fun getQuickPrompts(
+        recentMessages: List<ChatMessageEntity> = emptyList(),
+        onDeviceGemmaEngine: OnDeviceGemmaEngine? = null,
+        tipOfTheDay: String? = null
+    ): List<String> {
+        val prompts = mutableListOf<String>()
+
+        // 0. Topic Resumption Pill: If a previous topic was suspended, offer 1-tap resumption
+        val suspendedTopic = com.example.domain.ai.TopicContextManager.getInstance().getMostRecentSuspendedTopic()
+        if (suspendedTopic != null && suspendedTopic.title.isNotBlank()) {
+            prompts.add("🔙 Back to ${suspendedTopic.title.take(22)}")
+        }
+
+        // 1. LLM-Driven Dynamic Suggestion Generation from Conversation Dialogue
+        if (recentMessages.isNotEmpty()) {
+            val dialogueTurns = recentMessages.takeLast(4).map { msg ->
+                Pair(msg.sender, msg.content)
+            }
+
+            val aiSuggestions = try {
+                if (onDeviceGemmaEngine?.isModelReady() == true) {
+                    onDeviceGemmaEngine.generateFollowUpSuggestions(dialogueTurns, maxSuggestions = 4)
+                } else {
+                    FirebaseAiCloudEngine.getInstance().generateFollowUpSuggestions(dialogueTurns, maxSuggestions = 4)
+                }
+            } catch (_: Exception) {
+                emptyList()
+            }
+
+            prompts.addAll(aiSuggestions)
+        }
+
+        // 2. If list needs starters (brand new chat or offline fallback without models)
+        if (prompts.size < 3) {
+            val calendar = Calendar.getInstance()
+            val hour = calendar.get(Calendar.HOUR_OF_DAY)
+            when (hour) {
+                in 5..11 -> {
+                    prompts.add("✨ Plan morning focus blocks")
+                    prompts.add("🎯 Prioritize top daily quests")
+                }
+                in 12..16 -> {
+                    prompts.add("🌿 Quick 2-minute breath reset")
+                    prompts.add("⚡ Afternoon energy check-in")
+                }
+                in 17..21 -> {
+                    prompts.add("📝 Review today's completed goals")
+                    prompts.add("💧 Log hydration & evening mood")
+                }
+                else -> {
+                    prompts.add("🌙 Wind-down reflection")
+                    prompts.add("💭 Tomorrow's high-level preview")
+                }
+            }
+        }
+
+        // 3. Remote Config Tip of the day if space allows
+        val effectiveTip = tipOfTheDay ?: try {
+            org.koin.core.context.GlobalContext.getOrNull()?.getOrNull<com.example.data.firebase.LumiRemoteConfigManager>()?.config?.value?.companionTipOfTheDay
+        } catch (_: Exception) { null }
+
+        if (!effectiveTip.isNullOrBlank() && prompts.size < 5) {
+            val shortTip = if (effectiveTip.length > 36) effectiveTip.take(33) + "..." else effectiveTip
+            prompts.add("💡 $shortTip")
+        }
+
+        return prompts.distinct().take(6)
+    }
+
+    /**
+     * Dynamically generates categorized prompt templates by querying registered tools,
+     * current context, and contextual domains in Lumi.
+     */
+    fun getTemplateCategories(recentMessages: List<ChatMessageEntity> = emptyList()): List<Pair<String, List<String>>> {
         val categories = mutableListOf<Pair<String, List<String>>>()
+
+        // 0. Suspended Topic Resumption
+        val suspended = com.example.domain.ai.TopicContextManager.getInstance().getMostRecentSuspendedTopic()
+        if (suspended != null) {
+            categories.add(
+                "🔙 Resume Discussion" to listOf(
+                    "Back to ${suspended.title}",
+                    "What were we discussing earlier about ${suspended.title}?",
+                    "Summarize where we left off with ${suspended.title}"
+                )
+            )
+        }
 
         // 1. Contextual Productivity & Planning
         categories.add(

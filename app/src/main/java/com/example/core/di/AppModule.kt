@@ -120,7 +120,7 @@ val appModule = module {
     // ViewModels
     viewModel { AuthViewModel(get(), get(), get(), get()) }
     viewModel { AiSettingsViewModel(get(), get(), getOrNull()) }
-    viewModel { ChatViewModel(get(), get(), get(), get(), get()) }
+    viewModel { ChatViewModel(get(), get(), get(), get(), get(), getOrNull()) }
     viewModel { LifeHubViewModel(get(), get(), get(), get(), get()) }
     viewModel { 
         LumiViewModel(

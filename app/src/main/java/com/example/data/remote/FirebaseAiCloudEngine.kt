@@ -101,8 +101,12 @@ class FirebaseAiCloudEngine {
         topP: Float = 0.95f,
         systemPrompt: String? = null
     ): GenerativeModel {
-        val resolvedModelName = modelName 
-            ?: (remoteConfigManager?.config?.value?.defaultCloudModelName ?: DEFAULT_MODEL)
+        val safeModelName = if (modelName.isNullOrBlank() || modelName.startsWith("gemma") || !modelName.startsWith("gemini")) {
+            remoteConfigManager?.config?.value?.defaultCloudModelName ?: DEFAULT_MODEL
+        } else {
+            modelName
+        }
+        val resolvedModelName = safeModelName 
         val resolvedTemp = temperature 
             ?: (remoteConfigManager?.config?.value?.aiCreativityTemperature ?: 0.75).toFloat()
         val resolvedSystemPrompt = systemPrompt ?: baseCompanionSystemPrompt
@@ -130,11 +134,13 @@ class FirebaseAiCloudEngine {
         history: List<Pair<String, String>> = emptyList(),
         image: ByteArray? = null,
         systemPrompt: String? = null,
-        temperature: Float? = null
+        temperature: Float? = null,
+        modelName: String? = null
     ): String = withContext(Dispatchers.IO) {
         val startTime = System.currentTimeMillis()
         try {
             val generativeModel = getModel(
+                modelName = modelName,
                 temperature = temperature,
                 systemPrompt = systemPrompt
             )
@@ -303,6 +309,52 @@ class FirebaseAiCloudEngine {
             Log.e(TAG, "Failed structured generation via Firebase AI", e)
             crashlyticsManager?.logBreadcrumb("FirebaseAiCloudEngine", "Structured generation failed: ${e.message}")
             ""
+        }
+    }
+
+    /**
+     * Intelligently generates context-aware follow-up suggestion pills from recent dialogue turns
+     * using Cloud Gemini when on-device LLM is unready. Zero keyword matching.
+     */
+    suspend fun generateFollowUpSuggestions(
+        recentHistory: List<Pair<String, String>>,
+        maxSuggestions: Int = 4
+    ): List<String> = withContext(Dispatchers.IO) {
+        if (recentHistory.isEmpty()) return@withContext emptyList()
+
+        val dialogueContext = recentHistory.takeLast(3).joinToString("\n") { (sender, text) ->
+            val role = if (sender.equals("user", ignoreCase = true)) "User" else "Lumi"
+            "$role: ${text.take(120).trim()}"
+        }
+
+        val prompt = """
+            Given this recent conversation between a user and their AI companion Lumi:
+            $dialogueContext
+
+            Generate $maxSuggestions short, natural follow-up actions or questions the user might want to say or do next.
+            Strict constraints:
+            - Output each suggestion on its own line.
+            - Start each suggestion with an emoji.
+            - Keep each suggestion under 6 words.
+            - Do NOT include numbering, bullet points, asterisks, or markdown formatting.
+        """.trimIndent()
+
+        try {
+            val generativeModel = getModel(
+                temperature = 0.4f,
+                systemPrompt = "You are Lumi's suggestion engine. Output only suggestions, one per line."
+            )
+            val response = generativeModel.generateContent(content { text(prompt) })
+            val raw = response.text?.trim() ?: return@withContext emptyList()
+
+            raw.lines()
+                .map { line ->
+                    line.replace(Regex("""^[\d\.\-\*\s]+"""), "").trim()
+                }
+                .filter { it.length in 3..50 && !it.contains("suggestion", ignoreCase = true) }
+                .take(maxSuggestions)
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 }

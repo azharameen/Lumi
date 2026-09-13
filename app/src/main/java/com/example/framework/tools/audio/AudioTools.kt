@@ -18,7 +18,7 @@ object AudioToolsModule {
 class FlashlightTool(private val context: Context) : LumiTool {
     override val id = "system_toggle_flashlight"
     override val displayName = "Toggle Flashlight"
-    override val description = "Turns camera torch on or off"
+    override val description = "Turns device flashlight or torch on or off"
     override val category = ToolCategory.SYSTEM
     override val riskLevel = ToolRiskLevel.LOW
     override val parameters = listOf(

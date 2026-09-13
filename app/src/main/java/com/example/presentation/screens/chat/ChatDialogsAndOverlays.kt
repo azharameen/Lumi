@@ -114,8 +114,12 @@ fun QuickPromptChipsBar(
     onOpenTemplates: () -> Unit,
     haptics: LumiHaptics,
     modifier: Modifier = Modifier,
-    prompts: List<String> = remember { DynamicPromptSuggester.getQuickPrompts() }
+    prompts: List<String> = emptyList()
 ) {
+    val displayPrompts = remember(prompts) {
+        if (prompts.isNotEmpty()) prompts else DynamicPromptSuggester.getInitialPrompts()
+    }
+
     LazyRow(
         modifier = modifier
             .fillMaxWidth()
@@ -150,16 +154,14 @@ fun QuickPromptChipsBar(
             }
         }
 
-        items(prompts) { prompt ->
+        items(displayPrompts) { prompt ->
             Surface(
                 color = SurfaceDarkVariant.copy(alpha = 0.85f),
                 shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(1.dp, SurfaceHighlight.copy(alpha = 0.5f)),
                 modifier = Modifier.clickable {
                     haptics.performSuccess()
-                    val cleanPrompt = if (prompt.length > 2 && (prompt[0].isSurrogate() || prompt[1].isWhitespace() || prompt.substring(0, 2).any { !it.isLetterOrDigit() })) {
-                        prompt.drop(2).trim()
-                    } else prompt.trim()
+                    val cleanPrompt = prompt.replace(Regex("""^[^\p{L}\p{N}]+\s*"""), "").trim().ifBlank { prompt }
                     onSelectPrompt(cleanPrompt)
                 }
             ) {

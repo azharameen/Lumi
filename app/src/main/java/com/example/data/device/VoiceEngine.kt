@@ -144,7 +144,7 @@ class VoiceEngine(private val context: Context) : TextToSpeech.OnInitListener {
     }
 
     private fun speakInternal(text: String, onComplete: (() -> Unit)? = null) {
-        val cleanText = text.replace(Regex("[*#_`~]"), "").trim()
+        val cleanText = com.example.presentation.components.extractPlainTextFromMarkdown(text)
         if (cleanText.isBlank()) {
             onComplete?.invoke()
             return

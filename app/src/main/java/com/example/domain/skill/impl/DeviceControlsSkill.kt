@@ -18,7 +18,7 @@ class DeviceControlsSkill : AgentSkill {
             functionDeclarations = listOf(
                 GeminiFunctionDeclaration(
                     name = "system_toggle_flashlight",
-                    description = "Turns camera flashlight / torch on or off",
+                    description = "Turns device flashlight or torch on or off",
                     parameters = GeminiParametersSchema(
                         properties = mapOf(
                             "state" to GeminiPropertySchema(type = "BOOLEAN", description = "true to turn ON flashlight, false to turn OFF")

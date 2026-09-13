@@ -15,9 +15,22 @@ class MemoryRetrievalNode(
     override suspend fun execute(state: AgentState): AgentState {
         return try {
             val relevantContext = semanticMemoryEngine.retrieveRelevantContext(state.userQuery)
+            
+            // If user is discussing or resuming a known topic frame with a summary, attach it
+            val activeTopic = com.example.domain.ai.TopicContextManager.getInstance().getActiveTopic()
+            val topicContext = if (activeTopic != null && activeTopic.summary.isNotBlank()) {
+                "Active Discussion Topic: ${activeTopic.title}\nTopic Context: ${activeTopic.summary}"
+            } else ""
+
+            val combinedContext = when {
+                relevantContext.isNotBlank() && topicContext.isNotBlank() -> "$topicContext\n\n$relevantContext"
+                topicContext.isNotBlank() -> topicContext
+                else -> relevantContext
+            }
+
             state.copy(
-                retrievedContext = relevantContext,
-                currentThought = if (relevantContext.isNotBlank()) "Retrieved relevant user context." else "No relevant context found."
+                retrievedContext = combinedContext,
+                currentThought = if (combinedContext.isNotBlank()) "Retrieved relevant topic & user context." else "No relevant context found."
             )
         } catch (e: Exception) {
             state.copy(retrievedContext = "")

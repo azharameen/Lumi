@@ -12,6 +12,8 @@ import com.example.data.remote.google.GoogleWorkspaceRestEngine
 import com.example.data.repository.*
 import com.example.data.tools.FastToolIndex
 import com.example.domain.account.UserProfileRepository
+import com.example.domain.ai.ContextRelevancePruner
+import com.example.domain.ai.ModelSelectionEngine
 import com.example.domain.billing.TokenBillingManager
 import com.example.domain.briefing.AutonomousBriefingEngine
 import com.example.domain.connectors.ConnectorRepository
@@ -63,6 +65,9 @@ val appModule = module {
     single { ZenModeManager(androidContext()) }
     single { BiometricVaultManager(androidContext()) }
     single { ModelDownloadManager.getInstance(androidContext()) }
+    single { ModelSelectionEngine(get(), getOrNull()) }
+    single { ContextRelevancePruner.getInstance() }
+    single { com.example.domain.ai.TopicContextManager.getInstance() }
     single { AutonomousBriefingEngine(androidContext()) }
     single { ProceduralSoundscapeEngine.getInstance(androidContext()) }
     single { TokenBillingManager(androidContext()) }
@@ -89,7 +94,7 @@ val appModule = module {
     // AI Engines
     single { OnDeviceGemmaEngine(get(), get(), androidContext(), get()) }
     single { LocalVisionEngine(androidContext()) }
-    single { HybridAiEngine(get(), get<LumiDatabase>().aiExecutionLogDao(), get(), androidContext(), get(), get()) }
+    single { HybridAiEngine(get(), get<LumiDatabase>().aiExecutionLogDao(), get(), androidContext(), get(), get(), get()) }
     single { AutonomousGoalPlanner(get(), get(), get()) }
 
     // Specialized Clean Domain Repositories
@@ -114,7 +119,7 @@ val appModule = module {
 
     // ViewModels
     viewModel { AuthViewModel(get(), get(), get(), get()) }
-    viewModel { AiSettingsViewModel(get(), get()) }
+    viewModel { AiSettingsViewModel(get(), get(), getOrNull()) }
     viewModel { ChatViewModel(get(), get(), get(), get(), get()) }
     viewModel { LifeHubViewModel(get(), get(), get(), get(), get()) }
     viewModel { 

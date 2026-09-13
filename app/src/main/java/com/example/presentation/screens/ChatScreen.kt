@@ -36,6 +36,7 @@ import com.example.data.firebase.LumiRemoteConfigManager
 import com.example.data.local.entity.ChatMessageEntity
 import com.example.domain.agent.hitl.HitlPendingAction
 import com.example.domain.model.LumiRemoteConfig
+import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
 import com.example.presentation.screens.chat.*
 import com.example.presentation.viewmodel.LumiUiState
@@ -51,20 +52,29 @@ fun ChatScreen(
     pendingHitlActions: List<HitlPendingAction> = emptyList(),
     isListening: Boolean,
     isSpeaking: Boolean,
+    streamingMessage: ChatMessageEntity? = null,
+    currentlySpeakingMessageId: Long? = null,
     onSendMessage: (String) -> Unit,
     onSetInputText: (String) -> Unit,
     onShowCamera: () -> Unit,
     onStartVoiceListening: () -> Unit,
     onStopVoiceListening: () -> Unit,
-    onToggleVoiceOutput: () -> Unit,
+    onToggleVoiceOutput: () -> Unit = {},
     onClearChat: () -> Unit = {},
     onDeleteMessage: (Long) -> Unit = {},
     onSpeakMessage: (String) -> Unit = {},
+    onToggleSpeakMessage: (Long, String) -> Unit = { _, text -> onSpeakMessage(text) },
+    onStopSpeaking: () -> Unit = {},
     onResolveHitlAction: (String, Boolean) -> Unit = { _, _ -> },
     onDismissClipboard: () -> Unit = {},
     onProcessClipboard: (String) -> Unit = {},
-    onOpenBreathingExercise: () -> Unit = {},
     onNavigateBack: () -> Unit,
+    selectedModelId: String = "",
+    modelDisplayName: String = "",
+    onSelectModel: (String) -> Unit = {},
+    downloadedLocalModels: List<com.example.data.remote.LocalLlmModelSpec> = emptyList(),
+    availableCloudModels: List<com.example.domain.ai.CloudModelSpec> = emptyList(),
+    onNavigateToDownloadHub: () -> Unit = {},
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
@@ -76,13 +86,36 @@ fun ChatScreen(
     var searchQuery by remember { mutableStateOf("") }
     var isSearchActive by remember { mutableStateOf(false) }
     var showClearConfirmDialog by remember { mutableStateOf(false) }
+    var messageToDeleteId by remember { mutableStateOf<Long?>(null) }
     var showTemplatePicker by remember { mutableStateOf(false) }
     var previewImageSource by remember { mutableStateOf<String?>(null) }
+    var showModelSheet by remember { mutableStateOf(false) }
 
     val isAtBottom by remember {
         derivedStateOf {
             val firstVisibleIndex = listState.firstVisibleItemIndex
             firstVisibleIndex <= 1
+        }
+    }
+
+    val externalGazeX by remember(uiState.inputText, petStatus.isThinking, isListening) {
+        derivedStateOf {
+            when {
+                isListening -> 0f
+                petStatus.isThinking -> 0.35f
+                uiState.inputText.isNotEmpty() -> -0.3f
+                else -> 0f
+            }
+        }
+    }
+    val externalGazeY by remember(uiState.inputText, petStatus.isThinking, isListening) {
+        derivedStateOf {
+            when {
+                isListening -> 0.2f
+                petStatus.isThinking -> -0.6f
+                uiState.inputText.isNotEmpty() -> 0.5f
+                else -> 0f
+            }
         }
     }
 
@@ -95,8 +128,8 @@ fun ChatScreen(
     }
     val remoteConfig = remoteConfigManager?.config?.collectAsStateWithLifecycle(initialValue = LumiRemoteConfig())?.value ?: LumiRemoteConfig()
 
-    LaunchedEffect(chatMessages.itemCount) {
-        if (chatMessages.itemCount > 0 && isAtBottom) {
+    LaunchedEffect(chatMessages.itemCount, streamingMessage) {
+        if ((chatMessages.itemCount > 0 || streamingMessage != null) && isAtBottom) {
             listState.animateScrollToItem(0)
         }
     }
@@ -117,24 +150,23 @@ fun ChatScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Top Companion Bar
+            // Top Companion Bar with Live Mascot and Dynamic Gaze
             ChatTopAppBar(
                 petStatus = petStatus,
                 isListening = isListening,
                 isSpeaking = isSpeaking,
-                isTtsEnabled = uiState.isTtsVoiceOutputEnabled,
-                onToggleTts = onToggleVoiceOutput,
                 onNavigateBack = onNavigateBack,
                 onClearChatRequest = { showClearConfirmDialog = true },
                 onSearchToggle = { isSearchActive = !isSearchActive },
                 isSearchActive = isSearchActive,
                 searchQuery = searchQuery,
                 onSearchQueryChange = { searchQuery = it },
-                onOpenBreathing = onOpenBreathingExercise,
-                haptics = haptics
+                haptics = haptics,
+                externalGazeX = externalGazeX,
+                externalGazeY = externalGazeY
             )
 
-            // Pending Approvals & Thoughts
+            // Pending Approvals & Clipboard Action Banners
             Column {
                 pendingHitlActions.forEach { action ->
                     HitlApprovalActionCard(
@@ -142,12 +174,6 @@ fun ChatScreen(
                         onApprove = { onResolveHitlAction(action.stateId, true) },
                         onDecline = { onResolveHitlAction(action.stateId, false) },
                         haptics = haptics
-                    )
-                }
-
-                if (petStatus.isThinking || uiState.agentThought != null) {
-                    AgentThoughtStreamCard(
-                        thoughtText = uiState.agentThought ?: "Lumi is reasoning..."
                     )
                 }
 
@@ -166,7 +192,7 @@ fun ChatScreen(
 
             // Messages Flow
             Box(modifier = Modifier.weight(1f)) {
-                if (chatMessages.itemCount == 0) {
+                if (chatMessages.itemCount == 0 && streamingMessage == null && !petStatus.isThinking) {
                     ChatEmptyStateView(
                         remoteConfig = remoteConfig,
                         onSelectStarter = { onSendMessage(it) },
@@ -182,6 +208,40 @@ fun ChatScreen(
                         verticalArrangement = Arrangement.spacedBy(14.dp),
                         reverseLayout = true
                     ) {
+                        // In-Stream Streaming Bubble or Thinking Shimmer
+                        if (streamingMessage != null) {
+                            item(key = "streaming_message", contentType = "streaming_message") {
+                                if (streamingMessage.content.isNotBlank()) {
+                                    ChatMessageBubble(
+                                        message = streamingMessage,
+                                        onCopyMessage = copyToClipboard,
+                                        onSpeakMessage = { onToggleSpeakMessage(streamingMessage.id, it) },
+                                        onDeleteMessage = {},
+                                        onImageClick = { previewImageSource = it },
+                                        haptics = haptics,
+                                        isSpeakingThisMessage = currentlySpeakingMessageId == streamingMessage.id,
+                                        onStopSpeaking = onStopSpeaking,
+                                        isStreaming = true
+                                    )
+                                } else {
+                                    ChatThinkingShimmerBubble(
+                                        petStatus = petStatus,
+                                        thoughtText = uiState.agentThought,
+                                        haptics = haptics
+                                    )
+                                }
+                            }
+                        } else if (petStatus.isThinking) {
+                            item(key = "thinking_shimmer_bubble", contentType = "thinking_shimmer") {
+                                ChatThinkingShimmerBubble(
+                                    petStatus = petStatus,
+                                    thoughtText = uiState.agentThought,
+                                    haptics = haptics
+                                )
+                            }
+                        }
+
+                        // Persisted Chat History
                         items(
                             count = chatMessages.itemCount,
                             key = chatMessages.itemKey { it.id },
@@ -192,10 +252,13 @@ fun ChatScreen(
                                 ChatMessageBubble(
                                     message = msg,
                                     onCopyMessage = copyToClipboard,
-                                    onSpeakMessage = onSpeakMessage,
-                                    onDeleteMessage = onDeleteMessage,
+                                    onSpeakMessage = { onToggleSpeakMessage(msg.id, it) },
+                                    onDeleteMessage = { id -> messageToDeleteId = id },
                                     onImageClick = { previewImageSource = it },
-                                    haptics = haptics
+                                    haptics = haptics,
+                                    isSpeakingThisMessage = currentlySpeakingMessageId == msg.id,
+                                    onStopSpeaking = onStopSpeaking,
+                                    isStreaming = false
                                 )
                             }
                         }
@@ -226,15 +289,8 @@ fun ChatScreen(
                 }
             }
 
-            // Footer Section
+            // Footer Section (Antigravity & Copilot Enterprise Layout)
             Column {
-                VoiceActivityOverlayBar(
-                    isListening = isListening,
-                    isSpeaking = isSpeaking,
-                    onStopListening = onStopVoiceListening,
-                    onStopSpeaking = { onSpeakMessage("") }
-                )
-
                 QuickPromptChipsBar(
                     onSelectPrompt = { onSendMessage(it) },
                     onOpenTemplates = { showTemplatePicker = true },
@@ -248,7 +304,12 @@ fun ChatScreen(
                     onShowCamera = onShowCamera,
                     onStartVoiceListening = onStartVoiceListening,
                     isListening = isListening,
-                    haptics = haptics
+                    haptics = haptics,
+                    onOpenTemplates = { showTemplatePicker = true },
+                    onStopVoiceListening = onStopVoiceListening,
+                    selectedModelId = selectedModelId,
+                    modelDisplayName = modelDisplayName,
+                    onSelectModel = { showModelSheet = true }
                 )
             }
         }
@@ -262,6 +323,16 @@ fun ChatScreen(
         )
     }
 
+    messageToDeleteId?.let { id ->
+        DeleteMessageConfirmDialog(
+            onConfirm = {
+                onDeleteMessage(id)
+                messageToDeleteId = null
+            },
+            onDismiss = { messageToDeleteId = null }
+        )
+    }
+
     if (showTemplatePicker) {
         PromptTemplatePickerModal(
             onSelectPrompt = { onSendMessage(it) },
@@ -272,5 +343,19 @@ fun ChatScreen(
 
     previewImageSource?.let { src ->
         ChatImagePreviewDialog(imageSource = src, onDismiss = { previewImageSource = null })
+    }
+
+    if (showModelSheet) {
+        ModelSelectionSheet(
+            selectedModelId = selectedModelId,
+            downloadedLocalModels = downloadedLocalModels,
+            availableCloudModels = availableCloudModels,
+            onSelectModel = { modelId ->
+                onSelectModel(modelId)
+                showModelSheet = false
+            },
+            onDismiss = { showModelSheet = false },
+            onNavigateToDownloadHub = onNavigateToDownloadHub
+        )
     }
 }

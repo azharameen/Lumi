@@ -15,6 +15,8 @@ import com.example.domain.repository.LumiRepository
 import com.example.data.device.VoiceEngine
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import androidx.paging.cachedIn
 import kotlinx.coroutines.launch
@@ -34,14 +36,24 @@ class ChatViewModel(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
 
+    val streamingAiMessage: StateFlow<ChatMessageEntity?> = repository.streamingAiMessage.stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5000), null
+    )
+
     val pendingHitlActions = repository.pendingHitlActions.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
+
+    private val _currentlySpeakingMessageId = kotlinx.coroutines.flow.MutableStateFlow<Long?>(null)
+    val currentlySpeakingMessageId: StateFlow<Long?> = _currentlySpeakingMessageId.asStateFlow()
 
     init {
         viewModelScope.launch {
             voiceEngine.isSpeaking.collect { isSpeaking ->
                 repository.setSpeaking(isSpeaking)
+                if (!isSpeaking) {
+                    _currentlySpeakingMessageId.value = null
+                }
             }
         }
     }
@@ -59,7 +71,27 @@ class ChatViewModel(
     }
 
     fun speakMessage(text: String) {
-        voiceEngine.speak(text)
+        if (text.isBlank()) {
+            stopSpeaking()
+        } else {
+            voiceEngine.speak(text)
+        }
+    }
+
+    fun stopSpeaking() {
+        voiceEngine.stopSpeaking()
+        _currentlySpeakingMessageId.value = null
+    }
+
+    fun toggleSpeakMessage(messageId: Long, text: String) {
+        if (_currentlySpeakingMessageId.value == messageId && voiceEngine.isSpeaking.value) {
+            stopSpeaking()
+        } else {
+            _currentlySpeakingMessageId.value = messageId
+            voiceEngine.speak(text) {
+                _currentlySpeakingMessageId.value = null
+            }
+        }
     }
 
     fun resolveHitlAction(stateId: String, approved: Boolean) {
@@ -70,25 +102,45 @@ class ChatViewModel(
 
     fun sendMessage(text: String, image: Bitmap? = null) {
         viewModelScope.launch {
+            val modelId = userProfile.value.selectedChatModelId.ifEmpty { null }
             analytics?.logAiChatMessage(
                 mode = if (image != null) "multimodal_vision" else "text",
                 messageLength = text.length,
-                modelUsed = userProfile.value.geminiModelChoice
+                modelUsed = modelId ?: "auto"
             )
             val response = if (performance != null) {
                 performance.traceAsync(LumiPerformanceManager.TRACE_AI_INFERENCE) {
-                    val imageBytes = image?.let { val stream = ByteArrayOutputStream(); it.compress(CompressFormat.JPEG, 80, stream); stream.toByteArray() }; repository.sendMessage(text, imageBytes)
+                    val imageBytes = image?.let { val stream = ByteArrayOutputStream(); it.compress(CompressFormat.JPEG, 80, stream); stream.toByteArray() }
+                    repository.sendMessage(text, imageBytes, modelId)
                 }
             } else {
-                val imageBytes = image?.let { val stream = ByteArrayOutputStream(); it.compress(CompressFormat.JPEG, 80, stream); stream.toByteArray() }; repository.sendMessage(text, imageBytes)
+                val imageBytes = image?.let { val stream = ByteArrayOutputStream(); it.compress(CompressFormat.JPEG, 80, stream); stream.toByteArray() }
+                repository.sendMessage(text, imageBytes, modelId)
             }
             if (userProfileManager.userProfile.value.enableSpeechOutput) {
-                voiceEngine.speak(response.content)
+                _currentlySpeakingMessageId.value = response.id
+                voiceEngine.speak(response.content) {
+                    _currentlySpeakingMessageId.value = null
+                }
             }
         }
     }
     
     fun sendMessageToAi(prompt: String) { sendMessage(prompt) }
+
+    /** Exposes the currently selected chat model ID. Empty string means Auto. */
+    val selectedChatModelId: StateFlow<String> = userProfileManager.userProfile
+        .map { it.selectedChatModelId }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "")
+
+    /** Updates the selected chat model and persists the preference. */
+    fun setSelectedModel(modelId: String) {
+        viewModelScope.launch {
+            userProfileManager.updateProfile(
+                userProfileManager.userProfile.value.copy(selectedChatModelId = modelId)
+            )
+        }
+    }
 
     fun startVoiceListening() {
         viewModelScope.launch { repository.setListening(true) }

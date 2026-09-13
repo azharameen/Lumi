@@ -14,8 +14,9 @@ interface ChatRepository {
     val aiRoutingMode: Flow<AiRoutingMode>
     val pendingHitlActions: Flow<List<HitlPendingAction>>
     val agentThoughts: Flow<String?>
+    val streamingAiMessage: Flow<ChatMessageEntity?>
 
-    suspend fun sendMessage(userText: String, image: ByteArray? = null): ChatMessageEntity
+    suspend fun sendMessage(userText: String, image: ByteArray? = null, modelId: String? = null): ChatMessageEntity
     fun setAiRoutingMode(mode: AiRoutingMode)
     suspend fun clearAiAnalyticsLogs()
     suspend fun clearChatHistory()

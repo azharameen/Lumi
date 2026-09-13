@@ -31,10 +31,11 @@ interface LumiRepository {
     val allMemories: Flow<List<PetMemoryEntity>>
     val chatMessages: Flow<List<ChatMessageEntity>>
     val pagedChatMessages: Flow<androidx.paging.PagingData<ChatMessageEntity>>
+    val streamingAiMessage: Flow<ChatMessageEntity?>
     suspend fun clearChatHistory()
     suspend fun deleteMessage(id: Long)
 
-    suspend fun sendMessage(userText: String, image: ByteArray? = null): ChatMessageEntity
+    suspend fun sendMessage(userText: String, image: ByteArray? = null, modelId: String? = null): ChatMessageEntity
     suspend fun petTheCharacter()
     suspend fun setBloubShape(shape: com.example.domain.model.BloubShape)
     suspend fun setBloubSkinColor(skinColor: com.example.domain.model.BloubSkinColor)

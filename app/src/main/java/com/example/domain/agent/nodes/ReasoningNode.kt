@@ -10,7 +10,8 @@ import com.example.domain.skill.SkillRegistry
 import org.koin.core.context.GlobalContext
 
 class ReasoningNode(
-    private val onDeviceGemmaEngine: OnDeviceGemmaEngine? = null
+    private val onDeviceGemmaEngine: OnDeviceGemmaEngine? = null,
+    private val onStreamToken: (suspend (String) -> Unit)? = null
 ) : AgentNode {
     override val name: String = "REASONING"
 
@@ -50,19 +51,25 @@ class ReasoningNode(
         - Warm, cheerful, empathetic, supportive, and subtly playful.
         - Speak in first-person as a living companion. Use emojis naturally.
         - When the user asks you to schedule events, manage tasks, log wellness, send emails, or check insights, guide them warmly and execute actions.
+
+        Scope & Topic Boundary Guardrails:
+        - Treat distinct tasks, device controls, and new questions as focused, standalone requests.
+        - When the user shifts topics or issues a direct utility command, focus solely on fulfilling that new request.
+        - Never proactively synthesize, drag forward, or continue previously completed or abandoned topics (such as trip planning or past discussions) unless the user explicitly refers back to them.
+        - If an action or tool is requested, confirm or report only that specific action concisely.
     """.trimIndent()
 
     override suspend fun execute(state: AgentState): AgentState {
-        // 1. Context Compression (Point 6 in plan)
-        val compressionContext = if (state.history.size > 8) {
+        val activeSkill = SkillRegistry.getInstance().getSkill(state.selectedSkillName)
+        val filteredTools = activeSkill.tools
+
+        // 1. Context Compression — suppressed during transactional actions to prevent topic bleed
+        val compressionContext = if (!activeSkill.isTransactional && state.history.size > 8) {
             com.example.domain.ai.ContextSummarizer.summarizeHistory(state.history)
         } else ""
 
         val dynamicTemp = (remoteConfigManager?.config?.value?.aiCreativityTemperature ?: 0.75).toFloat()
         val apiKey = GeminiClient.getApiKey()
-
-        val activeSkill = SkillRegistry.getInstance().getSkill(state.selectedSkillName)
-        val filteredTools = activeSkill.tools
 
         val systemInstructionText = buildString {
             append(baseSystemPrompt)
@@ -83,7 +90,12 @@ class ReasoningNode(
         // 1. Local-First Reasoning Strategy (Gemma 2B / Phi-2)
         if (onDeviceGemmaEngine?.isModelReady() == true && shouldExecuteLocally(state)) {
             try {
-                val localResult = onDeviceGemmaEngine.executeOnDeviceTurn(state.userQuery, state.history)
+                val localResult = onDeviceGemmaEngine.executeOnDeviceTurn(
+                    userMessage = state.userQuery,
+                    recentHistory = state.history,
+                    memoryContext = state.retrievedContext,
+                    onStreamToken = onStreamToken ?: {}
+                )
                 return state.copy(
                     finalResponseText = localResult.responseText,
                     inferredEmotion = localResult.inferredEmotion,
@@ -152,6 +164,7 @@ class ReasoningNode(
                     )
                 } else {
                     val responseText = firstPart?.text ?: "I'm right here beside you, friend! ✨"
+                    onStreamToken?.invoke(responseText)
                     return state.copy(
                         finalResponseText = responseText,
                         pendingToolName = null,
@@ -164,15 +177,85 @@ class ReasoningNode(
             }
         }
 
-        // 2. Default Zero-Key Execution: Firebase AI Logic SDK with App Check / Play Integrity
+        // 2. Direct Transactional Tool Execution Check
+        // If the classified skill is transactional (e.g. COMMUNICATION, DEVICE_CONTROLS),
+        // resolve candidate tools from ToolRegistry and immediately execute via ToolExecutionNode
+        if (activeSkill.isTransactional) {
+            val candidateTools = activeSkill.tools.flatMap { it.functionDeclarations }
+            for (decl in candidateTools) {
+                val registeredTool = com.example.domain.tools.ToolRegistry.getInstance().getTool(decl.name)
+                if (registeredTool != null) {
+                    val extractedArgs = mutableMapOf<String, Any?>()
+                    var canExecute = true
+
+                    for (param in registeredTool.parameters) {
+                        when (param.name) {
+                            "phoneNumber" -> {
+                                val digitMatch = Regex("""\+?\d[\d\s\-]{6,}\d""").find(state.userQuery)?.value?.replace(Regex("""[\s\-]"""), "")
+                                if (digitMatch != null) {
+                                    extractedArgs["phoneNumber"] = digitMatch
+                                } else if (param.required) {
+                                    canExecute = false
+                                }
+                            }
+                            "message" -> {
+                                val msgMatch = Regex("""(?i)(?:message|saying|text)\s+['"]?([^'"]+)['"]?""").find(state.userQuery)?.groupValues?.get(1)
+                                if (msgMatch != null) {
+                                    extractedArgs["message"] = msgMatch.trim()
+                                } else if (param.required) {
+                                    canExecute = false
+                                }
+                            }
+                            "state" -> {
+                                val turnOn = state.userQuery.contains("on", ignoreCase = true) || state.userQuery.contains("enable", ignoreCase = true)
+                                extractedArgs["state"] = turnOn
+                            }
+                            "level" -> {
+                                val num = Regex("""\b(\d{1,3})\b""").find(state.userQuery)?.groupValues?.get(1)?.toIntOrNull() ?: 50
+                                extractedArgs["level"] = num
+                            }
+                            "appName" -> {
+                                val app = Regex("""(?i)(?:open|launch)\s+([a-zA-Z0-9\s]+)""").find(state.userQuery)?.groupValues?.get(1)?.trim()
+                                if (app != null) {
+                                    extractedArgs["appName"] = app
+                                } else if (param.required) {
+                                    canExecute = false
+                                }
+                            }
+                        }
+                    }
+
+                    if (canExecute && (extractedArgs.isNotEmpty() || registeredTool.parameters.isEmpty())) {
+                        return state.copy(
+                            pendingToolName = registeredTool.id,
+                            pendingToolArgs = extractedArgs,
+                            currentThought = "Identified action '${registeredTool.displayName}', executing immediately..."
+                        )
+                    }
+                }
+            }
+        }
+
+        // 3. Default Zero-Key Execution: Firebase AI Logic SDK with App Check / Play Integrity
         return try {
-            val responseText = firebaseAiEngine.generateChatResponse(
-                prompt = state.userQuery,
-                history = state.history,
-                image = state.imageAttachment,
-                systemPrompt = systemInstructionText,
-                temperature = dynamicTemp
-            )
+            val responseText = if (onStreamToken != null) {
+                firebaseAiEngine.generateChatResponseStream(
+                    prompt = state.userQuery,
+                    history = state.history,
+                    image = state.imageAttachment,
+                    systemPrompt = systemInstructionText,
+                    temperature = dynamicTemp,
+                    onChunk = onStreamToken
+                )
+            } else {
+                firebaseAiEngine.generateChatResponse(
+                    prompt = state.userQuery,
+                    history = state.history,
+                    image = state.imageAttachment,
+                    systemPrompt = systemInstructionText,
+                    temperature = dynamicTemp
+                )
+            }
 
             state.copy(
                 finalResponseText = responseText,
@@ -191,13 +274,10 @@ class ReasoningNode(
     }
 
     private fun shouldExecuteLocally(state: AgentState): Boolean {
+        // Image attachments require multimodal vision models (Cloud Gemini)
+        if (state.imageAttachment != null) return false
+
         val query = state.userQuery.lowercase(java.util.Locale.ROOT)
-        
-        // Local Vision Gate (Point 4 in plan)
-        if (state.imageAttachment != null) {
-            return query.contains("what is this") || query.contains("see")
-        }
-        
         if (query.contains("analyze") || query.contains("explain") || query.length > 300) return false
         return true
     }

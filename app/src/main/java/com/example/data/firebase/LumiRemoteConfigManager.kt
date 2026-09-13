@@ -1,12 +1,16 @@
 package com.example.data.firebase
 
 import android.util.Log
+import com.example.domain.ai.CloudModelSpec
 import com.example.domain.model.LumiRemoteConfig
 import com.google.firebase.remoteconfig.ConfigUpdate
 import com.google.firebase.remoteconfig.ConfigUpdateListener
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,8 +31,15 @@ class LumiRemoteConfigManager {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
+    private val cloudModelListType = Types.newParameterizedType(List::class.java, CloudModelSpec::class.java)
+    private val cloudModelAdapter = moshi.adapter<List<CloudModelSpec>>(cloudModelListType)
+
     private val _config = MutableStateFlow(LumiRemoteConfig())
     val config: StateFlow<LumiRemoteConfig> = _config.asStateFlow()
+
+    private val _parsedCloudModels = MutableStateFlow<List<CloudModelSpec>>(parseCloudModels(LumiRemoteConfig().availableCloudModels))
+    val parsedCloudModels: StateFlow<List<CloudModelSpec>> = _parsedCloudModels.asStateFlow()
 
     private val _isFetching = MutableStateFlow(false)
     val isFetching: StateFlow<Boolean> = _isFetching.asStateFlow()
@@ -66,6 +77,7 @@ class LumiRemoteConfigManager {
         const val KEY_ENABLE_SLACK_INTEGRATION = "enable_slack_integration"
         const val KEY_ENABLE_GITHUB_INTEGRATION = "enable_github_integration"
         const val KEY_ENABLE_PURCHASE_BUTTONS = "enable_purchase_buttons"
+        const val KEY_AVAILABLE_CLOUD_MODELS = "available_cloud_models"
     }
 
     private val remoteConfigInstance: FirebaseRemoteConfig? by lazy {
@@ -100,7 +112,8 @@ class LumiRemoteConfigManager {
                     KEY_ENABLE_GOOGLE_WORKSPACE to false,
                     KEY_ENABLE_SLACK_INTEGRATION to false,
                     KEY_ENABLE_GITHUB_INTEGRATION to true,
-                    KEY_ENABLE_PURCHASE_BUTTONS to false
+                    KEY_ENABLE_PURCHASE_BUTTONS to false,
+                    KEY_AVAILABLE_CLOUD_MODELS to LumiRemoteConfig().availableCloudModels
                 )
                 setDefaultsAsync(defaults)
 
@@ -221,9 +234,20 @@ class LumiRemoteConfigManager {
             enableGoogleWorkspace = rc.getBoolean(KEY_ENABLE_GOOGLE_WORKSPACE),
             enableSlackIntegration = rc.getBoolean(KEY_ENABLE_SLACK_INTEGRATION),
             enableGithubIntegration = rc.getBoolean(KEY_ENABLE_GITHUB_INTEGRATION),
-            enablePurchaseButtons = rc.getBoolean(KEY_ENABLE_PURCHASE_BUTTONS)
+            enablePurchaseButtons = rc.getBoolean(KEY_ENABLE_PURCHASE_BUTTONS),
+            availableCloudModels = rc.getString(KEY_AVAILABLE_CLOUD_MODELS).ifBlank { _config.value.availableCloudModels }
         )
         _config.value = newConfig
+        _parsedCloudModels.value = parseCloudModels(newConfig.availableCloudModels)
+    }
+
+    private fun parseCloudModels(json: String): List<CloudModelSpec> {
+        return try {
+            cloudModelAdapter.fromJson(json) ?: emptyList()
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to parse availableCloudModels JSON: ${e.message}")
+            emptyList()
+        }
     }
 
     /**

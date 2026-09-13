@@ -57,9 +57,7 @@ class SemanticMemoryEngine(
             .map { it.first }
 
         if (topMemories.isEmpty() && topFacts.isEmpty()) {
-            // Fallback to recent items if no high similarity match
-            val recentMemories = memories.take(2)
-            return@withContext buildContextString(recentMemories, facts.take(3))
+            return@withContext ""
         }
 
         return@withContext buildContextString(topMemories, topFacts)

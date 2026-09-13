@@ -30,7 +30,14 @@ class FlashlightTool(private val context: Context) : LumiTool {
             val state = params["state"].toString().toBoolean()
             val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as? CameraManager
                 ?: return ToolExecutionResult(false, "Camera service unavailable")
-            val cameraId = cameraManager.cameraIdList.firstOrNull()
+            val cameraId = cameraManager.cameraIdList.firstOrNull { id ->
+                try {
+                    val characteristics = cameraManager.getCameraCharacteristics(id)
+                    characteristics.get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+                } catch (_: Exception) {
+                    false
+                }
+            } ?: cameraManager.cameraIdList.firstOrNull()
                 ?: return ToolExecutionResult(false, "No camera hardware detected")
             cameraManager.setTorchMode(cameraId, state)
             ToolExecutionResult(true, "Flashlight turned ${if (state) "ON" else "OFF"}")

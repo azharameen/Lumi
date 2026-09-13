@@ -18,6 +18,8 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import com.example.domain.prompt.DynamicPromptSuggester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -111,17 +113,9 @@ fun QuickPromptChipsBar(
     onSelectPrompt: (String) -> Unit,
     onOpenTemplates: () -> Unit,
     haptics: LumiHaptics,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    prompts: List<String> = remember { DynamicPromptSuggester.getQuickPrompts() }
 ) {
-    val quickStarters = listOf(
-        "✨ Plan my day",
-        "🌿 4-7-8 Breathing",
-        "💧 Log 2 cups water",
-        "🎯 Break down goal",
-        "📝 Add high priority task",
-        "🧘 How to calm stress"
-    )
-
     LazyRow(
         modifier = modifier
             .fillMaxWidth()
@@ -156,14 +150,17 @@ fun QuickPromptChipsBar(
             }
         }
 
-        items(quickStarters) { prompt ->
+        items(prompts) { prompt ->
             Surface(
                 color = SurfaceDarkVariant.copy(alpha = 0.85f),
                 shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(1.dp, SurfaceHighlight.copy(alpha = 0.5f)),
                 modifier = Modifier.clickable {
                     haptics.performSuccess()
-                    onSelectPrompt(prompt.drop(2).trim())
+                    val cleanPrompt = if (prompt.length > 2 && (prompt[0].isSurrogate() || prompt[1].isWhitespace() || prompt.substring(0, 2).any { !it.isLetterOrDigit() })) {
+                        prompt.drop(2).trim()
+                    } else prompt.trim()
+                    onSelectPrompt(cleanPrompt)
                 }
             ) {
                 Text(
@@ -183,7 +180,8 @@ fun QuickPromptChipsBar(
 fun PromptTemplatePickerModal(
     onSelectPrompt: (String) -> Unit,
     onDismiss: () -> Unit,
-    haptics: LumiHaptics
+    haptics: LumiHaptics,
+    categories: List<Pair<String, List<String>>> = remember { DynamicPromptSuggester.getTemplateCategories() }
 ) {
     val sheetState = rememberModalBottomSheetState()
 
@@ -212,26 +210,6 @@ fun PromptTemplatePickerModal(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            val categories = listOf(
-                "🚀 Focus & Productivity" to listOf(
-                    "Plan my day efficiently with time blocks",
-                    "Break down my complex project into 3 daily quests",
-                    "Help me prioritize: Task A vs Task B",
-                    "Summarize my upcoming calendar events"
-                ),
-                "🌿 Mindfulness & Vitality" to listOf(
-                    "Guide me through a 4-7-8 breathing session",
-                    "Log 3 cups of water and energetic mood",
-                    "I am feeling stressed. Help me ground myself",
-                    "Review my sleep and hydration habits this week"
-                ),
-                "💭 Brainstorming & Reflection" to listOf(
-                    "Help me write an uplifting morning gratitude note",
-                    "Brainstorm 5 creative ideas for my project",
-                    "What should I learn next to level up my skills?"
-                )
-            )
 
             categories.forEach { (categoryName, prompts) ->
                 Text(
@@ -290,6 +268,34 @@ fun ClearChatConfirmDialog(
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(stringResource(R.string.text_clear_chat_confirm), color = LumiPink, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.text_cancel), color = TextTertiary)
+            }
+        },
+        containerColor = SurfaceDark,
+        shape = RoundedCornerShape(20.dp)
+    )
+}
+
+@Composable
+fun DeleteMessageConfirmDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Delete Message", color = TextPrimary, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Text("Are you sure you want to permanently delete this message?", color = TextSecondary)
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Delete", color = LumiPink, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

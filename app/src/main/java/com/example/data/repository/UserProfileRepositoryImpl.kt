@@ -34,6 +34,8 @@ class UserProfileRepositoryImpl(private val context: Context) : UserProfileRepos
         private val PERSONA_TONE = stringPreferencesKey("persona_tone")
         private val CUSTOM_AI = stringPreferencesKey("custom_ai_instructions")
         private val GEMINI_MODEL = stringPreferencesKey("gemini_model_choice")
+        private val SELECTED_CHAT_MODEL = stringPreferencesKey("selected_chat_model_id")
+        private val SELECTED_UTILITY_MODEL = stringPreferencesKey("selected_utility_model_id")
         private val TEMPERATURE = floatPreferencesKey("temperature")
         private val PROACTIVE_BRIEF = booleanPreferencesKey("enable_proactive_briefings")
         private val TOOL_CALLING = booleanPreferencesKey("enable_tool_calling")
@@ -88,6 +90,8 @@ class UserProfileRepositoryImpl(private val context: Context) : UserProfileRepos
             personaTone = tone,
             customAiInstructions = prefs[CUSTOM_AI] ?: "Keep answers concise, actionable, and formatted in clean markdown bullet points.",
             geminiModelChoice = prefs[GEMINI_MODEL] ?: "gemini-2.5-flash",
+            selectedChatModelId = prefs[SELECTED_CHAT_MODEL] ?: prefs[GEMINI_MODEL] ?: "",
+            selectedUtilityModelId = prefs[SELECTED_UTILITY_MODEL] ?: "",
             temperature = prefs[TEMPERATURE] ?: 0.7f,
             enableProactiveBriefings = prefs[PROACTIVE_BRIEF] ?: true,
             enableToolCalling = prefs[TOOL_CALLING] ?: true,
@@ -161,6 +165,8 @@ class UserProfileRepositoryImpl(private val context: Context) : UserProfileRepos
                 prefs[PERSONA_TONE] = profile.personaTone.name
                 prefs[CUSTOM_AI] = profile.customAiInstructions
                 prefs[GEMINI_MODEL] = profile.geminiModelChoice
+                prefs[SELECTED_CHAT_MODEL] = profile.selectedChatModelId
+                prefs[SELECTED_UTILITY_MODEL] = profile.selectedUtilityModelId
                 prefs[TEMPERATURE] = profile.temperature
                 prefs[PROACTIVE_BRIEF] = profile.enableProactiveBriefings
                 prefs[TOOL_CALLING] = profile.enableToolCalling

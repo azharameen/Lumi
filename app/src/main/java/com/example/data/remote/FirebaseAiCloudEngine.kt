@@ -14,6 +14,7 @@ import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
+import com.example.domain.ai.ContextRelevancePruner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.context.GlobalContext
@@ -83,6 +84,12 @@ class FirebaseAiCloudEngine {
         - Warm, cheerful, empathetic, supportive, and subtly playful.
         - Speak in first-person as a living companion. Use emojis naturally.
         - Provide insightful, actionable, and encouraging guidance.
+
+        Scope & Topic Boundary Guardrails:
+        - Treat distinct tasks, device controls, and new questions as focused, standalone requests.
+        - When the user shifts topics or issues a direct utility command, focus solely on fulfilling that new request.
+        - Never proactively synthesize, drag forward, or continue previously completed or abandoned topics (such as trip planning or past discussions) unless the user explicitly refers back to them.
+        - If an action or tool is requested, confirm or report only that specific action concisely.
     """.trimIndent()
 
     /**
@@ -134,8 +141,9 @@ class FirebaseAiCloudEngine {
 
             val contentList = mutableListOf<Content>()
             
-            // Replay bounded conversation history
-            for ((sender, message) in history.takeLast(12)) {
+            // Replay intelligently pruned conversation history
+            val prunedHistory = ContextRelevancePruner.getInstance().pruneHistory(prompt, history)
+            for ((sender, message) in prunedHistory) {
                 if (message.isNotBlank()) {
                     contentList.add(
                         content(role = if (sender.equals("user", ignoreCase = true)) "user" else "model") {
@@ -187,6 +195,81 @@ class FirebaseAiCloudEngine {
             }
             crashlyticsManager?.logBreadcrumb("FirebaseAiCloudEngine", "Cloud generation failed: $errorMessage")
             response
+        }
+    }
+
+    /**
+     * Executes streaming conversational turn with multi-turn chat history and optional image attachment.
+     * Emits cumulative cleaned response text to [onChunk] as chunks arrive from Firebase AI.
+     */
+    suspend fun generateChatResponseStream(
+        prompt: String,
+        history: List<Pair<String, String>> = emptyList(),
+        image: ByteArray? = null,
+        systemPrompt: String? = null,
+        temperature: Float? = null,
+        modelName: String? = null,
+        onChunk: suspend (String) -> Unit
+    ): String = withContext(Dispatchers.IO) {
+        val startTime = System.currentTimeMillis()
+        try {
+            val generativeModel = getModel(
+                modelName = modelName,
+                temperature = temperature,
+                systemPrompt = systemPrompt
+            )
+
+            val contentList = mutableListOf<Content>()
+            val prunedHistory = ContextRelevancePruner.getInstance().pruneHistory(prompt, history)
+            for ((sender, message) in prunedHistory) {
+                if (message.isNotBlank()) {
+                    contentList.add(
+                        content(role = if (sender.equals("user", ignoreCase = true)) "user" else "model") {
+                            text(message)
+                        }
+                    )
+                }
+            }
+
+            contentList.add(
+                content(role = "user") {
+                    text(prompt)
+                    image?.let {
+                        val bitmap = BitmapFactory.decodeByteArray(it, 0, it.size)
+                        image(bitmap)
+                    }
+                }
+            )
+
+            val accumulatedText = StringBuilder()
+            generativeModel.generateContentStream(contentList).collect { responseChunk ->
+                val chunkText = responseChunk.text ?: ""
+                if (chunkText.isNotEmpty()) {
+                    accumulatedText.append(chunkText)
+                    val cleanedAccumulated = accumulatedText.toString()
+                        .replace(Regex("""^(?:lumi|assistant|model|ai|bot)\s*[:\-]\s*""", RegexOption.IGNORE_CASE), "")
+                    onChunk(cleanedAccumulated)
+                }
+            }
+
+            val finalCleaned = accumulatedText.toString()
+                .replace(Regex("""^(?:lumi|assistant|model|ai|bot)\s*[:\-]\s*""", RegexOption.IGNORE_CASE), "")
+                .trim()
+                .ifBlank { "I'm right here beside you, friend! ✨" }
+
+            analyticsManager?.logAiChatMessage(
+                mode = "FIREBASE_AI_CLOUD_STREAM",
+                messageLength = prompt.length,
+                modelUsed = DEFAULT_MODEL
+            )
+
+            Log.d(TAG, "Firebase AI streamed response in ${System.currentTimeMillis() - startTime}ms")
+            finalCleaned
+        } catch (e: Exception) {
+            Log.e(TAG, "Error executing Firebase AI cloud streaming, falling back to unary", e)
+            generateChatResponse(prompt, history, image, systemPrompt, temperature).also { fallbackText ->
+                onChunk(fallbackText)
+            }
         }
     }
 

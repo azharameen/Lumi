@@ -26,7 +26,6 @@ import com.example.core.theme.TextPrimary
 @Composable
 fun WellnessHeader(
     onNavigateBack: () -> Unit,
-    onOpenBreathing: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -58,21 +57,6 @@ fun WellnessHeader(
                     fontSize = 12.5.sp
                 )
             }
-        }
-
-        IconButton(
-            onClick = onOpenBreathing,
-            modifier = Modifier
-                .size(42.dp)
-                .background(LumiGreen.copy(alpha = 0.18f), CircleShape)
-                .testTag("wellness_breathing_btn")
-        ) {
-            Icon(
-                imageVector = Icons.Default.Air,
-                contentDescription = stringResource(id = R.string.desc_breathing_exercise),
-                tint = LumiGreen,
-                modifier = Modifier.size(22.dp)
-            )
         }
     }
 }

@@ -25,7 +25,6 @@ data class LumiUiState(
     val lifeHubSubTab: Int = 0,
     val isOverlayEnabled: Boolean = false,
     val showCameraDialog: Boolean = false,
-    val showBreathingDialog: Boolean = false,
     val showOverlayPermissionDialog: Boolean = false,
     val showWardrobeScreen: Boolean = false,
     val isTtsVoiceOutputEnabled: Boolean = true,
@@ -147,7 +146,6 @@ class LumiViewModel(
     }
     fun setInputText(text: String) { _uiState.value = _uiState.value.copy(inputText = text) }
     fun setShowCamera(show: Boolean) { _uiState.value = _uiState.value.copy(showCameraDialog = show) }
-    fun setShowBreathing(show: Boolean) { _uiState.value = _uiState.value.copy(showBreathingDialog = show) }
     fun setShowOverlayPermission(show: Boolean) { _uiState.value = _uiState.value.copy(showOverlayPermissionDialog = show) }
     fun setOverlayEnabled(enabled: Boolean) { 
         _uiState.value = _uiState.value.copy(isOverlayEnabled = enabled) 

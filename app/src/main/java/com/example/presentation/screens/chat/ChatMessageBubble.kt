@@ -1,11 +1,13 @@
 package com.example.presentation.screens.chat
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.*
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -37,6 +40,7 @@ import com.example.R
 import com.example.core.theme.*
 import com.example.core.utils.LumiHaptics
 import com.example.data.local.entity.ChatMessageEntity
+import com.example.presentation.components.MarkdownText
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -49,11 +53,52 @@ fun ChatMessageBubble(
     onDeleteMessage: (Long) -> Unit,
     onImageClick: (String) -> Unit,
     haptics: LumiHaptics,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isSpeakingThisMessage: Boolean = false,
+    onStopSpeaking: () -> Unit = {},
+    isStreaming: Boolean = false
 ) {
     val isUser = message.sender == "USER"
     val timeFormat = remember { SimpleDateFormat("h:mm a", Locale.getDefault()) }
-    var isLiked by remember { mutableStateOf(false) }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "CursorAndAudioTransition")
+    val cursorAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(450, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "StreamingCursorAlpha"
+    )
+
+    val waveBar1 by infiniteTransition.animateFloat(
+        initialValue = 4f,
+        targetValue = 12f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(320, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "WaveBar1"
+    )
+    val waveBar2 by infiniteTransition.animateFloat(
+        initialValue = 12f,
+        targetValue = 5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "WaveBar2"
+    )
+    val waveBar3 by infiniteTransition.animateFloat(
+        initialValue = 6f,
+        targetValue = 14f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(360, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "WaveBar3"
+    )
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -163,13 +208,12 @@ fun ChatMessageBubble(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                Text(
-                    text = message.content,
-                    color = if (isUser) ObsidianDark else TextPrimary,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (isUser) FontWeight.Medium else FontWeight.Normal,
-                    fontSize = 14.sp,
-                    lineHeight = 21.sp
+                MarkdownText(
+                    markdown = message.content,
+                    isUser = isUser,
+                    isStreaming = isStreaming,
+                    cursorAlpha = cursorAlpha,
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 val rawToolName = message.toolUsedName
@@ -352,30 +396,53 @@ fun ChatMessageBubble(
 
             if (!isUser) {
                 Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.VolumeUp,
-                    contentDescription = stringResource(R.string.desc_read_aloud),
-                    tint = TextTertiary,
-                    modifier = Modifier
-                        .size(14.dp)
-                        .clickable {
-                            haptics.performTick()
-                            onSpeakMessage(message.content)
-                        }
-                )
 
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                    contentDescription = null,
-                    tint = if (isLiked) LumiPink else TextTertiary,
-                    modifier = Modifier
-                        .size(14.dp)
-                        .clickable {
-                            isLiked = !isLiked
+                if (isSpeakingThisMessage) {
+                    // Active Audio Playback Stop Button with Glowing Waveform Pill
+                    Surface(
+                        color = LumiCyan.copy(alpha = 0.22f),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, LumiCyan.copy(alpha = 0.7f)),
+                        modifier = Modifier.clickable {
                             haptics.performTick()
+                            onStopSpeaking()
                         }
-                )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(1.5.dp),
+                                modifier = Modifier.height(12.dp)
+                            ) {
+                                Box(modifier = Modifier.width(2.dp).height(waveBar1.dp).background(LumiCyan, RoundedCornerShape(1.dp)))
+                                Box(modifier = Modifier.width(2.dp).height(waveBar2.dp).background(LumiCyan, RoundedCornerShape(1.dp)))
+                                Box(modifier = Modifier.width(2.dp).height(waveBar3.dp).background(LumiCyan, RoundedCornerShape(1.dp)))
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.Stop,
+                                contentDescription = "Stop reading aloud",
+                                tint = LumiCyan,
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
+                    }
+                } else {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.VolumeUp,
+                        contentDescription = stringResource(R.string.desc_read_aloud),
+                        tint = TextTertiary,
+                        modifier = Modifier
+                            .size(14.dp)
+                            .clickable {
+                                haptics.performTick()
+                                onSpeakMessage(message.content)
+                            }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(8.dp))

@@ -6,27 +6,43 @@ import com.example.data.remote.GeminiPart
 import com.example.data.remote.OnDeviceGemmaEngine
 import com.example.domain.agent.AgentNode
 import com.example.domain.agent.AgentState
+import com.example.domain.ai.ContextRelevancePruner
 import java.io.ByteArrayOutputStream
 
 class IntentRoutingNode(
-    private val onDeviceGemmaEngine: OnDeviceGemmaEngine? = null
+    private val onDeviceGemmaEngine: OnDeviceGemmaEngine? = null,
+    private val contextRelevancePruner: ContextRelevancePruner = ContextRelevancePruner.getInstance()
 ) : AgentNode {
     override val name: String = "INTENT_ROUTING"
 
     override suspend fun execute(state: AgentState): AgentState = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-        val queryLower = state.userQuery.lowercase(java.util.Locale.ROOT)
+        // 1. Semantic Skill Classification (On-Device LLM preferred; default to GENERAL_COMPANION if not ready)
+        val skill = onDeviceGemmaEngine?.classifyIntent(state.userQuery) ?: "GENERAL_COMPANION"
+        val activeSkillObj = com.example.domain.skill.SkillRegistry.getInstance().getSkill(skill)
 
-        // 1. Semantic Skill Classification (On-Device LLM preferred)
-        val skill = onDeviceGemmaEngine?.classifyIntent(state.userQuery) ?: detectSkillViaAi(state.userQuery)
+        // 2. Track & Manage Topic Stack (suspension, continuation, resumption)
+        val topicManager = com.example.domain.ai.TopicContextManager.getInstance()
+        topicManager.trackTopicTurn(
+            userMessage = state.userQuery,
+            skillName = skill,
+            isTransactional = activeSkillObj.isTransactional
+        )
 
-        // 2. Local execution preference (Hardware & model readiness)
-        val isLocal = onDeviceGemmaEngine?.isModelReady() == true || state.imageAttachment == null
+        // 3. Local execution preference (Hardware & model readiness)
+        val isLocal = onDeviceGemmaEngine?.isModelReady() == true && state.imageAttachment == null
+
+        // 4. Intelligent Context Relevance Pruning (eliminates topic bleed for direct actions)
+        val prunedHistory = contextRelevancePruner.pruneHistory(
+            userQuery = state.userQuery,
+            fullHistory = state.history,
+            classifiedSkill = skill
+        )
 
         val contentsList = mutableListOf<GeminiContent>()
 
-        // Add history turns (last 6 turns)
-        for (turn in state.history.takeLast(6)) {
-            val role = if (turn.first == "USER") "user" else "model"
+        // Add pruned history turns only
+        for (turn in prunedHistory) {
+            val role = if (turn.first.equals("USER", ignoreCase = true)) "user" else "model"
             contentsList.add(
                 GeminiContent(
                     role = role,
@@ -59,19 +75,10 @@ class IntentRoutingNode(
         state.copy(
             isLocalExecution = isLocal,
             selectedSkillName = skill,
+            history = prunedHistory,
             contentsList = contentsList,
             currentThought = "Analyzing your request with local semantic routing..."
         )
-    }
-
-    private fun detectSkillViaAi(query: String): String {
-        val category = com.example.domain.ai.SemanticIntentClassifier.classifyTask(query)
-        return when (category) {
-            com.example.domain.ai.AiTaskCategory.WELLNESS_MOOD -> "WELLNESS"
-            com.example.domain.ai.AiTaskCategory.TIMELINE_PLANNING -> "LIFE_ORGANIZER"
-            com.example.domain.ai.AiTaskCategory.QUICK_DEVICE_ACTION -> "LIFE_ORGANIZER"
-            else -> "GENERAL_COMPANION"
-        }
     }
 
     private fun ByteArray.toBase64(): String {

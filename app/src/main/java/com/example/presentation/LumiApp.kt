@@ -15,6 +15,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -29,7 +30,6 @@ import com.example.core.theme.ObsidianDark
 import com.example.core.utils.rememberLumiHaptics
 import com.example.data.local.mapper.toDomain
 import com.example.framework.PetOverlayService
-import com.example.presentation.components.BreathingExerciseModal
 import com.example.presentation.components.CameraVisionDialog
 import com.example.presentation.components.OverlayPermissionDialog
 import com.example.presentation.home.HomeScreen
@@ -91,10 +91,20 @@ fun LumiApp(
     val isListening by chatViewModel.voiceEngine.isListening.collectAsStateWithLifecycle()
     val isSpeaking by chatViewModel.voiceEngine.isSpeaking.collectAsStateWithLifecycle()
     val pendingHitlActions by chatViewModel.pendingHitlActions.collectAsStateWithLifecycle()
+    val streamingAiMessage by chatViewModel.streamingAiMessage.collectAsStateWithLifecycle()
+    val currentlySpeakingMessageId by chatViewModel.currentlySpeakingMessageId.collectAsStateWithLifecycle()
 
     val modelDownloadStates by aiSettingsViewModel.modelDownloadStates.collectAsStateWithLifecycle()
+    val downloadedLocalModels by aiSettingsViewModel.downloadedLocalModels.collectAsStateWithLifecycle()
+    val availableCloudModels by aiSettingsViewModel.availableCloudModels.collectAsStateWithLifecycle()
+    val selectedChatModelId by chatViewModel.selectedChatModelId.collectAsStateWithLifecycle()
     val activeLocalModelId by aiSettingsViewModel.activeLocalModelId.collectAsStateWithLifecycle()
     val selectedAccelerator by aiSettingsViewModel.selectedAccelerator.collectAsStateWithLifecycle()
+
+    val modelSelectionEngine = remember { org.koin.core.context.GlobalContext.get().get<com.example.domain.ai.ModelSelectionEngine>() }
+    val modelDisplayName = remember(selectedChatModelId, downloadedLocalModels, availableCloudModels) {
+        modelSelectionEngine.getModelDisplayName(selectedChatModelId)
+    }
 
     val context = LocalContext.current
     val haptics = rememberLumiHaptics(isEnabled = userProfile.enableHapticFeedback)
@@ -164,7 +174,6 @@ fun LumiApp(
             enabled = uiState.selectedTab != NavDestination.PetCompanion.tabIndex || 
                       uiState.showWardrobeScreen || 
                       uiState.showCameraDialog || 
-                      uiState.showBreathingDialog ||
                       uiState.showOverlayPermissionDialog ||
                       uiState.lifeHubSubTab != 0
         ) {
@@ -172,7 +181,6 @@ fun LumiApp(
             when {
                 uiState.showWardrobeScreen -> viewModel.setShowWardrobeScreen(false)
                 uiState.showCameraDialog -> viewModel.setShowCamera(false)
-                uiState.showBreathingDialog -> viewModel.setShowBreathing(false)
                 uiState.showOverlayPermissionDialog -> viewModel.setShowOverlayPermission(false)
                 uiState.selectedTab == NavDestination.LifeHub.tabIndex && uiState.lifeHubSubTab != 0 -> {
                     viewModel.setLifeHubSubTab(0)
@@ -232,6 +240,8 @@ fun LumiApp(
                             pendingHitlActions = pendingHitlActions,
                             isListening = isListening,
                             isSpeaking = isSpeaking,
+                            streamingMessage = streamingAiMessage,
+                            currentlySpeakingMessageId = currentlySpeakingMessageId,
                             onSendMessage = { text -> chatViewModel.sendMessage(text) },
                             onSetInputText = { text -> viewModel.setInputText(text) },
                             onShowCamera = { viewModel.setShowCamera(true) },
@@ -241,10 +251,19 @@ fun LumiApp(
                             onClearChat = { chatViewModel.clearChatHistory() },
                             onDeleteMessage = { id -> chatViewModel.deleteMessage(id) },
                             onSpeakMessage = { text -> chatViewModel.speakMessage(text) },
+                            onToggleSpeakMessage = { id, text -> chatViewModel.toggleSpeakMessage(id, text) },
+                            onStopSpeaking = { chatViewModel.stopSpeaking() },
                             onResolveHitlAction = { stateId, approved -> chatViewModel.resolveHitlAction(stateId, approved) },
                             onDismissClipboard = { viewModel.dismissClipboardSnippet() },
                             onProcessClipboard = { snippet -> viewModel.processClipboardWithLumi(snippet) },
-                            onOpenBreathingExercise = { viewModel.setShowBreathing(true) },
+                            selectedModelId = selectedChatModelId,
+                            modelDisplayName = modelDisplayName,
+                            onSelectModel = { modelId -> chatViewModel.setSelectedModel(modelId) },
+                            downloadedLocalModels = downloadedLocalModels,
+                            availableCloudModels = availableCloudModels,
+                            onNavigateToDownloadHub = {
+                                viewModel.setSelectedTab(NavDestination.Account.tabIndex)
+                            },
                             onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                         )
                         NavDestination.LifeHub.tabIndex -> LifeHubScreen(
@@ -377,23 +396,6 @@ fun LumiApp(
                             viewModel.setShowCamera(false)
                             viewModel.sendMessage(prompt, bitmap)
                             viewModel.setSelectedTab(NavDestination.Assistant.tabIndex)
-                        }
-                    )
-                }
-
-                // Breathing Exercise Dialog Modal
-                if (uiState.showBreathingDialog) {
-                    BreathingExerciseModal(
-                        onDismiss = { viewModel.setShowBreathing(false) },
-                        onComplete = {
-                            viewModel.setShowBreathing(false)
-                            viewModel.logWellness(
-                                moodScore = 9,
-                                moodLabel = "Centered & Relaxed",
-                                energyLevel = 8,
-                                hydrationCups = 0,
-                                gratitude = "Completed 4-7-8 Breathing Coherence with Lumi"
-                            )
                         }
                     )
                 }

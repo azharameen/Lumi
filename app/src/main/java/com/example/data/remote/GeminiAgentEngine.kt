@@ -34,7 +34,9 @@ class GeminiAgentEngine(
         userMessage: String,
         recentHistory: List<Pair<String, String>> = emptyList(),
         imageAttachment: ByteArray? = null,
-        onThought: (String?) -> Unit = {}
+        selectedModelId: String? = null,
+        onThought: (String?) -> Unit = {},
+        onStreamToken: suspend (String) -> Unit = {}
     ): AgentExecutionResult = withContext(Dispatchers.IO) {
         try {
             val initialState = AgentState(
@@ -43,7 +45,7 @@ class GeminiAgentEngine(
                 imageAttachment = imageAttachment
             )
 
-            val stateMachine = LumiAgentGraph.create(database, toolDispatcher, onDeviceGemmaEngine)
+            val stateMachine = LumiAgentGraph.create(database, toolDispatcher, onDeviceGemmaEngine, onStreamToken)
             var finalState = initialState
 
             // Execute the DAG state machine via Kotlin Flow
@@ -55,8 +57,10 @@ class GeminiAgentEngine(
             if (finalState.status == AgentStatus.WAITING_FOR_HITL) {
                 hitlApprovalManager?.enqueueHitlAction(finalState)
                 val toolName = finalState.pendingToolName ?: "action"
+                val hitlMsg = "I've staged the `$toolName` action for you! Since this interacts with external services, please review and approve it to execute. 🛡️"
+                onStreamToken(hitlMsg)
                 return@withContext AgentExecutionResult(
-                    responseText = "I've staged the `$toolName` action for you! Since this interacts with external services, please review and approve it to execute. 🛡️",
+                    responseText = hitlMsg,
                     inferredEmotion = PetEmotion.THINKING,
                     toolReports = finalState.executedToolReports
                 )
@@ -64,10 +68,12 @@ class GeminiAgentEngine(
 
             if (finalState.status == AgentStatus.FAILED) {
                 // Fallback to direct Firebase AI generation
-                val directResponse = firebaseAiEngine.generateChatResponse(
+                val directResponse = firebaseAiEngine.generateChatResponseStream(
                     prompt = userMessage,
                     history = recentHistory,
-                    image = imageAttachment
+                    image = imageAttachment,
+                    modelName = selectedModelId,
+                    onChunk = onStreamToken
                 )
                 return@withContext AgentExecutionResult(
                     responseText = directResponse,
@@ -76,12 +82,18 @@ class GeminiAgentEngine(
                 )
             }
 
-            val finalReply = finalState.finalResponseText
-                ?: firebaseAiEngine.generateChatResponse(
+            val finalReply = if (finalState.finalResponseText != null) {
+                onStreamToken(finalState.finalResponseText!!)
+                finalState.finalResponseText!!
+            } else {
+                firebaseAiEngine.generateChatResponseStream(
                     prompt = userMessage,
                     history = recentHistory,
-                    image = imageAttachment
+                    image = imageAttachment,
+                    modelName = selectedModelId,
+                    onChunk = onStreamToken
                 )
+            }
 
             AgentExecutionResult(
                 responseText = finalReply,
@@ -90,10 +102,12 @@ class GeminiAgentEngine(
             )
 
         } catch (e: Exception) {
-            val fallbackText = firebaseAiEngine.generateChatResponse(
+            val fallbackText = firebaseAiEngine.generateChatResponseStream(
                 prompt = userMessage,
                 history = recentHistory,
-                image = imageAttachment
+                image = imageAttachment,
+                modelName = selectedModelId,
+                onChunk = onStreamToken
             )
             AgentExecutionResult(
                 responseText = fallbackText,

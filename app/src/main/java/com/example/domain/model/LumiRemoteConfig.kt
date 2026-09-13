@@ -27,5 +27,18 @@ data class LumiRemoteConfig(
     val enableGoogleWorkspace: Boolean = false,
     val enableSlackIntegration: Boolean = false,
     val enableGithubIntegration: Boolean = true,
-    val enablePurchaseButtons: Boolean = false
+    val enablePurchaseButtons: Boolean = false,
+    /**
+     * JSON array of cloud model descriptors, fetched from Firebase Remote Config.
+     * Format: [{"id":"...","displayName":"...","description":"..."},...]
+     * Parsed by LumiRemoteConfigManager into List<CloudModelSpec>.
+     * Never hardcode model IDs in Kotlin logic — always read from this field.
+     */
+    val availableCloudModels: String = """
+        [
+          {"id":"gemini-2.5-flash","displayName":"Gemini 2.5 Flash","description":"Fast multimodal model for broad tasks"},
+          {"id":"gemini-2.5-pro","displayName":"Gemini 2.5 Pro","description":"Deep reasoning for complex workflows"},
+          {"id":"gemini-2.5-flash-lite","displayName":"Gemini 2.5 Flash-Lite","description":"Low latency, high throughput model"}
+        ]
+    """.trimIndent()
 )

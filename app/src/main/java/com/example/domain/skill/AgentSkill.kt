@@ -12,4 +12,5 @@ interface AgentSkill {
     val description: String
     val systemPromptExtension: String
     val tools: List<GeminiToolWrapper>
+    val isTransactional: Boolean get() = false
 }

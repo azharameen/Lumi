@@ -22,6 +22,8 @@ class SkillRegistry {
     init {
         // Register default skills
         registerSkill(LifeOrganizerSkill())
+        registerSkill(DeviceControlsSkill())
+        registerSkill(CommunicationSkill())
         registerSkill(GoogleWorkspaceSkill())
         registerSkill(GithubSkill())
         registerSkill(SlackSkill())

@@ -57,8 +57,7 @@ fun WellnessScreen(
         // Top Header
         item {
             WellnessHeader(
-                onNavigateBack = onNavigateBack,
-                onOpenBreathing = { appViewModel.setShowBreathing(true) }
+                onNavigateBack = onNavigateBack
             )
         }
 

@@ -35,13 +35,6 @@ object AppShortcutsManager {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
 
-            val breathIntent = Intent(context, MainActivity::class.java).apply {
-                action = Intent.ACTION_VIEW
-                putExtra("SHORTCUT_ACTION", "START_BREATHING")
-                putExtra("NAVIGATE_TAB", 0)
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            }
-
             val overlayIntent = Intent(context, MainActivity::class.java).apply {
                 action = Intent.ACTION_VIEW
                 putExtra("SHORTCUT_ACTION", "TOGGLE_OVERLAY")
@@ -66,20 +59,12 @@ object AppShortcutsManager {
                     .setRank(2)
                     .build(),
 
-                ShortcutInfoCompat.Builder(context, "dyn_shortcut_breathing")
-                    .setShortLabel("Mindful Breath")
-                    .setLongLabel("4-7-8 Coherence Session")
-                    .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
-                    .setIntent(breathIntent)
-                    .setRank(3)
-                    .build(),
-
                 ShortcutInfoCompat.Builder(context, "dyn_shortcut_toggle_overlay")
                     .setShortLabel("Screen Companion")
                     .setLongLabel("Toggle Floating Lumi Pet")
                     .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
                     .setIntent(overlayIntent)
-                    .setRank(4)
+                    .setRank(3)
                     .build()
             )
 

@@ -58,6 +58,7 @@ import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.PushPin
@@ -193,11 +194,7 @@ fun LlmSettingsSection(
         )
     )
 
-    val cloudModels = listOf(
-        AiModelInfo("gemini-2.5-flash", "Gemini 2.5 Flash (Ultra Fast & Multimodal)", "Input: Text, Audio, Images, Video", "Output: Text, Code"),
-        AiModelInfo("gemini-2.5-pro", "Gemini 2.5 Pro (Deep Reasoning & Complex Workflows)", "Input: Text, Audio, Images, Video", "Output: Text, Code"),
-        AiModelInfo("gemini-2.5-flash-lite", "Gemini 2.5 Flash-Lite (Low Latency / High Throughput)", "Input: Text, Audio, Images, Video", "Output: Text, Code")
-    )
+    val cloudModels = remoteConfigManager?.parsedCloudModels?.collectAsStateWithLifecycle(initialValue = emptyList())?.value ?: emptyList()
 
     LazyColumn(
         modifier = Modifier
@@ -460,7 +457,7 @@ fun LlmSettingsSection(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         cloudModels.forEach { model ->
-                            val isSelected = userProfile.geminiModelChoice == model.id
+                            val isSelected = (userProfile.selectedChatModelId.ifEmpty { userProfile.geminiModelChoice }) == model.id
                             Surface(
                                 color = if (isSelected) LumiMint.copy(alpha = 0.15f) else SurfaceDarkVariant,
                                 shape = RoundedCornerShape(10.dp),
@@ -469,7 +466,7 @@ fun LlmSettingsSection(
                                     .fillMaxWidth()
                                     .padding(vertical = 3.dp)
                                     .clickable {
-                                        onUpdateProfile(userProfile.copy(geminiModelChoice = model.id))
+                                        onUpdateProfile(userProfile.copy(selectedChatModelId = model.id, geminiModelChoice = model.id))
                                     }
                             ) {
                                 Row(
@@ -478,13 +475,13 @@ fun LlmSettingsSection(
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = model.label,
+                                            text = model.displayName,
                                             color = if (isSelected) LumiMint else TextPrimary,
                                             fontSize = 12.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                                         )
                                         Text(
-                                            text = "${model.inputTypes} • ${model.outputTypes}",
+                                            text = model.description,
                                             color = TextSecondary,
                                             fontSize = 10.sp
                                         )
@@ -492,6 +489,111 @@ fun LlmSettingsSection(
                                     if (isSelected) {
                                         Icon(Icons.Default.Check, contentDescription = null, tint = LumiMint, modifier = Modifier.size(16.dp))
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Utility & Classification Model Selection
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                shape = RoundedCornerShape(MaterialTheme.spacing.medium),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(MaterialTheme.spacing.medium)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Tune, contentDescription = null, tint = LumiGreen, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
+                        Text(
+                            text = "Utility & Classification Model",
+                            color = LumiGreen,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Powers background intent classification, skill routing, and fast tool discovery 100% on-device.",
+                        color = TextSecondary,
+                        fontSize = 11.sp
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Auto option
+                    val isAutoSelected = userProfile.selectedUtilityModelId.isBlank()
+                    Surface(
+                        color = if (isAutoSelected) LumiGreen.copy(alpha = 0.15f) else SurfaceDarkVariant,
+                        shape = RoundedCornerShape(10.dp),
+                        border = if (isAutoSelected) androidx.compose.foundation.BorderStroke(1.dp, LumiGreen) else null,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 3.dp)
+                            .clickable {
+                                onUpdateProfile(userProfile.copy(selectedUtilityModelId = ""))
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Auto (Best Available On-Device)",
+                                    color = if (isAutoSelected) LumiGreen else TextPrimary,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isAutoSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+                                Text(
+                                    text = "Automatically selects the active local Gemma model.",
+                                    color = TextSecondary,
+                                    fontSize = 10.sp
+                                )
+                            }
+                            if (isAutoSelected) {
+                                Icon(Icons.Default.Check, contentDescription = null, tint = LumiGreen, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    }
+
+                    // Downloaded local models
+                    localModelCatalog.filter {
+                        modelDownloadStates[it.id]?.status == com.example.data.remote.ModelDownloadStatus.DOWNLOADED
+                    }.forEach { spec ->
+                        val isSelected = userProfile.selectedUtilityModelId == spec.id
+                        Surface(
+                            color = if (isSelected) LumiGreen.copy(alpha = 0.15f) else SurfaceDarkVariant,
+                            shape = RoundedCornerShape(10.dp),
+                            border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, LumiGreen) else null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 3.dp)
+                                .clickable {
+                                    onUpdateProfile(userProfile.copy(selectedUtilityModelId = spec.id))
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = spec.displayName,
+                                        color = if (isSelected) LumiGreen else TextPrimary,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = "${spec.hardwareTarget} • ${spec.sizeDisplay}",
+                                        color = TextSecondary,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                                if (isSelected) {
+                                    Icon(Icons.Default.Check, contentDescription = null, tint = LumiGreen, modifier = Modifier.size(16.dp))
                                 }
                             }
                         }

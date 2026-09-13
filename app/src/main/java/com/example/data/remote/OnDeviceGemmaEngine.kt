@@ -7,9 +7,11 @@ import com.example.domain.model.PetEmotion
 import com.example.domain.tools.AgentToolDispatcher
 import com.example.domain.tools.ToolRegistry
 import com.example.domain.tools.ToolRetriever
+import com.example.domain.tools.LumiTool
 import com.example.domain.model.ToolExecutionReport
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.asStateFlow
 import org.json.JSONObject
@@ -47,6 +49,7 @@ class OnDeviceGemmaEngine(
     }
     companion object {
         private const val RAM_HEADROOM_SAFETY_MARGIN_BYTES = 350_000_000L
+        const val DEFAULT_CONTEXT_MAX_TOKENS = 1024
     }
 
     private var llmInference: LlmInference? = null
@@ -103,7 +106,9 @@ class OnDeviceGemmaEngine(
 
     suspend fun executeOnDeviceTurn(
         userMessage: String,
-        recentHistory: List<Pair<String, String>> = emptyList()
+        recentHistory: List<Pair<String, String>> = emptyList(),
+        memoryContext: String = "",
+        onStreamToken: suspend (String) -> Unit = {}
     ): AgentExecutionResult = withContext(Dispatchers.Default) {
         if (context == null) throw OnDeviceInferenceException.HardwareIncompatible("Application context required for MediaPipe Local LLM.")
 
@@ -135,7 +140,7 @@ class OnDeviceGemmaEngine(
                 llmInference?.close()
                 val optionsBuilder = LlmInference.LlmInferenceOptions.builder()
                     .setModelPath(modelFile.absolutePath)
-                    .setMaxTokens(512)
+                    .setMaxTokens(DEFAULT_CONTEXT_MAX_TOKENS)
                     .setTopK(40)
                     .setTemperature(0.4f)
 
@@ -170,66 +175,49 @@ class OnDeviceGemmaEngine(
                 loadedModelPath = modelFile.absolutePath
             }
 
-            val conversationHistory = recentHistory.takeLast(4).joinToString("\n") { "${it.first}: ${it.second}" }
-            
-            // Stage 1: Fast Tool Retrieval (<5ms) with Intent Gating
-            // Only inject tool schemas if the user message signals actionable tool intent
-            val actionIntentKeywords = listOf(
-                "set", "schedule", "create", "add", "turn", "toggle", "open", "launch",
-                "check", "battery", "uptime", "alarm", "reminder", "timer", "volume",
-                "brightness", "wifi", "bluetooth", "note", "task", "event", "status"
-            )
-            val hasActionIntent = actionIntentKeywords.any { keyword ->
-                Regex("""\b${Regex.escape(keyword)}\b""", RegexOption.IGNORE_CASE).containsMatchIn(userMessage)
-            }
-
-            val relevantTools = if (hasActionIntent) {
-                toolRetriever?.getRelevantTools(userMessage, maxTools = 3) ?: emptyList()
-            } else {
+            // Stage 1: Dynamically retrieve candidate tools relevant ONLY to the active userMessage via FTS BM25
+            val relevantCandidates = try {
+                toolRetriever?.getRelevantTools(userMessage, maxTools = 5) ?: emptyList()
+            } catch (_: Exception) {
                 emptyList()
             }
 
-            val toolPromptSection = if (relevantTools.isNotEmpty()) {
-                val toolsXml = relevantTools.joinToString("\n") { tool ->
-                    val paramsStr = tool.parameters.joinToString(" ") { "${it.name}=\"${it.type}\"" }
-                    "<tool name=\"${tool.id}\" desc=\"${tool.description}\" $paramsStr/>"
+            val toolPromptSection = buildString {
+                append("[Tools]\n")
+                for (t in relevantCandidates) {
+                    val paramDesc = if (t.parameters.isNotEmpty()) {
+                        "(" + t.parameters.joinToString(", ") { "${it.name}: ${it.type.lowercase(java.util.Locale.ROOT)}" } + ")"
+                    } else "()"
+                    append("- ${t.id}$paramDesc: ${t.description}\n")
                 }
-                "\nAvailable Tools:\n$toolsXml\nIf you need to call a tool, reply ONLY with: <tool_call><name>TOOL_NAME</name><args>{\"key\": \"val\"}</args></tool_call>\n"
-            } else ""
+                append("\n[Format]\n")
+                append("<tool_call><name>TOOL_ID</name><args>{\"param\": \"val\"}</args></tool_call>\n")
+            }.trim()
 
-            val systemPrompt = "You are Lumi, a friendly, loving AI companion pet. Reply warmly and concisely to your friend."
+            val systemPrompt = "You are Lumi, a loving, helpful AI companion pet and life planner on Android. You control device hardware directly. When asked for a specific action or command, execute only that request directly and concisely. Do not drag forward or resume previous discussion topics unless the user explicitly asks to."
             
-            // Build Gemma Instruction-Tuning Prompt with native alternating turns (<start_of_turn>user ... <end_of_turn><start_of_turn>model)
+            // Build Gemma Instruction-Tuning Prompt ensuring tools & memory context are ALWAYS in the active turn
             val prompt = buildString {
-                val pastTurns = recentHistory.takeLast(6)
-                if (pastTurns.isNotEmpty()) {
-                    pastTurns.forEachIndexed { index, (sender, text) ->
-                        val isUser = sender.equals("user", ignoreCase = true)
-                        val roleTag = if (isUser) "user" else "model"
-                        append("<start_of_turn>$roleTag\n")
-                        if (index == 0 && isUser) {
-                            append(systemPrompt)
-                            if (toolPromptSection.isNotBlank()) {
-                                append("\n").append(toolPromptSection)
-                            }
-                            append("\n\n")
-                        }
-                        append(text.trim())
-                        append("<end_of_turn>\n")
+                val prunedHistory = com.example.domain.ai.ContextRelevancePruner.getInstance()
+                    .pruneHistory(userMessage, recentHistory)
+                val pastTurns = prunedHistory.takeLast(2)
+                for ((sender, text) in pastTurns) {
+                    val roleTag = if (sender.equals("user", ignoreCase = true)) "user" else "model"
+                    val cleanText = text
+                        .replace(Regex("<tool_call>.*?</tool_call>", RegexOption.DOT_MATCHES_ALL), "")
+                        .trim()
+                    if (cleanText.isNotBlank()) {
+                        append("<start_of_turn>$roleTag\n").append(cleanText.take(100).trim()).append("<end_of_turn>\n")
                     }
-                    append("<start_of_turn>user\n")
-                    append(userMessage)
-                    append("<end_of_turn>\n<start_of_turn>model\n")
-                } else {
-                    append("<start_of_turn>user\n")
-                    append(systemPrompt)
-                    if (toolPromptSection.isNotBlank()) {
-                        append("\n").append(toolPromptSection)
-                    }
-                    append("\n\n")
-                    append(userMessage)
-                    append("<end_of_turn>\n<start_of_turn>model\n")
                 }
+                append("<start_of_turn>user\n")
+                append(systemPrompt).append("\n\n")
+                if (memoryContext.isNotBlank()) {
+                    append("User Context & Memories:\n").append(memoryContext.take(200).trim()).append("\n\n")
+                }
+                append(toolPromptSection).append("\n\n")
+                append("User request: ").append(userMessage.take(200).trim())
+                append("<end_of_turn>\n<start_of_turn>model\n")
             }
 
             // Stage 2: Real True Local Inference Execution
@@ -257,30 +245,44 @@ class OnDeviceGemmaEngine(
             val executedToolIds = mutableSetOf<String>()
             val executedToolSummaries = mutableListOf<String>()
 
-            // Stage 3: Parse XML Tool Calls & Local Kotlin Execution (Handle multiple or duplicated calls)
-            val toolCallRegex = Regex("<tool_call>\\s*<name>(.*?)</name>\\s*<args>(.*?)</args>\\s*</tool_call>", RegexOption.DOT_MATCHES_ALL)
-            val matches = toolCallRegex.findAll(rawOutput).toList()
+            // Stage 3: Multi-Format Tool Call Parser (XML & JSON with fuzzy name resolution)
+            data class ExtractedCall(val rawName: String, val argsJson: String)
+            val extractedCalls = mutableListOf<ExtractedCall>()
 
-            for (match in matches) {
-                val toolId = match.groupValues[1].trim()
-                val argsJsonStr = match.groupValues[2].trim()
+            // Format 1: XML <tool_call><name>...</name><args>...</args></tool_call>
+            val xmlRegex = Regex("<tool_call>\\s*<name>(.*?)</name>\\s*<args>(.*?)</args>\\s*</tool_call>", RegexOption.DOT_MATCHES_ALL)
+            for (match in xmlRegex.findAll(rawOutput)) {
+                extractedCalls.add(ExtractedCall(match.groupValues[1].trim(), match.groupValues[2].trim()))
+            }
 
-                // Deduplicate repetitive tool executions in a single model turn
-                if (!executedToolIds.add(toolId)) continue
+            // Format 2: XML <tool_call>{...}</tool_call>
+            val xmlJsonRegex = Regex("<tool_call>\\s*(\\{.*?\\})\\s*</tool_call>", RegexOption.DOT_MATCHES_ALL)
+            for (match in xmlJsonRegex.findAll(rawOutput)) {
+                try {
+                    val jsonObj = JSONObject(match.groupValues[1].trim())
+                    val name = jsonObj.optString("name").ifBlank { jsonObj.optString("call").ifBlank { jsonObj.optString("tool") } }
+                    val args = jsonObj.optJSONObject("args")?.toString() ?: jsonObj.optJSONObject("parameters")?.toString() ?: "{}"
+                    if (name.isNotBlank()) extractedCalls.add(ExtractedCall(name, args))
+                } catch (_: Exception) {}
+            }
 
-                val tool = ToolRegistry.getInstance().getTool(toolId)
-                if (tool != null) {
-                    val paramsMap = mutableMapOf<String, Any?>()
+            // Format 3: Embedded JSON {"call": "...", "args": {...}}
+            val jsonPattern = Regex("""\{[^{}]*?"(?:call|tool|name)"\s*:\s*"([^"]+)"[^{}]*?"(?:args|parameters)"\s*:\s*(\{[^{}]*\})[^{}]*?\}""", RegexOption.DOT_MATCHES_ALL)
+            for (match in jsonPattern.findAll(rawOutput)) {
+                extractedCalls.add(ExtractedCall(match.groupValues[1].trim(), match.groupValues[2].trim()))
+            }
+
+            for (call in extractedCalls) {
+                val tool = resolveTool(call.rawName)
+                if (tool != null && executedToolIds.add(tool.id)) {
+                    val rawParams = mutableMapOf<String, Any?>()
                     try {
-                        val jsonObj = JSONObject(argsJsonStr)
-                        jsonObj.keys().forEach { key -> paramsMap[key] = jsonObj.get(key) }
-                    } catch (_: Exception) {
-                        // ignore malformed json
-                    }
+                        val jsonObj = JSONObject(call.argsJson)
+                        jsonObj.keys().forEach { key -> rawParams[key] = jsonObj.get(key) }
+                    } catch (_: Exception) {}
 
-                    val startTime = System.currentTimeMillis()
-                    val execResult = tool.execute(paramsMap)
-                    val duration = System.currentTimeMillis() - startTime
+                    val safeParams = normalizeParams(tool, rawParams)
+                    val execResult = tool.execute(safeParams)
 
                     toolReports.add(
                         ToolExecutionReport(
@@ -306,9 +308,16 @@ class OnDeviceGemmaEngine(
                 .replace(Regex("</?tool>", RegexOption.IGNORE_CASE), "")
                 .replace(Regex("</?args>", RegexOption.IGNORE_CASE), "")
                 .replace(Regex("</?name>", RegexOption.IGNORE_CASE), "")
+                .replace(jsonPattern, "")
+                .replace(Regex("""(?i)\[?(?:tools|available tools|format|instructions|example)\]?:?.*?(?:\n|$)"""), "")
+                .replace(Regex("""(?i)when the user asks to control.*?(?:\n|$)"""), "")
+                .replace(Regex("""(?i)you must output.*?(?:\n|$)"""), "")
+                .replace(Regex("""(?i)^\s*-\s*system_[a-z_]+.*?(?:\n|$)""", RegexOption.MULTILINE), "")
+                .replace(Regex("""(?i)^\s*-\s*set_[a-z_]+.*?(?:\n|$)""", RegexOption.MULTILINE), "")
+                .replace(Regex("""(?i)user\s*request\s*:?.*?(?:\n|$)"""), "")
                 .trim()
 
-            // Gracefully truncate hallucinated multi-turn continuations (e.g. model fabricating next "user: ... assistant: ...")
+            // Gracefully truncate hallucinated multi-turn continuations
             val nextTurnPattern = Regex("""(?:\n|<start_of_turn>)\s*(?:user|human|userl|assistant|model|lumi)\s*[:\-]""", RegexOption.IGNORE_CASE)
             val turnCutoff = nextTurnPattern.find(generatedText)?.range?.first
             if (turnCutoff != null && turnCutoff > 0) {
@@ -325,10 +334,22 @@ class OnDeviceGemmaEngine(
                 .replace(Regex("""(?i)\b(?:user|assistant|userl)\s*:\s*"""), "")
                 .trim()
 
-            // If the model produced only tool calls with no companion text, provide a natural companion response
-            if (generatedText.isBlank()) {
+            // Detect any remaining instruction leak or prompt echo
+            val isContaminatedWithInstructions = generatedText.contains("instruction", ignoreCase = true) ||
+                    generatedText.contains("tool_call", ignoreCase = true) ||
+                    generatedText.contains("output a tool", ignoreCase = true) ||
+                    generatedText.contains("device settings", ignoreCase = true) ||
+                    generatedText.contains("<name>", ignoreCase = true) ||
+                    generatedText.contains("<args>", ignoreCase = true) ||
+                    generatedText.startsWith("- system_", ignoreCase = true)
+
+            // If the model produced only tool calls or echoed prompt instructions, provide a natural companion response
+            if (generatedText.isBlank() || isContaminatedWithInstructions) {
                 generatedText = when {
-                    executedToolSummaries.isNotEmpty() -> executedToolSummaries.joinToString("\n\n")
+                    executedToolSummaries.isNotEmpty() -> {
+                        val summaryText = executedToolSummaries.joinToString("\n")
+                        "I've taken care of that for you! ✨\n$summaryText"
+                    }
                     else -> "I'm right here with you! How can I help?"
                 }
             }
@@ -341,6 +362,9 @@ class OnDeviceGemmaEngine(
                 lowerText.contains("stress") || lowerText.contains("sorry") -> PetEmotion.CONCERNED
                 else -> PetEmotion.HAPPY
             }
+
+            // Stage 4: Real-time token streaming to the UI
+            streamTokensGracefully(generatedText, onStreamToken)
 
             AgentExecutionResult(generatedText, emotion, toolReports)
         } catch (h: OnDeviceInferenceException) {
@@ -358,6 +382,102 @@ class OnDeviceGemmaEngine(
         }
     }
 
+    private fun resolveTool(toolIdOrName: String): LumiTool? {
+        val registry = ToolRegistry.getInstance()
+        val trimmed = toolIdOrName.trim()
+        val clean = trimmed.lowercase(java.util.Locale.ROOT)
+            .removePrefix("system_")
+            .removePrefix("tool_")
+            .replace(" ", "_")
+        
+        // 1. Exact ID match
+        registry.getTool(trimmed)?.let { return it }
+        // 2. Case-insensitive ID match
+        registry.getAllTools().find { it.id.equals(trimmed, ignoreCase = true) }?.let { return it }
+        // 3. ID without system_ prefix
+        registry.getAllTools().find { it.id.removePrefix("system_").equals(clean, ignoreCase = true) }?.let { return it }
+        // 4. Common device & assistant aliases
+        when (clean) {
+            "flashlight", "torch", "light", "toggle_flashlight" -> registry.getTool("system_toggle_flashlight")?.let { return it }
+            "bluetooth", "open_bluetooth", "bt" -> registry.getTool("system_open_bluetooth_settings")?.let { return it }
+            "wifi", "wi_fi", "open_wifi", "internet_settings" -> registry.getTool("system_open_wifi_settings")?.let { return it }
+            "location", "gps", "open_location" -> registry.getTool("system_open_location_settings")?.let { return it }
+            "display", "screen", "brightness_settings" -> registry.getTool("system_open_display_settings")?.let { return it }
+            "battery", "battery_status", "power" -> registry.getTool("system_battery_status")?.let { return it }
+            "volume", "media_volume", "sound" -> registry.getTool("system_set_media_volume")?.let { return it }
+            "timer", "set_timer", "countdown" -> registry.getTool("set_timer")?.let { return it }
+            "alarm", "set_alarm", "alarm_clock" -> registry.getTool("set_alarm")?.let { return it }
+            "app", "open_app", "launch_app" -> registry.getTool("system_open_app")?.let { return it }
+            "storage", "storage_info", "disk" -> registry.getTool("system_storage_info")?.let { return it }
+            "uptime", "device_uptime" -> registry.getTool("system_device_uptime")?.let { return it }
+            "ram", "memory", "ram_usage" -> registry.getTool("system_ram_usage")?.let { return it }
+            "network", "network_status", "connectivity" -> registry.getTool("system_network_status")?.let { return it }
+        }
+        // 5. Contains match on id or display name
+        registry.getAllTools().find { 
+            it.id.contains(clean, ignoreCase = true) || 
+            it.displayName.contains(clean, ignoreCase = true) 
+        }?.let { return it }
+        
+        return null
+    }
+
+    private fun normalizeParams(tool: LumiTool, rawArgs: Map<String, Any?>): Map<String, Any?> {
+        val normalized = rawArgs.toMutableMap()
+        when (tool.id) {
+            "system_toggle_flashlight" -> {
+                val stateRaw = rawArgs["state"] ?: rawArgs["enabled"] ?: rawArgs["on"] ?: rawArgs["status"] ?: rawArgs["action"]
+                val boolState = when (stateRaw?.toString()?.lowercase(java.util.Locale.ROOT)) {
+                    "off", "false", "0", "disable", "deactivate", "stop" -> false
+                    else -> true
+                }
+                normalized["state"] = boolState
+            }
+            "system_open_app" -> {
+                val appVal = rawArgs["appName"] ?: rawArgs["app"] ?: rawArgs["name"] ?: rawArgs["application"]
+                if (appVal != null) normalized["appName"] = appVal.toString()
+            }
+            "system_set_media_volume", "system_set_ringer_volume", "system_set_alarm_volume" -> {
+                val lvl = rawArgs["level"] ?: rawArgs["volume"] ?: rawArgs["percentage"] ?: rawArgs["val"] ?: 50
+                normalized["level"] = lvl
+            }
+            "set_timer" -> {
+                val sec = rawArgs["seconds"] ?: rawArgs["duration"] ?: rawArgs["time"] ?: 60
+                normalized["seconds"] = sec
+            }
+        }
+        return normalized
+    }
+
+    private fun splitCompoundQuery(query: String): List<String> {
+        val delimiters = listOf(" and then ", " then ", " and also ", " also ", " and ", ", ")
+        var segments = listOf(query)
+        for (del in delimiters) {
+            segments = segments.flatMap { seg ->
+                if (seg.contains(del, ignoreCase = true)) {
+                    seg.split(Regex(del, RegexOption.IGNORE_CASE))
+                } else {
+                    listOf(seg)
+                }
+            }
+        }
+        val result = segments.map { it.trim().trim(',', '.') }.filter { it.length > 3 }
+        return if (result.isNotEmpty()) result else listOf(query)
+    }
+
+    private suspend fun streamTokensGracefully(text: String, onStreamToken: suspend (String) -> Unit) {
+        if (text.isBlank()) return
+        val words = text.split(" ")
+        val sb = StringBuilder()
+        for (i in words.indices) {
+            if (i > 0) sb.append(" ")
+            sb.append(words[i])
+            onStreamToken(sb.toString())
+            delay(16) // Smooth natural streaming cadence
+        }
+        onStreamToken(text)
+    }
+
     suspend fun benchmarkOnDeviceGemma(): Pair<String, Long> = withContext(Dispatchers.Default) {
         val safeContext = context ?: throw OnDeviceInferenceException.HardwareIncompatible("Context required for benchmark.")
         if (!isHardwareSupported()) {
@@ -372,7 +492,7 @@ class OnDeviceGemmaEngine(
                 val modelFile = downloadManager.getModelFile(activeSpec.id)
                 val options = LlmInference.LlmInferenceOptions.builder()
                     .setModelPath(modelFile.absolutePath)
-                    .setMaxTokens(128)
+                    .setMaxTokens(DEFAULT_CONTEXT_MAX_TOKENS)
                     .build()
                 llmInference = LlmInference.createFromOptions(safeContext, options)
                 loadedModelPath = modelFile.absolutePath
@@ -399,6 +519,8 @@ class OnDeviceGemmaEngine(
         
         val prompt = """
             You are a semantic classifier. Categorize the user's message into EXACTLY ONE of these categories:
+            - COMMUNICATION (if about dialing numbers, phone calls, texting, drafting SMS)
+            - DEVICE_CONTROLS (if about flashlight, bluetooth, wifi, volume, alarms, timers, apps, battery, device settings)
             - GOOGLE_WORKSPACE (if about emails, docs, sheets, drive)
             - GITHUB (if about issues, repos, code, pull requests)
             - SLACK (if about messaging, channels, status)
@@ -417,7 +539,7 @@ class OnDeviceGemmaEngine(
                 val modelFile = downloadManager.getModelFile(activeSpec.id)
                 val options = LlmInference.LlmInferenceOptions.builder()
                     .setModelPath(modelFile.absolutePath)
-                    .setMaxTokens(16)
+                    .setMaxTokens(DEFAULT_CONTEXT_MAX_TOKENS)
                     .setTemperature(0.1f)
                     .build()
                 llmInference = LlmInference.createFromOptions(context, options)
@@ -427,6 +549,8 @@ class OnDeviceGemmaEngine(
             val raw = llmInference?.generateResponse(prompt)?.trim() ?: "GENERAL_COMPANION"
             
             when {
+                raw.contains("COMMUNICATION") -> "COMMUNICATION"
+                raw.contains("DEVICE_CONTROLS") -> "DEVICE_CONTROLS"
                 raw.contains("GOOGLE_WORKSPACE") -> "GOOGLE_WORKSPACE"
                 raw.contains("GITHUB") -> "GITHUB"
                 raw.contains("SLACK") -> "SLACK"

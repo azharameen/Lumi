@@ -55,7 +55,10 @@ data class LocalLlmModelSpec(
     val sha256Checksum: String = "",
     val isDeviceCompatible: Boolean = true,
     val compatibilityReason: String = ""
-)
+) {
+    val displayName: String get() = name
+    val hardwareTarget: String get() = recommendedFor
+}
 
 data class ModelDownloadProgress(
     val modelId: String,

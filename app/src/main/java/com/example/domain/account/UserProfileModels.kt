@@ -70,7 +70,11 @@ data class UserProfileData(
     val enableAmbientLocation: Boolean = true,
     val enableLocalAiFallback: Boolean = true,
     val enableOverlay: Boolean = true,
-    val hasCompletedOnboarding: Boolean = false
+    val hasCompletedOnboarding: Boolean = false,
+    /** The model ID chosen for chat sessions. Empty string means Auto (engine decides). */
+    val selectedChatModelId: String = "",
+    /** The model ID chosen for utility/background tasks. Empty string means Auto. */
+    val selectedUtilityModelId: String = ""
 )
 
 @Immutable

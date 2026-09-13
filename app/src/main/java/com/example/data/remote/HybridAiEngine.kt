@@ -9,7 +9,7 @@ import com.example.data.local.LumiDatabase
 import com.example.data.local.dao.AiExecutionLogDao
 import com.example.data.local.entity.AiExecutionLogEntity
 import com.example.domain.agent.hitl.HitlApprovalManager
-import com.example.domain.ai.AiModelRegistry
+import com.example.domain.ai.ModelSelectionEngine
 import com.example.domain.ai.SmartAiRouter
 import com.example.domain.model.PetEmotion
 import androidx.datastore.preferences.core.edit
@@ -40,10 +40,12 @@ class HybridAiEngine(
     private val database: LumiDatabase,
     private val context: Context? = null,
     private val toolRetriever: ToolRetriever? = null,
-    val onDeviceGemmaEngine: OnDeviceGemmaEngine
+    val onDeviceGemmaEngine: OnDeviceGemmaEngine,
+    private val modelSelectionEngine: ModelSelectionEngine? = null
 ) {
     val hitlApprovalManager = HitlApprovalManager(database, toolDispatcher)
     private val geminiEngine = GeminiAgentEngine(toolDispatcher, database, hitlApprovalManager, onDeviceGemmaEngine)
+    private val semanticMemoryEngine = com.example.domain.memory.SemanticMemoryEngine(database)
     val downloadManager = context?.let { ModelDownloadManager.getInstance(it) }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -113,7 +115,9 @@ class HybridAiEngine(
         userMessage: String,
         recentHistory: List<Pair<String, String>> = emptyList(),
         imageAttachment: ByteArray? = null,
-        onThought: (String?) -> Unit = {}
+        selectedModelId: String? = null,
+        onThought: (String?) -> Unit = {},
+        onStreamToken: suspend (String) -> Unit = {}
     ): EngineTurnResult = withContext(Dispatchers.IO) {
         val startTime = System.currentTimeMillis()
         val currentRoutingMode = _routingMode.value
@@ -123,12 +127,32 @@ class HybridAiEngine(
             userMessage = userMessage,
             imageAttachment = imageAttachment,
             userRoutingMode = currentRoutingMode,
+            selectedModelId = selectedModelId,
+            modelSelectionEngine = modelSelectionEngine ?: ModelSelectionEngine(
+                downloadManager ?: return@withContext EngineTurnResult(
+                    responseText = "Model not available.",
+                    inferredEmotion = com.example.domain.model.PetEmotion.CONCERNED,
+                    usedEngine = "ERROR"
+                ),
+                null
+            ),
             isLocalModelReady = isLocalReady
         )
 
         val turnResult = if (decision.isLocalOnDevice) {
             try {
-                val localResult = onDeviceGemmaEngine.executeOnDeviceTurn(userMessage, recentHistory)
+                // Retrieve relevant semantic user memory and context for on-device turn
+                val memoryContext = try {
+                    semanticMemoryEngine.retrieveRelevantContext(userMessage, limit = 2)
+                } catch (_: Exception) { "" }
+
+                val localResult = onDeviceGemmaEngine.executeOnDeviceTurn(
+                    userMessage = userMessage,
+                    recentHistory = recentHistory,
+                    memoryContext = memoryContext,
+                    onStreamToken = onStreamToken
+                )
+
                 EngineTurnResult(
                     responseText = localResult.responseText,
                     inferredEmotion = localResult.inferredEmotion,
@@ -140,13 +164,14 @@ class HybridAiEngine(
                 if (currentRoutingMode == AiRoutingMode.STRICT_ON_DEVICE) {
                     // Strict On-Device Mode: Never send to cloud without user consent
                     val errorMessage = when (e) {
-                        is OnDeviceInferenceException.HardwareIncompatible -> 
+                        is OnDeviceInferenceException.HardwareIncompatible ->
                             "⚠️ [On-Device Mode]: MediaPipe GenAI requires an ARM-compatible Android device (arm64-v8a). x86_64 emulators do not have native inference library support. Please test on a physical Android phone or an ARM64 emulator."
                         is LinkageError ->
                             "⚠️ [On-Device Mode]: Native inference library error (libllm_inference_engine_jni.so). This device architecture is incompatible with MediaPipe local LLM."
                         else ->
                             "⚠️ [On-Device Mode]: ${e.message ?: "Local model weights are not downloaded."}\n\nTo chat 100% offline, go to Settings > LLM Settings > On-Device Local LLM Hub and download Gemma 2B."
                     }
+                    onStreamToken(errorMessage)
                     EngineTurnResult(
                         responseText = errorMessage,
                         inferredEmotion = PetEmotion.THINKING,
@@ -154,8 +179,8 @@ class HybridAiEngine(
                         usedEngine = "ON_DEVICE_GEMMA_UNREADY"
                     )
                 } else {
-                    // Hybrid mode: Auto-failover to Cloud Gemini 2.5 Flash
-                    val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment, onThought)
+                    // Hybrid mode: Auto-failover to Cloud Gemini
+                    val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment, decision.selectedModelId, onThought, onStreamToken)
                     EngineTurnResult(
                         responseText = cloudResult.responseText,
                         inferredEmotion = cloudResult.inferredEmotion,
@@ -165,7 +190,7 @@ class HybridAiEngine(
                 }
             }
         } else {
-            val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment, onThought)
+            val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment, decision.selectedModelId, onThought, onStreamToken)
             EngineTurnResult(
                 responseText = cloudResult.responseText,
                 inferredEmotion = cloudResult.inferredEmotion,
@@ -183,7 +208,7 @@ class HybridAiEngine(
         analyticsManager?.logAiChatMessage(
             mode = turnResult.usedEngine,
             messageLength = userMessage.length,
-            modelUsed = if (decision.isLocalOnDevice) "ondevice-gemma" else "gemini-2.5-flash"
+            modelUsed = decision.selectedModelId
         )
 
         // Record custom trace in Firebase Performance Monitoring
@@ -205,7 +230,7 @@ class HybridAiEngine(
                 AiExecutionLogEntity(
                     taskCategory = decision.taskCategory.name,
                     engineType = turnResult.usedEngine,
-                    modelName = if (turnResult.usedEngine.contains("GEMMA")) "gemma-2b-it-int4" else "gemini-2.5-flash",
+                    modelName = decision.selectedModelId,
                     promptPreview = userMessage.take(150),
                     responsePreview = turnResult.responseText.take(200),
                     promptTokens = promptTokens,

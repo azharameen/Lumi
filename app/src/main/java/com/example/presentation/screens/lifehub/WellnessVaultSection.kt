@@ -138,59 +138,6 @@ fun WellnessVaultSection(
         contentPadding = PaddingValues(top = MaterialTheme.spacing.medium, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
     ) {
-        // Coherence Breathing Banner
-        item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { viewModel.setShowBreathing(true) }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(MaterialTheme.spacing.medium),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .background(LumiGreen.copy(alpha = 0.2f), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Air,
-                            contentDescription = null,
-                            tint = LumiGreen,
-                            modifier = Modifier.size(MaterialTheme.spacing.large)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.text_478_coherence_breathing),
-                            color = TextPrimary,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = stringResource(R.string.text_calm_your_vagus_nerve_with_guided),
-                            color = TextSecondary,
-                            fontSize = 12.sp
-                        )
-                    }
-                    Button(
-                        onClick = { viewModel.setShowBreathing(true) },
-                        colors = ButtonDefaults.buttonColors(containerColor = LumiGreen),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(text = stringResource(R.string.text_start), color = ObsidianDark, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                    }
-                }
-            }
-        }
-
         // Daily Check-In Card
         item {
             Card(

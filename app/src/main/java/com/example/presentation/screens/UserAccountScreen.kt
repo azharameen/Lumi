@@ -79,7 +79,7 @@ fun UserAccountScreen(
     val context = LocalContext.current
 
     var selectedSectionIndex by remember { mutableIntStateOf(0) }
-    val sectionTabs = listOf("Profile & Persona", "Memory Feeder", "Connectors", "LLM Settings", "Privacy & Vault")
+    val sectionTabs = listOf("Profile & Persona", "Memory Feeder", "Tools & Connectors", "LLM Settings", "Privacy & Vault")
 
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var showAddFactDialog by remember { mutableStateOf(false) }
@@ -311,9 +311,7 @@ fun UserAccountScreen(
                         onDeleteFact = { id -> onRemoveUserFact(id) },
                         onTogglePin = { id -> onTogglePinFact(id) }
                     )
-                    2 -> ConnectorsControlSection(
-                        
-                    )
+                    2 -> ToolsAndConnectorsSection()
                     3 -> LlmSettingsSection(
                         userProfile = userProfile,
                         benchmarkStatus = benchmarkStatus,

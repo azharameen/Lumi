@@ -127,7 +127,8 @@ class AgentStateMachine(
         return base.copy(
             isLocalExecution = if (update.isLocalExecution != base.isLocalExecution) update.isLocalExecution else base.isLocalExecution,
             selectedSkillName = update.selectedSkillName ?: base.selectedSkillName,
-            contentsList = if (update.contentsList.size > base.contentsList.size) update.contentsList else base.contentsList,
+            history = if (update.history.size < base.history.size || (base.history.isEmpty() && update.history.isNotEmpty())) update.history else base.history,
+            contentsList = if (update.contentsList.isNotEmpty()) update.contentsList else base.contentsList,
             retrievedContext = if (update.retrievedContext.isNotBlank()) update.retrievedContext else base.retrievedContext,
             pendingToolName = update.pendingToolName ?: base.pendingToolName,
             pendingToolArgs = update.pendingToolArgs ?: base.pendingToolArgs,

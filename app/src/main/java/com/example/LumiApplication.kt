@@ -63,6 +63,12 @@ class LumiApplication : Application() {
         SystemToolSuite.registerAll(this)
         CoreToolsModule.register(database, integrationService)
         IntegrationToolsModule.register(integrationService)
+
+        // Initialize and sync SQLite FTS5 fast tool search index
+        try {
+            val toolRetriever: com.example.domain.tools.ToolRetriever = koin.get()
+            toolRetriever.initializeIndex()
+        } catch (_: Exception) {}
     }
 
     private fun getApiKey(): String {

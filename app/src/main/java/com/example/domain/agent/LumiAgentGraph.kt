@@ -13,7 +13,8 @@ object LumiAgentGraph {
     fun create(
         database: LumiDatabase,
         toolDispatcher: AgentToolDispatcher,
-        onDeviceGemmaEngine: OnDeviceGemmaEngine? = null
+        onDeviceGemmaEngine: OnDeviceGemmaEngine? = null,
+        onStreamToken: (suspend (String) -> Unit)? = null
     ): AgentStateMachine {
         val stateMachine = AgentStateMachine(database.agentCheckpointDao())
 
@@ -23,7 +24,7 @@ object LumiAgentGraph {
             .registerNode(IntentRoutingNode(onDeviceGemmaEngine))
             .registerNode(MemoryRetrievalNode(database))
             .registerNode(PlanningNode(onDeviceGemmaEngine))
-            .registerNode(ReasoningNode(onDeviceGemmaEngine))
+            .registerNode(ReasoningNode(onDeviceGemmaEngine, onStreamToken))
             .registerNode(ToolExecutionNode(toolDispatcher))
             .registerNode(ReflexionNode())
             .registerNode(FinalSynthesisNode())

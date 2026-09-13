@@ -27,6 +27,9 @@ class ChatRepositoryImpl(
     private val _agentThoughts = MutableStateFlow<String?>(null)
     override val agentThoughts: Flow<String?> = _agentThoughts.asStateFlow()
 
+    private val _streamingAiMessage = MutableStateFlow<ChatMessageEntity?>(null)
+    override val streamingAiMessage: Flow<ChatMessageEntity?> = _streamingAiMessage.asStateFlow()
+
     override val chatMessages: Flow<List<ChatMessageEntity>> = database.chatMessageDao().getAllMessages()
 
     override val pagedChatMessages: Flow<PagingData<ChatMessageEntity>> = Pager(
@@ -40,7 +43,7 @@ class ChatRepositoryImpl(
 
     override val pendingHitlActions: Flow<List<HitlPendingAction>> = hybridAiEngine.hitlApprovalManager.pendingActions
 
-    override suspend fun sendMessage(userText: String, image: ByteArray?): ChatMessageEntity = withContext(Dispatchers.IO) {
+    override suspend fun sendMessage(userText: String, image: ByteArray?, modelId: String?): ChatMessageEntity = withContext(Dispatchers.IO) {
         // Fetch prior history BEFORE inserting current user message to avoid duplicate turns
         val previousEntities = database.chatMessageDao().getRecentMessagesDirect()
         val historyTurns = previousEntities.reversed().map { it.sender to it.content }
@@ -53,24 +56,50 @@ class ChatRepositoryImpl(
         database.chatMessageDao().insertMessage(userEntity)
 
         petRepository.setThinking(true)
+        petRepository.setSpeaking(false)
         petRepository.setPetEmotion(PetEmotion.THINKING)
         petRepository.setSpeechBubbleText("Thinking...")
+
+        // Stage initial thinking streaming message placeholder
+        _streamingAiMessage.value = ChatMessageEntity(
+            id = -999L,
+            sender = "LUMI",
+            content = "",
+            petEmotion = PetEmotion.THINKING.name
+        )
 
         val agentResult = try {
             hybridAiEngine.executeUserTurn(
                 userMessage = userText,
                 recentHistory = historyTurns,
                 imageAttachment = image,
-                onThought = { thought -> _agentThoughts.value = thought }
+                selectedModelId = modelId,
+                onThought = { thought -> _agentThoughts.value = thought },
+                onStreamToken = { tokenChunk ->
+                    _streamingAiMessage.value = ChatMessageEntity(
+                        id = -999L,
+                        sender = "LUMI",
+                        content = tokenChunk,
+                        petEmotion = PetEmotion.HAPPY.name
+                    )
+                    if (tokenChunk.isNotBlank()) {
+                        petRepository.setThinking(false)
+                        petRepository.setSpeaking(true)
+                    }
+                }
             )
         } catch (e: Exception) {
             petRepository.setThinking(false)
+            petRepository.setSpeaking(false)
+            petRepository.setPetEmotion(PetEmotion.CONCERNED)
+            _streamingAiMessage.value = null
             throw e
         } finally {
             _agentThoughts.value = null
         }
 
         petRepository.setThinking(false)
+        petRepository.setSpeaking(false)
         petRepository.setPetEmotion(agentResult.inferredEmotion)
         petRepository.setSpeechBubbleText(agentResult.responseText)
 
@@ -92,6 +121,7 @@ class ChatRepositoryImpl(
             toolResultJson = toolResult
         )
         database.chatMessageDao().insertMessage(aiEntity)
+        _streamingAiMessage.value = null
 
         aiEntity
     }

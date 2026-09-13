@@ -23,7 +23,12 @@ class AgentToolDispatcher(
         args: Map<String, Any?>?
     ): Pair<Map<String, Any?>, ToolExecutionReport> = withContext(Dispatchers.IO) {
         val registry = ToolRegistry.getInstance()
+        val cleanName = toolName.trim().lowercase(java.util.Locale.ROOT).removePrefix("system_").removePrefix("tool_")
         val tool = registry.getTool(toolName)
+            ?: registry.getAllTools().find { it.id.equals(toolName, ignoreCase = true) }
+            ?: registry.getAllTools().find { it.id.removePrefix("system_").equals(cleanName, ignoreCase = true) }
+            ?: registry.getAllTools().find { it.id.contains(cleanName, ignoreCase = true) }
+            ?: registry.getAllTools().find { it.displayName.equals(cleanName, ignoreCase = true) }
 
         if (tool == null) {
             return@withContext handleUnknownTool(toolName)

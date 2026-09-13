@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -28,6 +29,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -43,6 +45,7 @@ import com.example.core.theme.*
 import com.example.core.utils.LumiHaptics
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
+import com.example.presentation.pet.LumiPetView
 
 private val LumiAmber = Color(0xFFFFB300)
 
@@ -51,16 +54,15 @@ fun ChatTopAppBar(
     petStatus: PetStatus,
     isListening: Boolean,
     isSpeaking: Boolean,
-    isTtsEnabled: Boolean,
-    onToggleTts: () -> Unit,
     onNavigateBack: () -> Unit,
     onClearChatRequest: () -> Unit,
     onSearchToggle: () -> Unit,
     isSearchActive: Boolean,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
-    onOpenBreathing: () -> Unit,
     haptics: LumiHaptics,
+    externalGazeX: Float = 0f,
+    externalGazeY: Float = 0f,
     modifier: Modifier = Modifier
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -68,12 +70,12 @@ fun ChatTopAppBar(
     val infiniteTransition = rememberInfiniteTransition(label = "CompanionHoloTransition")
     val haloScale by infiniteTransition.animateFloat(
         initialValue = 0.95f,
-        targetValue = 1.08f,
+        targetValue = 1.05f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1800, easing = FastOutSlowInEasing),
+            animation = tween(2400, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "HaloScale"
+        label = "CompanionHaloScale"
     )
 
     val emotionColor = when (petStatus.currentEmotion) {
@@ -111,17 +113,20 @@ fun ChatTopAppBar(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Back & Companion Info
+                // Companion Avatar & Status Cluster
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f, fill = false)
                 ) {
                     IconButton(
-                        onClick = onNavigateBack,
+                        onClick = {
+                            haptics.performTick()
+                            onNavigateBack()
+                        },
                         modifier = Modifier.testTag("chat_back_button")
                     ) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.desc_back),
                             tint = TextPrimary
                         )
@@ -129,24 +134,32 @@ fun ChatTopAppBar(
 
                     Spacer(modifier = Modifier.width(4.dp))
 
-                    // Companion Animated Hologram Avatar Badge
+                    // Companion Procedural Mascot Avatar Badge
                     Box(
                         modifier = Modifier
-                            .size(42.dp)
+                            .size(46.dp)
                             .scale(haloScale)
                             .background(
-                                color = emotionColor.copy(alpha = 0.2f),
+                                color = emotionColor.copy(alpha = 0.16f),
                                 shape = CircleShape
                             )
+                            .border(
+                                BorderStroke(1.5.dp, emotionColor.copy(alpha = 0.6f)),
+                                shape = CircleShape
+                            )
+                            .clip(CircleShape)
                             .clickable {
                                 haptics.performSuccess()
-                                onOpenBreathing()
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = emotionEmoji,
-                            fontSize = 20.sp
+                        LumiPetView(
+                            petStatus = petStatus,
+                            size = 46.dp,
+                            enableInternalGestures = false,
+                            externalGazeX = externalGazeX,
+                            externalGazeY = externalGazeY,
+                            haptics = haptics
                         )
                     }
 
@@ -179,11 +192,13 @@ fun ChatTopAppBar(
                             text = when {
                                 isListening -> stringResource(R.string.text_listening_now)
                                 isSpeaking -> stringResource(R.string.text_speaking_now)
+                                petStatus.isThinking -> "Thinking deeply..."
                                 else -> "Level ${petStatus.level} • Neural Copilot"
                             },
                             color = when {
                                 isListening -> LumiPink
                                 isSpeaking -> LumiCyan
+                                petStatus.isThinking -> LumiViolet
                                 else -> TextTertiary
                             },
                             style = MaterialTheme.typography.bodySmall,
@@ -208,20 +223,6 @@ fun ChatTopAppBar(
                         )
                     }
 
-                    // Text-To-Speech Toggle
-                    IconButton(
-                        onClick = {
-                            haptics.performTick()
-                            onToggleTts()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = if (isTtsEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                            contentDescription = stringResource(R.string.desc_read_aloud),
-                            tint = if (isTtsEnabled) LumiCyan else TextTertiary
-                        )
-                    }
-
                     // More Menu
                     Box {
                         IconButton(onClick = { menuExpanded = true }) {
@@ -237,26 +238,6 @@ fun ChatTopAppBar(
                             onDismissRequest = { menuExpanded = false },
                             modifier = Modifier.background(SurfaceDark)
                         ) {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        stringResource(R.string.text_478_coherence_breathing),
-                                        color = TextPrimary
-                                    )
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.Default.Spa,
-                                        contentDescription = null,
-                                        tint = LumiMint
-                                    )
-                                },
-                                onClick = {
-                                    menuExpanded = false
-                                    onOpenBreathing()
-                                }
-                            )
-
                             DropdownMenuItem(
                                 text = {
                                     Text(

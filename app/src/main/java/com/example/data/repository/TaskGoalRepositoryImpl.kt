@@ -1,16 +1,20 @@
 package com.example.data.repository
 
 import com.example.data.local.LumiDatabase
-import com.example.data.local.entity.CalendarEventEntity
-import com.example.data.local.entity.GoalMilestoneEntity
-import com.example.data.local.entity.GoalPlanEntity
 import com.example.data.local.entity.TaskEntity
+import com.example.data.local.mapper.toDomain
+import com.example.data.local.mapper.toEntity
+import com.example.domain.model.CalendarEvent
+import com.example.domain.model.GoalMilestone
+import com.example.domain.model.GoalPlan
+import com.example.domain.model.Task
 import com.example.domain.planner.AutonomousGoalPlanner
 import com.example.domain.planner.DecomposedGoalResult
 import com.example.domain.repository.PetRepository
 import com.example.domain.repository.TaskGoalRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 class TaskGoalRepositoryImpl(
@@ -19,14 +23,17 @@ class TaskGoalRepositoryImpl(
     private val petRepository: PetRepository
 ) : TaskGoalRepository {
 
-    override val allTasks: Flow<List<TaskEntity>> = database.taskDao().getAllTasks()
-    
-    override val allCalendarEvents: Flow<List<CalendarEventEntity>> = database.calendarEventDao().getAllEvents()
-    
-    override val allGoalPlans: Flow<List<GoalPlanEntity>> = database.goalPlanDao().getAllGoals()
+    override val allTasks: Flow<List<Task>> = 
+        database.taskDao().getAllTasks().map { list -> list.map { it.toDomain() } }
+        
+    override val allCalendarEvents: Flow<List<CalendarEvent>> = 
+        database.calendarEventDao().getAllEvents().map { list -> list.map { it.toDomain() } }
+        
+    override val allGoalPlans: Flow<List<GoalPlan>> = 
+        database.goalPlanDao().getAllGoals().map { list -> list.map { it.toDomain() } }
 
-    override fun getMilestonesForGoal(goalId: Long): Flow<List<GoalMilestoneEntity>> = 
-        database.goalPlanDao().getMilestonesForGoal(goalId)
+    override fun getMilestonesForGoal(goalId: Long): Flow<List<GoalMilestone>> = 
+        database.goalPlanDao().getMilestonesForGoal(goalId).map { list -> list.map { it.toDomain() } }
 
     override suspend fun addTask(
         title: String,
@@ -53,12 +60,12 @@ class TaskGoalRepositoryImpl(
         }
     }
 
-    override suspend fun deleteTask(task: TaskEntity) = withContext(Dispatchers.IO) {
-        database.taskDao().deleteTask(task)
+    override suspend fun deleteTask(task: Task) = withContext(Dispatchers.IO) {
+        database.taskDao().deleteTask(task.toEntity())
     }
 
-    override suspend fun addCalendarEvent(event: CalendarEventEntity): Long = withContext(Dispatchers.IO) {
-        database.calendarEventDao().insertEvent(event)
+    override suspend fun addCalendarEvent(event: CalendarEvent): Long = withContext(Dispatchers.IO) {
+        database.calendarEventDao().insertEvent(event.toEntity())
     }
 
     override suspend fun deleteCalendarEvent(eventId: Long) = withContext(Dispatchers.IO) {

@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.core.theme.*
-import com.example.data.local.entity.TaskEntity
+import com.example.domain.model.Task
 import com.example.domain.model.PetStatus
 import kotlin.random.Random
 
@@ -159,7 +159,7 @@ fun RemoteConfigSeasonalBanner(
 }
 
 @Composable
-fun QuestItemRow(task: TaskEntity, onToggle: (Boolean) -> Unit) {
+fun QuestItemRow(task: Task, onToggle: (Boolean) -> Unit) {
     Surface(
         color = SurfaceDarkVariant.copy(alpha = 0.8f),
         shape = RoundedCornerShape(12.dp),

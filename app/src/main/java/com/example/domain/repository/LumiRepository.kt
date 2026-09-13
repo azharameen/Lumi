@@ -24,8 +24,8 @@ interface LumiRepository {
 
     val petEvolution: Flow<PetEvolutionEntity?>
     val petStatus: Flow<PetStatus>
-    val allTasks: Flow<List<TaskEntity>>
-    val allCalendarEvents: Flow<List<CalendarEventEntity>>
+    val allTasks: Flow<List<com.example.domain.model.Task>>
+    val allCalendarEvents: Flow<List<com.example.domain.model.CalendarEvent>>
     val allWellnessLogs: Flow<List<WellnessLogEntity>>
     val pagedWellnessLogs: Flow<androidx.paging.PagingData<WellnessLogEntity>>
     val allMemories: Flow<List<PetMemoryEntity>>
@@ -41,8 +41,8 @@ interface LumiRepository {
     suspend fun setBloubSkinColor(skinColor: com.example.domain.model.BloubSkinColor)
     suspend fun addTask(title: String, priority: String, category: String, estimatedMinutes: Int, notes: String): Long
     suspend fun toggleTaskCompleted(taskId: Long, isCompleted: Boolean)
-    suspend fun deleteTask(task: TaskEntity)
-    suspend fun addCalendarEvent(event: CalendarEventEntity): Long
+    suspend fun deleteTask(task: com.example.domain.model.Task)
+    suspend fun addCalendarEvent(event: com.example.domain.model.CalendarEvent): Long
     suspend fun deleteCalendarEvent(eventId: Long)
     suspend fun logWellness(moodScore: Int, moodLabel: String, energyLevel: Int, hydrationCups: Int, gratitudeNote: String): Long
     suspend fun incrementHydration(logId: Long)
@@ -74,8 +74,8 @@ interface LumiRepository {
     suspend fun updatePetName(name: String)
 
     // Autonomous Goal Planner ("Agent Swarms")
-    val allGoalPlans: Flow<List<com.example.data.local.entity.GoalPlanEntity>>
-    fun getMilestonesForGoal(goalId: Long): Flow<List<com.example.data.local.entity.GoalMilestoneEntity>>
+    val allGoalPlans: Flow<List<com.example.domain.model.GoalPlan>>
+    fun getMilestonesForGoal(goalId: Long): Flow<List<com.example.domain.model.GoalMilestone>>
     suspend fun decomposeGoal(title: String, description: String, category: String, targetDate: String): com.example.domain.planner.DecomposedGoalResult
     suspend fun executeMilestoneTool(milestoneId: Long, goalId: Long): String
     suspend fun toggleMilestone(milestoneId: Long, goalId: Long, isCompleted: Boolean)

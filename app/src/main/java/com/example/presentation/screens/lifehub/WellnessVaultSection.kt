@@ -93,8 +93,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.local.entity.CalendarEventEntity
-import com.example.data.local.entity.TaskEntity
+import com.example.domain.model.CalendarEvent
+import com.example.domain.model.Task
 import com.example.data.local.entity.WellnessLogEntity
 import com.example.core.theme.LumiCoral
 import com.example.core.theme.LumiGold

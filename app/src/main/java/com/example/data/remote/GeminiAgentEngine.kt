@@ -15,7 +15,8 @@ import kotlinx.coroutines.withContext
 data class AgentExecutionResult(
     val responseText: String,
     val inferredEmotion: PetEmotion,
-    val toolReports: List<ToolExecutionReport> = emptyList()
+    val toolReports: List<ToolExecutionReport> = emptyList(),
+    val finalThought: String? = null
 )
 
 /**
@@ -64,7 +65,8 @@ class GeminiAgentEngine(
                 return@withContext AgentExecutionResult(
                     responseText = hitlMsg,
                     inferredEmotion = PetEmotion.THINKING,
-                    toolReports = finalState.executedToolReports
+                    toolReports = finalState.executedToolReports,
+                    finalThought = finalState.currentThought
                 )
             }
 
@@ -75,7 +77,8 @@ class GeminiAgentEngine(
                     return@withContext AgentExecutionResult(
                         responseText = reportText,
                         inferredEmotion = PetEmotion.HAPPY,
-                        toolReports = finalState.executedToolReports
+                        toolReports = finalState.executedToolReports,
+                        finalThought = finalState.currentThought
                     )
                 }
                 // Fallback to direct Firebase AI generation - local Gemma IDs are never sent to cloud
@@ -89,7 +92,8 @@ class GeminiAgentEngine(
                 return@withContext AgentExecutionResult(
                     responseText = directResponse,
                     inferredEmotion = PetEmotion.HAPPY,
-                    toolReports = finalState.executedToolReports
+                    toolReports = finalState.executedToolReports,
+                    finalThought = finalState.currentThought
                 )
             }
 
@@ -113,7 +117,8 @@ class GeminiAgentEngine(
             AgentExecutionResult(
                 responseText = finalReply,
                 inferredEmotion = finalState.inferredEmotion,
-                toolReports = finalState.executedToolReports
+                toolReports = finalState.executedToolReports,
+                finalThought = finalState.currentThought
             )
 
         } catch (e: Exception) {
@@ -127,7 +132,8 @@ class GeminiAgentEngine(
             AgentExecutionResult(
                 responseText = fallbackText,
                 inferredEmotion = PetEmotion.HAPPY,
-                toolReports = emptyList()
+                toolReports = emptyList(),
+                finalThought = "Fallback execution due to error."
             )
         }
     }

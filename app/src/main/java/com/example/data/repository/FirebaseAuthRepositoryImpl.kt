@@ -71,7 +71,7 @@ class FirebaseAuthRepositoryImpl(
                 if (app == null) {
                     val apiKey = getApiKey()
                     if (apiKey.isEmpty()) {
-                        Log.e(TAG, "No valid Firebase API Key available to initialize Auth")
+                        Log.w(TAG, "No valid Firebase API Key available to initialize Auth. Firebase features disabled.")
                         return false
                     }
                     val options = FirebaseOptions.Builder()

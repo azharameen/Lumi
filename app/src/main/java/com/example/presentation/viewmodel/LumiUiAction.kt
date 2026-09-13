@@ -1,7 +1,7 @@
 package com.example.presentation.viewmodel
 
-import com.example.data.local.entity.CalendarEventEntity
-import com.example.data.local.entity.TaskEntity
+import com.example.domain.model.CalendarEvent
+import com.example.domain.model.Task
 import com.example.data.device.SoundscapeType
 
 sealed interface LumiUiAction {
@@ -10,7 +10,7 @@ sealed interface LumiUiAction {
     data class SetLifeHubSubTab(val tabIndex: Int) : LumiUiAction
     
     // Calendar
-    data class AddCalendarEvent(val event: CalendarEventEntity) : LumiUiAction
+    data class AddCalendarEvent(val event: CalendarEvent) : LumiUiAction
     data class DeleteCalendarEvent(val id: Long) : LumiUiAction
     
     // Briefing
@@ -19,7 +19,7 @@ sealed interface LumiUiAction {
     // Tasks
     data class AddTask(val title: String, val priority: String, val category: String, val estimatedMinutes: Int, val notes: String) : LumiUiAction
     data class ToggleTask(val id: Long, val isCompleted: Boolean) : LumiUiAction
-    data class DeleteTask(val task: TaskEntity) : LumiUiAction
+    data class DeleteTask(val task: Task) : LumiUiAction
     
     // Goals
     data class DecomposeGoal(val title: String, val description: String, val category: String, val deadline: String) : LumiUiAction

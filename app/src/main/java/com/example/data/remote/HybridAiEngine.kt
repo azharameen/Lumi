@@ -163,7 +163,8 @@ class HybridAiEngine(
                         responseText = graphResult.responseText,
                         inferredEmotion = graphResult.inferredEmotion,
                         toolReports = graphResult.toolReports,
-                        usedEngine = if (isLocalReady) "ON_DEVICE_GEMMA" else "CLOUD_GEMINI_FALLBACK"
+                        usedEngine = if (isLocalReady) "ON_DEVICE_GEMMA" else "CLOUD_GEMINI_FALLBACK",
+                        finalThought = graphResult.finalThought
                     )
                 } catch (e: Throwable) {
                     crashlyticsManager?.logBreadcrumb("HybridAiEngine", "Agent graph execution failed: ${e.message}")
@@ -189,7 +190,8 @@ class HybridAiEngine(
                             responseText = cloudResult.responseText,
                             inferredEmotion = cloudResult.inferredEmotion,
                             toolReports = cloudResult.toolReports,
-                            usedEngine = "CLOUD_GEMINI_FALLBACK"
+                            usedEngine = "CLOUD_GEMINI_FALLBACK",
+                            finalThought = cloudResult.finalThought
                         )
                     }
                 }
@@ -200,7 +202,8 @@ class HybridAiEngine(
                 responseText = cloudResult.responseText,
                 inferredEmotion = cloudResult.inferredEmotion,
                 toolReports = cloudResult.toolReports,
-                usedEngine = "CLOUD_GEMINI"
+                usedEngine = "CLOUD_GEMINI",
+                finalThought = cloudResult.finalThought
             )
         }
 
@@ -263,5 +266,6 @@ data class EngineTurnResult(
     val responseText: String,
     val inferredEmotion: PetEmotion,
     val toolReports: List<com.example.domain.model.ToolExecutionReport> = emptyList(),
-    val usedEngine: String
+    val usedEngine: String,
+    val finalThought: String? = null
 )

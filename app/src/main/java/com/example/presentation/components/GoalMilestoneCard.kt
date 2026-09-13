@@ -16,13 +16,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core.theme.*
-import com.example.data.local.entity.GoalMilestoneEntity
-import com.example.data.local.entity.GoalPlanEntity
+import com.example.domain.model.GoalMilestone
+import com.example.domain.model.GoalPlan
 
 @Composable
 fun GoalMilestoneCard(
-    goal: GoalPlanEntity,
-    milestones: List<GoalMilestoneEntity>,
+    goal: GoalPlan,
+    milestones: List<GoalMilestone>,
     onToggleMilestone: (milestoneId: Long, goalId: Long, isCompleted: Boolean) -> Unit,
     onExecuteMilestone: (milestoneId: Long, goalId: Long) -> Unit,
     modifier: Modifier = Modifier

@@ -23,15 +23,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.R
 import com.example.core.theme.*
-import com.example.data.local.entity.GoalMilestoneEntity
-import com.example.data.local.entity.GoalPlanEntity
+import com.example.domain.model.GoalMilestone
+import com.example.domain.model.GoalPlan
 import com.example.presentation.viewmodel.LumiUiAction
 import kotlinx.coroutines.flow.Flow
 
 @Composable
 fun GoalPlanItemCard(
-    goal: GoalPlanEntity,
-    getMilestonesForGoal: (Long) -> Flow<List<GoalMilestoneEntity>>,
+    goal: GoalPlan,
+    getMilestonesForGoal: (Long) -> Flow<List<GoalMilestone>>,
     onAction: (LumiUiAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -196,7 +196,7 @@ fun GoalPlanItemCard(
 
 @Composable
 private fun MilestoneItemRow(
-    milestone: GoalMilestoneEntity,
+    milestone: GoalMilestone,
     goalId: Long,
     onAction: (LumiUiAction) -> Unit
 ) {

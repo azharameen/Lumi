@@ -1,46 +1,92 @@
 package com.example.domain.model
 
-/**
- * Pure Domain Model for Todo Tasks (decoupled from Room DB TaskEntity).
- */
 data class Task(
-    val id: String,
+    val id: Long = 0,
     val title: String,
-    val isCompleted: Boolean,
-    val category: String,
-    val createdAt: Long,
+    val notes: String = "",
     val dueDate: Long? = null,
-    val priority: String = "NORMAL"
+    val priority: String = "MEDIUM",
+    val isCompleted: Boolean = false,
+    val category: String = "General",
+    val estimatedMinutes: Int = 30,
+    val createdAt: Long
 )
 
-/**
- * Pure Domain Model for Chat Messages (decoupled from Room DB ChatMessageEntity).
- */
-data class ChatMessage(
-    val id: String,
-    val sender: String, // "USER" or "PET"
-    val text: String,
-    val timestamp: Long,
-    val emotion: String? = null,
-    val isPending: Boolean = false
-)
-
-/**
- * Pure Domain Model for Calendar Events (decoupled from Room DB CalendarEventEntity).
- */
 data class CalendarEvent(
-    val id: String,
+    val id: Long = 0,
     val title: String,
-    val startTime: Long,
-    val endTime: Long,
-    val location: String? = null,
-    val description: String? = null,
-    val isAllDay: Boolean = false
+    val description: String = "",
+    val startTimeMillis: Long,
+    val endTimeMillis: Long,
+    val location: String = "",
+    val isAllDay: Boolean = false,
+    val category: String = "Routine",
+    val colorHex: String = "#00F0FF",
+    val reminderMinutesBefore: Int = 15,
+    val createdAt: Long
 )
 
-/**
- * Pure Domain Model for Stored Personal Facts.
- */
+data class ChatMessage(
+    val id: Long = 0,
+    val timestamp: Long,
+    val sender: String,
+    val content: String,
+    val petEmotion: String = "HAPPY",
+    val toolUsedName: String? = null,
+    val toolResultJson: String? = null,
+    val imageBase64OrUri: String? = null
+)
+
+data class WellnessLog(
+    val id: Long = 0,
+    val timestamp: Long,
+    val moodScore: Int = 3,
+    val moodLabel: String = "Balanced",
+    val energyLevel: Int = 3,
+    val hydrationCups: Int = 0,
+    val sleepHours: Float = 7.0f,
+    val gratitudeNote: String = "",
+    val stressLevel: Int = 2,
+    val breathingMinutesCompleted: Int = 0
+)
+
+data class GoalPlan(
+    val id: Long = 0,
+    val title: String,
+    val description: String,
+    val category: String = "Productivity",
+    val targetDate: String = "",
+    val status: String = "ACTIVE",
+    val totalSteps: Int = 0,
+    val completedSteps: Int = 0,
+    val createdAt: Long,
+    val isAiGenerated: Boolean = true,
+    val tagsJson: String = "[]"
+)
+
+data class GoalMilestone(
+    val id: Long = 0,
+    val goalId: Long,
+    val phaseNumber: Int = 1,
+    val phaseTitle: String,
+    val stepTitle: String,
+    val stepDescription: String,
+    val suggestedTool: String = "NONE",
+    val isCompleted: Boolean = false,
+    val executionOutput: String = "",
+    val scheduledDate: String = ""
+)
+
+data class PetMemory(
+    val id: Long = 0,
+    val timestamp: Long,
+    val category: String = "Emotion",
+    val memoryText: String,
+    val sentiment: String = "Positive",
+    val emotionalImpact: Int = 3,
+    val isPinned: Boolean = false
+)
+
 data class UserFact(
     val id: String,
     val factKey: String,
@@ -48,3 +94,4 @@ data class UserFact(
     val isPinned: Boolean,
     val createdAt: Long
 )
+

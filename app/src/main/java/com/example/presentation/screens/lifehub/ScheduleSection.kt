@@ -27,7 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.local.entity.CalendarEventEntity
+import com.example.domain.model.CalendarEvent
 import com.example.core.theme.*
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -38,7 +38,7 @@ import com.example.core.theme.spacing
 @Composable
 fun ScheduleSection(
     haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
-    events: List<CalendarEventEntity>,
+    events: List<CalendarEvent>,
     onAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit,
     dailyBriefing: com.example.domain.briefing.DailyBriefing?,
 ) {
@@ -268,13 +268,14 @@ fun ScheduleSection(
                     val start = now + (startOffsetHours * 3600000L)
                     val end = start + (durationHours * 3600000L)
                     onAction(com.example.presentation.viewmodel.LumiUiAction.AddCalendarEvent(
-                        CalendarEventEntity(
+                        CalendarEvent(
                             title = title,
                             description = desc,
                             startTimeMillis = start,
                             endTimeMillis = end,
                             location = loc,
-                            colorHex = color
+                            colorHex = color,
+                            createdAt = System.currentTimeMillis()
                         )
                     ))
                     showAddEventDialog = false

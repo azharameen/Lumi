@@ -250,7 +250,30 @@ fun ChatMessageBubble(
 
                     var isToolExpanded by remember { mutableStateOf(false) }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    val parsedToolData = remember(message.toolResultJson) {
+                        if (message.toolResultJson?.startsWith("{") == true) {
+                            try {
+                                val obj = org.json.JSONObject(message.toolResultJson)
+                                val thought = obj.optString("agent_thought").takeIf { it.isNotBlank() }
+                                val result = obj.optString("tool_result").takeIf { it.isNotBlank() }
+                                Pair(thought, result)
+                            } catch (e: Exception) {
+                                Pair(null, message.toolResultJson)
+                            }
+                        } else {
+                            Pair(null, message.toolResultJson)
+                        }
+                    }
+                    val (agentThought, rawToolResult) = parsedToolData
+
+                    if (agentThought != null) {
+                        AgentThoughtStreamCard(
+                            thoughtText = agentThought,
+                            modifier = Modifier.padding(bottom = 6.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -293,9 +316,9 @@ fun ChatMessageBubble(
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
                                     )
-                                    if (!isToolExpanded && !message.toolResultJson.isNullOrBlank()) {
+                                    if (!isToolExpanded && !rawToolResult.isNullOrBlank()) {
                                         Text(
-                                            text = message.toolResultJson,
+                                            text = rawToolResult,
                                             color = TextTertiary,
                                             fontSize = 10.sp,
                                             maxLines = 1,
@@ -332,7 +355,7 @@ fun ChatMessageBubble(
                                 enter = expandVertically() + fadeIn(),
                                 exit = shrinkVertically() + fadeOut()
                             ) {
-                                if (!message.toolResultJson.isNullOrBlank()) {
+                                if (!rawToolResult.isNullOrBlank()) {
                                     Column(modifier = Modifier.padding(top = 8.dp)) {
                                         HorizontalDivider(
                                             color = SurfaceHighlight.copy(alpha = 0.5f),
@@ -346,7 +369,7 @@ fun ChatMessageBubble(
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Text(
-                                                text = message.toolResultJson,
+                                                text = rawToolResult,
                                                 color = LumiCyan,
                                                 fontSize = 10.sp,
                                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,

@@ -2,6 +2,7 @@ package com.example.data.tools
 
 import com.example.data.local.dao.ToolFtsDao
 import com.example.data.local.entity.ToolFtsEntity
+import com.example.domain.memory.WordEmbeddingSimilarity
 import com.example.domain.tools.LumiTool
 import com.example.domain.tools.ToolRegistry
 import kotlinx.coroutines.Dispatchers
@@ -9,15 +10,15 @@ import kotlinx.coroutines.withContext
 
 /**
  * Stage 1 Fast Local Indexer & Search Engine.
- * Leverages SQLite FTS5 / BM25 inside LumiDatabase to query 1,000+ registered tools in ~2ms.
+ * Uses MediaPipe dense embeddings for semantic matching of tools.
  */
 class FastToolIndex(
     private val toolFtsDao: ToolFtsDao,
     private val toolRegistry: ToolRegistry = ToolRegistry.getInstance()
 ) {
-
     /**
      * Rebuilds the FTS index from all currently registered LumiTools in ToolRegistry.
+     * Still keeps FTS for broad sync, but semantic search is preferred.
      */
     suspend fun syncIndexFromRegistry() = withContext(Dispatchers.IO) {
         val allTools = toolRegistry.getAllTools()
@@ -34,47 +35,32 @@ class FastToolIndex(
                 keywords = keywords
             )
         }
+
         if (entities.isNotEmpty()) {
             toolFtsDao.insertAll(entities)
         }
     }
 
     /**
-     * Search 1,000+ indexed tools and return top N matching LumiTools.
-     * Completes in ~2-5ms.
+     * Search indexed tools and return top N matching LumiTools semantically.
      */
     suspend fun searchTools(query: String, topK: Int = 3): List<LumiTool> = withContext(Dispatchers.IO) {
-        val sanitizedQuery = sanitizeFtsQuery(query)
-        if (sanitizedQuery.isBlank()) {
+        if (query.isBlank()) {
             return@withContext emptyList()
         }
 
-        try {
-            val matchingIds = toolFtsDao.searchMatchingToolIds(sanitizedQuery, topK)
-            matchingIds.mapNotNull { id -> toolRegistry.getTool(id) }
-        } catch (e: Exception) {
-            // Fallback: Simple keyword scanning if FTS syntax error occurs
-            fallbackKeywordSearch(query, topK)
-        }
-    }
-
-    private fun sanitizeFtsQuery(query: String): String {
-        // Extract words and format for SQLite FTS5 wildcard search (word*)
-        val words = query.replace(Regex("[^a-zA-Z0-9 ]"), " ")
-            .split(" ")
-            .filter { it.length > 2 }
-        if (words.isEmpty()) return ""
-        return words.joinToString(" OR ") { "$it*" }
-    }
-
-    private fun fallbackKeywordSearch(query: String, topK: Int): List<LumiTool> {
-        val lowerQuery = query.lowercase(java.util.Locale.ROOT)
-        return toolRegistry.getAllTools()
-            .filter { tool ->
-                tool.displayName.lowercase(java.util.Locale.ROOT).contains(lowerQuery) ||
-                tool.description.lowercase(java.util.Locale.ROOT).contains(lowerQuery) ||
-                tool.id.lowercase(java.util.Locale.ROOT).contains(lowerQuery)
-            }
+        val allTools = toolRegistry.getAllTools()
+        
+        // Use dense vector embeddings to rank tools instead of keyword matching
+        val scoredTools = allTools.map { tool ->
+            val toolContent = "${tool.displayName} ${tool.description}"
+            val score = WordEmbeddingSimilarity.calculateSimilarity(query, toolContent)
+            tool to score
+        }.sortedByDescending { it.second }
+        
+        // Only return tools that have a reasonable semantic match
+        scoredTools.filter { it.second > 0.02f }
             .take(topK)
+            .map { it.first }
     }
 }

@@ -21,8 +21,8 @@ import com.example.R
 import com.example.core.theme.*
 import com.example.core.utils.LumiHaptics
 import com.example.core.utils.rememberLumiHaptics
-import com.example.data.local.entity.GoalMilestoneEntity
-import com.example.data.local.entity.GoalPlanEntity
+import com.example.domain.model.GoalMilestone
+import com.example.domain.model.GoalPlan
 import com.example.presentation.screens.goals.*
 import com.example.presentation.viewmodel.LumiUiAction
 import kotlinx.coroutines.flow.Flow
@@ -30,8 +30,8 @@ import kotlinx.coroutines.flow.Flow
 @Composable
 fun AutonomousGoalsScreen(
     haptics: LumiHaptics = rememberLumiHaptics(),
-    goalPlans: List<GoalPlanEntity>,
-    getMilestonesForGoal: (Long) -> Flow<List<GoalMilestoneEntity>>,
+    goalPlans: List<GoalPlan>,
+    getMilestonesForGoal: (Long) -> Flow<List<GoalMilestone>>,
     onAction: (LumiUiAction) -> Unit
 ) {
     val context = LocalContext.current

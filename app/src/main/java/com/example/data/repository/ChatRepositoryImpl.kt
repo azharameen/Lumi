@@ -104,7 +104,13 @@ class ChatRepositoryImpl(
         petRepository.setSpeechBubbleText(agentResult.responseText)
 
         val toolName = agentResult.toolReports.firstOrNull()?.toolName
-        val toolResult = agentResult.toolReports.firstOrNull()?.description
+        val rawToolResult = agentResult.toolReports.firstOrNull()?.description
+        val finalThought = agentResult.finalThought
+        
+        val bundledResult = org.json.JSONObject().apply {
+            if (rawToolResult != null) put("tool_result", rawToolResult)
+            if (finalThought != null) put("agent_thought", finalThought)
+        }.toString().takeIf { it != "{}" } ?: rawToolResult
 
         val engineTag = if (agentResult.usedEngine.contains("GEMMA")) "ON_DEVICE_GEMMA" else null
         val finalToolName = when {
@@ -118,7 +124,7 @@ class ChatRepositoryImpl(
             content = agentResult.responseText,
             petEmotion = agentResult.inferredEmotion.name,
             toolUsedName = finalToolName,
-            toolResultJson = toolResult
+            toolResultJson = bundledResult
         )
         database.chatMessageDao().insertMessage(aiEntity)
         _streamingAiMessage.value = null

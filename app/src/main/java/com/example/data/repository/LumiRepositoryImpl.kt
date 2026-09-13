@@ -13,6 +13,7 @@ import com.example.domain.briefing.DailyBriefing
 import com.example.data.device.SoundscapeState
 import com.example.data.device.SoundscapeType
 import com.example.domain.agent.hitl.HitlPendingAction
+import com.example.data.local.mapper.toDomain
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -72,15 +73,15 @@ class LumiRepositoryImpl private constructor(
     override val pendingHitlActions: Flow<List<HitlPendingAction>> get() = chatRepository.pendingHitlActions
     override suspend fun resolveHitlAction(stateId: String, approved: Boolean) = chatRepository.resolveHitlAction(stateId, approved)
 
-    override val allTasks: Flow<List<TaskEntity>> get() = taskGoalRepository.allTasks
-    override val allCalendarEvents: Flow<List<CalendarEventEntity>> get() = taskGoalRepository.allCalendarEvents
-    override val allGoalPlans: Flow<List<GoalPlanEntity>> get() = taskGoalRepository.allGoalPlans
+    override val allTasks: Flow<List<com.example.domain.model.Task>> get() = taskGoalRepository.allTasks
+    override val allCalendarEvents: Flow<List<com.example.domain.model.CalendarEvent>> get() = taskGoalRepository.allCalendarEvents
+    override val allGoalPlans: Flow<List<com.example.domain.model.GoalPlan>> get() = taskGoalRepository.allGoalPlans
     override fun getMilestonesForGoal(goalId: Long) = taskGoalRepository.getMilestonesForGoal(goalId)
     override suspend fun addTask(title: String, priority: String, category: String, estimatedMinutes: Int, notes: String) = 
         taskGoalRepository.addTask(title, priority, category, estimatedMinutes, notes)
     override suspend fun toggleTaskCompleted(taskId: Long, isCompleted: Boolean) = taskGoalRepository.toggleTaskCompleted(taskId, isCompleted)
-    override suspend fun deleteTask(task: TaskEntity) = taskGoalRepository.deleteTask(task)
-    override suspend fun addCalendarEvent(event: CalendarEventEntity) = taskGoalRepository.addCalendarEvent(event)
+    override suspend fun deleteTask(task: com.example.domain.model.Task) = taskGoalRepository.deleteTask(task)
+    override suspend fun addCalendarEvent(event: com.example.domain.model.CalendarEvent) = taskGoalRepository.addCalendarEvent(event)
     override suspend fun deleteCalendarEvent(eventId: Long) = taskGoalRepository.deleteCalendarEvent(eventId)
     override suspend fun decomposeGoal(title: String, description: String, category: String, targetDate: String) = 
         taskGoalRepository.decomposeGoal(title, description, category, targetDate)
@@ -103,8 +104,8 @@ class LumiRepositoryImpl private constructor(
     override suspend fun toggleMemoryPin(memoryId: Long) = database.petMemoryDao().togglePin(memoryId)
 
     override suspend fun getDailyBriefing(): DailyBriefing {
-        val tasks = database.taskDao().getAllTasksDirect()
-        val events = database.calendarEventDao().getAllEventsDirect()
+        val tasks = database.taskDao().getAllTasksDirect().map { it.toDomain() }
+        val events = database.calendarEventDao().getAllEventsDirect().map { it.toDomain() }
         val logs = database.wellnessLogDao().getAllLogsDirect()
         val petEvol = database.petEvolutionDao().getPetEvolutionDirect()
         return briefingEngine.generateBriefing(

@@ -1,18 +1,18 @@
 package com.example.domain.repository
 
-import com.example.data.local.entity.CalendarEventEntity
-import com.example.data.local.entity.GoalMilestoneEntity
-import com.example.data.local.entity.GoalPlanEntity
-import com.example.data.local.entity.TaskEntity
+import com.example.domain.model.CalendarEvent
+import com.example.domain.model.GoalMilestone
+import com.example.domain.model.GoalPlan
+import com.example.domain.model.Task
 import com.example.domain.planner.DecomposedGoalResult
 import kotlinx.coroutines.flow.Flow
 
 interface TaskGoalRepository {
-    val allTasks: Flow<List<TaskEntity>>
-    val allCalendarEvents: Flow<List<CalendarEventEntity>>
-    val allGoalPlans: Flow<List<GoalPlanEntity>>
+    val allTasks: Flow<List<Task>>
+    val allCalendarEvents: Flow<List<CalendarEvent>>
+    val allGoalPlans: Flow<List<GoalPlan>>
     
-    fun getMilestonesForGoal(goalId: Long): Flow<List<GoalMilestoneEntity>>
+    fun getMilestonesForGoal(goalId: Long): Flow<List<GoalMilestone>>
 
     suspend fun addTask(
         title: String,
@@ -23,9 +23,9 @@ interface TaskGoalRepository {
     ): Long
     
     suspend fun toggleTaskCompleted(taskId: Long, isCompleted: Boolean)
-    suspend fun deleteTask(task: TaskEntity)
+    suspend fun deleteTask(task: Task)
     
-    suspend fun addCalendarEvent(event: CalendarEventEntity): Long
+    suspend fun addCalendarEvent(event: CalendarEvent): Long
     suspend fun deleteCalendarEvent(eventId: Long)
     
     suspend fun decomposeGoal(

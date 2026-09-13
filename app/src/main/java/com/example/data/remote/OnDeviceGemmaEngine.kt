@@ -276,21 +276,25 @@ class OnDeviceGemmaEngine(
                 extractedCalls.add(ExtractedCall(match.groupValues[1].trim(), match.groupValues[2].trim()))
             }
 
-            // Format 4: Function signature syntax e.g. system_toggle_flashlight(state: boolean) or system_toggle_flashlight(true)
+            // Format 4: Function signature syntax e.g. system_toggle_flashlight(true)
             val funcRegex = Regex("""\b((?:system_|communication_|set_)[a-z_]+)\s*\((.*?)\)""", RegexOption.IGNORE_CASE)
             for (match in funcRegex.findAll(rawOutput)) {
                 val name = match.groupValues[1].trim()
                 val argsContent = match.groupValues[2].trim()
                 val argsMap = mutableMapOf<String, Any?>()
-                if (argsContent.contains("true", ignoreCase = true) || userMessage.contains("on", ignoreCase = true) || userMessage.contains("enable", ignoreCase = true)) {
+                
+                // Relying purely on the LLM's generated arguments instead of hardcoded keyword matching on user message
+                if (argsContent.contains("true", ignoreCase = true)) {
                     argsMap["state"] = true
-                } else if (argsContent.contains("false", ignoreCase = true) || userMessage.contains("off", ignoreCase = true) || userMessage.contains("disable", ignoreCase = true)) {
+                } else if (argsContent.contains("false", ignoreCase = true)) {
                     argsMap["state"] = false
                 }
-                val digitMatch = Regex("""\+?\d[\d\s\-]{4,}\d""").find(argsContent)?.value ?: Regex("""\+?\d[\d\s\-]{4,}\d""").find(userMessage)?.value
+                
+                val digitMatch = Regex("""\+?\d[\d\s\-]{4,}\d""").find(argsContent)?.value
                 if (digitMatch != null) {
                     argsMap["phoneNumber"] = digitMatch.replace(Regex("""[\s\-]"""), "")
                 }
+                
                 extractedCalls.add(ExtractedCall(name, JSONObject(argsMap as Map<*, *>).toString()))
             }
 

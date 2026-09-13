@@ -70,7 +70,7 @@ class TopicContextManager private constructor() {
     /**
      * Records or updates conversational topic flow based on user message and active skill.
      */
-    fun trackTopicTurn(userMessage: String, skillName: String, isTransactional: Boolean) {
+    suspend fun trackTopicTurn(userMessage: String, skillName: String, isTransactional: Boolean) {
         if (isTransactional) {
             // Suspend the active conversational topic when a transactional command arrives
             _activeTopicId.value?.let { currentId ->
@@ -137,16 +137,26 @@ class TopicContextManager private constructor() {
     }
 
     /**
-     * Checks if the message explicitly signals returning to an earlier topic.
+     * Checks if the message signals returning to an earlier topic via local vector semantics.
      */
-    private fun isResumptionIntent(message: String): Boolean {
-        val lower = message.lowercase(java.util.Locale.ROOT)
-        return lower.contains("back to") ||
-               lower.contains("continue with") ||
-               lower.contains("resume") ||
-               lower.contains("as we were saying") ||
-               lower.contains("earlier we were") ||
-               lower.contains("what about the")
+    private suspend fun isResumptionIntent(message: String): Boolean {
+        if (message.isBlank()) return false
+        
+        val resumptionConcepts = listOf(
+            "let's go back to",
+            "continue with the previous topic",
+            "resume what we were discussing",
+            "as we were saying earlier",
+            "what about the other thing",
+            "return to"
+        )
+        
+        // Semantic zero-shot classification using dense vector similarity
+        val maxScore = resumptionConcepts.maxOfOrNull { concept ->
+            com.example.domain.memory.WordEmbeddingSimilarity.calculateSimilarity(message, concept)
+        } ?: 0f
+        
+        return maxScore > 0.45f
     }
 
     private fun extractTopicTitle(query: String, skillName: String): String {

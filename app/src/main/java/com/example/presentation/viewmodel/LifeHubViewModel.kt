@@ -33,9 +33,9 @@ class LifeHubViewModel(
     val remoteConfigManager: LumiRemoteConfigManager? = null,
     val analytics: LumiAnalyticsManager? = null
 ) : ViewModel() {
-    val allTasks: StateFlow<List<TaskEntity>> = taskGoalRepository.allTasks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val allCalendarEvents: StateFlow<List<CalendarEventEntity>> = taskGoalRepository.allCalendarEvents.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val allGoalPlans: StateFlow<List<GoalPlanEntity>> = taskGoalRepository.allGoalPlans.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allTasks: StateFlow<List<com.example.domain.model.Task>> = taskGoalRepository.allTasks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allCalendarEvents: StateFlow<List<com.example.domain.model.CalendarEvent>> = taskGoalRepository.allCalendarEvents.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allGoalPlans: StateFlow<List<com.example.domain.model.GoalPlan>> = taskGoalRepository.allGoalPlans.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val soundscapeState = repository.soundscapeState
 
     val remoteConfig: StateFlow<LumiRemoteConfig> = remoteConfigManager?.config ?: MutableStateFlow(LumiRemoteConfig())
@@ -75,13 +75,13 @@ class LifeHubViewModel(
     
     fun toggleTask(taskId: Long, isCompleted: Boolean) { viewModelScope.launch { taskGoalRepository.toggleTaskCompleted(taskId, isCompleted) } }
     
-    fun deleteTask(task: TaskEntity) { viewModelScope.launch { taskGoalRepository.deleteTask(task) } }
+    fun deleteTask(task: com.example.domain.model.Task) { viewModelScope.launch { taskGoalRepository.deleteTask(task) } }
     
     fun addTask(title: String, priority: String, category: String, estimatedMinutes: Int, notes: String) {
         viewModelScope.launch { taskGoalRepository.addTask(title, priority, category, estimatedMinutes, notes) }
     }
 
-    fun addCalendarEvent(event: CalendarEventEntity) { viewModelScope.launch { taskGoalRepository.addCalendarEvent(event) } }
+    fun addCalendarEvent(event: com.example.domain.model.CalendarEvent) { viewModelScope.launch { taskGoalRepository.addCalendarEvent(event) } }
     fun deleteCalendarEvent(id: Long) { viewModelScope.launch { taskGoalRepository.deleteCalendarEvent(id) } }
 
     fun startSoundscape(type: SoundscapeType) {

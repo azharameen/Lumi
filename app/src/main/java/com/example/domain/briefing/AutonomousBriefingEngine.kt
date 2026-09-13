@@ -83,8 +83,8 @@ class AutonomousBriefingEngine(private val context: Any) {
         type: BriefingType? = null,
         petStatus: PetStatus,
         petEvolution: PetEvolutionEntity?,
-        tasks: List<TaskEntity>,
-        events: List<CalendarEventEntity>,
+        tasks: List<com.example.domain.model.Task>,
+        events: List<com.example.domain.model.CalendarEvent>,
         wellnessLogs: List<WellnessLogEntity>,
         locationCity: String? = null
     ): DailyBriefing = withContext(Dispatchers.IO) {

@@ -83,8 +83,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.local.entity.CalendarEventEntity
-import com.example.data.local.entity.TaskEntity
+import com.example.domain.model.CalendarEvent
+import com.example.domain.model.Task
 import com.example.data.local.entity.WellnessLogEntity
 import com.example.core.theme.LumiCoral
 
@@ -115,13 +115,13 @@ import com.example.core.theme.spacing
 @Composable
 fun LifeHubScreen(
     uiState: com.example.presentation.viewmodel.LumiUiState,
-    tasks: List<com.example.data.local.entity.TaskEntity>,
-    events: List<com.example.data.local.entity.CalendarEventEntity>,
+    tasks: List<com.example.domain.model.Task>,
+    events: List<com.example.domain.model.CalendarEvent>,
     wellnessLogs: List<com.example.data.local.entity.WellnessLogEntity>,
     memories: List<com.example.data.local.entity.PetMemoryEntity>,
     dailyBriefing: com.example.domain.briefing.DailyBriefing?,
-    goalPlans: List<com.example.data.local.entity.GoalPlanEntity>,
-    getMilestonesForGoal: (Long) -> kotlinx.coroutines.flow.Flow<List<com.example.data.local.entity.GoalMilestoneEntity>>,
+    goalPlans: List<com.example.domain.model.GoalPlan>,
+    getMilestonesForGoal: (Long) -> kotlinx.coroutines.flow.Flow<List<com.example.domain.model.GoalMilestone>>,
     soundState: com.example.data.device.SoundscapeState,
     onAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit,
     onNavigateBack: () -> Unit

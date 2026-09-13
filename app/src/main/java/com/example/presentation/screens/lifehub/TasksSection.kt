@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.local.entity.TaskEntity
+import com.example.domain.model.Task
 import com.example.core.theme.*
 import androidx.compose.material3.MaterialTheme
 import com.example.core.theme.spacing
@@ -32,7 +32,7 @@ import com.example.core.theme.spacing
 @Composable
 fun TasksSection(
     haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
-    tasks: List<TaskEntity>,
+    tasks: List<Task>,
     onAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit,
 ) {
     var selectedCategory by remember { mutableStateOf("All") }

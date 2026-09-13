@@ -46,8 +46,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.local.entity.CalendarEventEntity
-import com.example.data.local.entity.TaskEntity
+import com.example.domain.model.CalendarEvent
+import com.example.domain.model.Task
 import com.example.domain.account.UserProfileData
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
@@ -73,8 +73,8 @@ fun HomeScreen(
     uiState: com.example.presentation.viewmodel.LumiUiState,
     batteryStatus: BatteryStatus,
     networkStatus: NetworkStatus,
-    events: List<CalendarEventEntity>,
-    tasks: List<TaskEntity>,
+    events: List<CalendarEvent>,
+    tasks: List<Task>,
     isListening: Boolean,
     isSpeaking: Boolean,
     onPetPetted: () -> Unit,
@@ -303,7 +303,7 @@ private fun AppButton(title: String, subtitle: String, icon: androidx.compose.ui
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun QuestsBottomSheet(
-    tasks: List<TaskEntity>,
+    tasks: List<Task>,
     petPrimary: Color,
     onDismiss: () -> Unit,
     onToggleTask: (Long, Boolean) -> Unit,

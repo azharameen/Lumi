@@ -307,7 +307,15 @@ object LumiAlarmScheduler {
         )
 
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, morningCal.timeInMillis, morningPendingIntent)
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, eveningCal.timeInMillis, eveningPendingIntent)
+                } else {
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, morningCal.timeInMillis, morningPendingIntent)
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, eveningCal.timeInMillis, eveningPendingIntent)
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, morningCal.timeInMillis, morningPendingIntent)
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, eveningCal.timeInMillis, eveningPendingIntent)
             } else {

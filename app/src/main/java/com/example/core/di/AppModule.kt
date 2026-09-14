@@ -95,7 +95,7 @@ val appModule = module {
     single<ConnectorRepository> { ConnectorRepositoryImpl(androidContext()) }
     single { get<ConnectorRepository>() as ConnectorRepositoryImpl }
     single { IntegrationService(get<ConnectorRepository>(), get<GoogleWorkspaceRestEngine>()) }
-    single { AgentToolDispatcher(get()) }
+    single { AgentToolDispatcher(get(), androidContext()) }
 
     // AI Engines
     single { OnDeviceGemmaEngine(get(), get(), androidContext(), get()) }

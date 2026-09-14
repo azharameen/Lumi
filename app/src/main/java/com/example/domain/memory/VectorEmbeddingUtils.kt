@@ -45,8 +45,10 @@ object VectorEmbeddingUtils {
             normB += (b * b)
         }
 
-        if (normA == 0.0 || normB == 0.0) return 0f
+        if (normA <= 0.0 || normB <= 0.0) return 0f
         val denom = sqrt(normA) * sqrt(normB)
-        return ((dot / denom).coerceIn(-1.0, 1.0)).toFloat()
+        if (denom <= 1e-7) return 0f
+        val res = ((dot / denom).coerceIn(-1.0, 1.0)).toFloat()
+        return if (res.isNaN()) 0f else res
     }
 }

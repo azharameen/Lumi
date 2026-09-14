@@ -52,7 +52,13 @@ object LumiAgentGraph {
                     else -> "REASONING"
                 }
             }
-            .addEdge("REFLEXION") { "REASONING" }
+            .addEdge("REFLEXION") { state ->
+                if (state.currentNodeName == "FINAL_SYNTHESIS") {
+                    "FINAL_SYNTHESIS"
+                } else {
+                    "REASONING"
+                }
+            }
 
         return stateMachine
     }

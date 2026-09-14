@@ -213,7 +213,7 @@ fun ChatScreen(
                     ) {
                         // In-Stream Streaming Bubble or Thinking Shimmer
                         if (streamingMessage != null) {
-                            item(key = "streaming_message", contentType = "streaming_message") {
+                            item(key = streamingMessage.id, contentType = "streaming_message") {
                                 if (streamingMessage.content.isNotBlank()) {
                                     ChatMessageBubble(
                                         message = streamingMessage,

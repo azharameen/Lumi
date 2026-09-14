@@ -2,6 +2,7 @@ package com.example.domain.tools
 
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.Locale
 
 /**
  * Result of tool parameter schema validation.
@@ -57,22 +58,46 @@ object ToolParameterValidator {
                 }
 
                 "number", "integer", "int", "float", "double" -> {
+                    val strVal = rawVal.toString().trim()
                     val numVal = when (rawVal) {
                         is Number -> rawVal.toDouble()
-                        is String -> rawVal.toDoubleOrNull()
+                        is String -> {
+                            strVal.toDoubleOrNull()
+                                ?: strVal.removeSuffix("%").trim().toDoubleOrNull()
+                                ?: when (strVal.lowercase(Locale.ROOT)) {
+                                    "true" -> 1.0
+                                    "false" -> 0.0
+                                    else -> null
+                                }
+                        }
+                        is Boolean -> if (rawVal) 1.0 else 0.0
                         else -> null
                     }
                     if (numVal == null) {
                         errors.add("Parameter '${paramSpec.name}' must be a valid number, received: '$rawVal'")
                     } else {
-                        validatedMap[paramSpec.name] = numVal
+                        val typeLower = paramSpec.type.lowercase(Locale.ROOT)
+                        val coercedVal: Number = if (typeLower in listOf("integer", "int")) {
+                            numVal.toLong()
+                        } else {
+                            numVal
+                        }
+                        validatedMap[paramSpec.name] = coercedVal
                     }
                 }
 
                 "boolean", "bool" -> {
+                    val strVal = rawVal.toString().trim().lowercase(Locale.ROOT)
                     val boolVal = when (rawVal) {
                         is Boolean -> rawVal
-                        is String -> rawVal.lowercase(java.util.Locale.ROOT).toBooleanStrictOrNull()
+                        is Number -> rawVal.toInt() != 0
+                        is String -> {
+                            when (strVal) {
+                                "true", "1", "yes", "on", "y", "enable", "enabled" -> true
+                                "false", "0", "no", "off", "n", "disable", "disabled" -> false
+                                else -> strVal.toBooleanStrictOrNull()
+                            }
+                        }
                         else -> null
                     }
                     if (boolVal == null) {

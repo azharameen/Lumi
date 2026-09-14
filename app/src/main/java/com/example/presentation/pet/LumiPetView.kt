@@ -203,6 +203,38 @@ fun LumiPetView(
         }
     }
 
+    // Reactive State Reactivity: Level-Up Celebration & Emotion Transition Triggers
+    var previousLevel by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(petStatus.level) {
+        if (previousLevel != null && petStatus.level > previousLevel!!) {
+            val approxRadius = size.value * 0.38f
+            spawnParticles("STAR", 14, LumiAmber, approxRadius)
+            spawnParticles("SPARKLE", 12, com.example.core.theme.LumiMint, approxRadius)
+            coroutineScope.launch {
+                jumpProgress.animateTo(1.5f, tween(160))
+                jumpProgress.animateTo(0f, spring(dampingRatio = 0.45f, stiffness = 260f))
+            }
+        }
+        previousLevel = petStatus.level
+    }
+
+    var previousEmotion by remember { mutableStateOf<PetEmotion?>(null) }
+    LaunchedEffect(petStatus.currentEmotion) {
+        if (previousEmotion != null && petStatus.currentEmotion != previousEmotion) {
+            val approxRadius = size.value * 0.38f
+            when (petStatus.currentEmotion) {
+                PetEmotion.HAPPY, PetEmotion.PLAYFUL -> {
+                    spawnParticles("HEART", 4, gradStart, approxRadius)
+                }
+                PetEmotion.ENERGETIC -> {
+                    spawnParticles("SPARKLE", 6, com.example.core.theme.LumiMint, approxRadius)
+                }
+                else -> {}
+            }
+        }
+        previousEmotion = petStatus.currentEmotion
+    }
+
     val gestureModifier = if (enableInternalGestures) {
         Modifier.pointerInput(Unit) {
             detectTapGestures(

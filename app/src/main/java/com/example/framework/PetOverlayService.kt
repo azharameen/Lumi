@@ -497,7 +497,7 @@ class PetOverlayService : Service() {
             overlayComposeView = null
             if (view != null) {
                 try {
-                    if (isViewAttached || view.isAttachedToWindow) {
+                    if (view.isAttachedToWindow) {
                         try {
                             windowManager.removeViewImmediate(view)
                         } catch (_: Exception) {

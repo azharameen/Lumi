@@ -49,6 +49,8 @@ data class AgentState(
     val executedToolReports: List<ToolExecutionReport> = emptyList(),
     val retryCount: Int = 0,
     val maxRetries: Int = 3,
+    val reflectionCount: Int = 0,
+    val failureSignatures: List<String> = emptyList(),
     val stepCount: Int = 0,
     val maxSteps: Int = 10,
     val lastError: String? = null,

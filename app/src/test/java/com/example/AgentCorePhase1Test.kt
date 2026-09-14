@@ -4,10 +4,18 @@ import com.example.domain.agent.AgentState
 import com.example.domain.agent.AgentStateSerializer
 import com.example.domain.agent.AgentStatus
 import com.example.domain.agent.PendingToolCall
+import com.example.domain.agent.nodes.ReflexionNode
 import com.example.domain.memory.VectorEmbeddingUtils
 import com.example.domain.memory.WorkingMemory
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.ToolExecutionReport
+import com.example.domain.tools.LumiTool
+import com.example.domain.tools.ToolCategory
+import com.example.domain.tools.ToolExecutionResult
+import com.example.domain.tools.ToolParameter
+import com.example.domain.tools.ToolParameterValidator
+import com.example.domain.tools.ToolRiskLevel
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -26,6 +34,26 @@ class AgentCorePhase1Test {
         assertEquals("Hi 1", turns[0].second)
         assertEquals("Hello 2", turns[1].second)
         assertEquals("Hi 2", turns[2].second)
+    }
+
+    @Test
+    fun workingMemory_preservesPinnedInstructionsWhenPruning() {
+        val memory = WorkingMemory(maxTurns = 3, maxTokens = 1000)
+        // Add pinned system context
+        memory.addTurn("system", "You are Lumi, an empathetic companion.", isPinned = true)
+        memory.addTurn("user", "Hello 1")
+        memory.addTurn("model", "Hi 1")
+        memory.addTurn("user", "Hello 2")
+        memory.addTurn("model", "Hi 2")
+
+        val turns = memory.getFullTurns()
+        // Total turns must be capped at 3
+        assertEquals(3, turns.size)
+        // First turn must be the pinned system turn, not evicted!
+        assertEquals("system", turns[0].speaker)
+        assertTrue(turns[0].isPinned)
+        assertEquals("Hello 2", turns[1].text)
+        assertEquals("Hi 2", turns[2].text)
     }
 
     @Test
@@ -192,6 +220,99 @@ class AgentCorePhase1Test {
         val res3 = com.example.domain.tools.ToolParameterValidator.validate(fakeTool, mapOf("minutes" to 5))
         assertTrue("Expected alias 'minutes' to resolve to 'seconds'", res3.isValid)
         assertEquals(5.0, res3.validatedParams["seconds"] as Double, 0.001)
+    }
+
+    @Test
+    fun reflexionNode_abortsOnDuplicateFailureOrMaxReflections() = runBlocking {
+        val node = ReflexionNode()
+
+        // 1. Initial state with error
+        val state1 = AgentState(
+            userQuery = "Run tool",
+            currentNodeName = "REFLEXION",
+            pendingToolName = "my_tool",
+            pendingToolArgs = mapOf("a" to 1),
+            lastError = "Connection refused"
+        )
+        val res1 = node.execute(state1)
+        assertEquals(1, res1.reflectionCount)
+        assertEquals("REFLEXION", res1.currentNodeName)
+
+        // 2. Exact same failure signature again
+        val state2 = res1.copy(
+            pendingToolName = "my_tool",
+            pendingToolArgs = mapOf("a" to 1),
+            lastError = "Connection refused"
+        )
+        val res2 = node.execute(state2)
+        assertEquals("FINAL_SYNTHESIS", res2.currentNodeName)
+        assertTrue(res2.finalResponseText!!.contains("Aborting reflection loop"))
+
+        // 3. Max reflections limit >= 2
+        val stateMax = AgentState(
+            userQuery = "Run tool",
+            reflectionCount = 2,
+            pendingToolName = "my_tool",
+            lastError = "Another error"
+        )
+        val resMax = node.execute(stateMax)
+        assertEquals("FINAL_SYNTHESIS", resMax.currentNodeName)
+    }
+
+    @Test
+    fun workingMemory_atomicToolPairPruning() {
+        val memory = WorkingMemory(maxTurns = 3, maxTokens = 1000)
+        memory.addTurn("user", "Help me search")
+        memory.addTurn("assistant_tool_call", "Tool Call: search(q='lumi')", isToolCall = true)
+        memory.addTurn("tool_result", "Tool Result: found 5 items", isToolResult = true)
+        memory.addTurn("model", "I found 5 items for you.")
+
+        // Should prune oldest turns to stay <= maxTurns (3)
+        val turns = memory.getFullTurns()
+        assertTrue(turns.size <= 3)
+        val hasCall = turns.any { it.isToolCall }
+        val hasResult = turns.any { it.isToolResult }
+        assertEquals(hasCall, hasResult)
+    }
+
+    @Test
+    fun toolParameterValidator_coercesStringifiedNumbersAndBooleans() {
+        val fakeTool = object : LumiTool {
+            override val id = "test_coercion_tool"
+            override val displayName = "Test Coercion"
+            override val description = "Test"
+            override val category = ToolCategory.UTILITY
+            override val riskLevel = ToolRiskLevel.LOW
+            override val parameters = listOf(
+                ToolParameter("volume", "integer", "Volume level", required = true),
+                ToolParameter("enabled", "boolean", "Is enabled", required = true)
+            )
+            override suspend fun execute(params: Map<String, Any?>) =
+                ToolExecutionResult(true, "OK")
+        }
+
+        val res = ToolParameterValidator.validate(
+            fakeTool,
+            mapOf("volume" to "80", "enabled" to "true")
+        )
+        assertTrue(res.isValid)
+        assertEquals(80L, res.validatedParams["volume"])
+        assertEquals(true, res.validatedParams["enabled"])
+    }
+
+    @Test
+    fun vectorEmbeddingUtils_handlesZeroAndSmallDenominatorsWithoutNaN() {
+        val zeroVec = floatArrayOf(0f, 0f, 0f)
+        val smallVec = floatArrayOf(1e-8f, 1e-8f, 1e-8f)
+        val normVec = floatArrayOf(1f, 2f, 3f)
+
+        val simZero = VectorEmbeddingUtils.cosineSimilarity(zeroVec, normVec)
+        assertEquals(0.0f, simZero, 0.00001f)
+        assertFalse(simZero.isNaN())
+
+        val simSmall = VectorEmbeddingUtils.cosineSimilarity(smallVec, smallVec)
+        assertEquals(0.0f, simSmall, 0.00001f)
+        assertFalse(simSmall.isNaN())
     }
 }
 

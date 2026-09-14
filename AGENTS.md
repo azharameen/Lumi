@@ -78,7 +78,14 @@ Dependencies point INWARD toward the Domain layer.
   - **Rule:** Apply `testTag` or `semantics` to key UI components so they can be easily targeted in Compose UI tests.
   - **Rule:** Use Roborazzi snapshot tests (`*ScreenshotTest.kt`) using `RobolectricDeviceQualifiers` for visual components.
 
-## 9. Strict Definition of Done (DoD)
+## 9. Workspace & Tooling Constraints (CRITICAL)
+
+- **STRICT PROHIBITION ON SCRIPT-BASED EDITS:**
+  - **Rule:** NEVER write `.sh`, `.py`, `.pl`, or any shell scripts to manipulate or patch codebase files.
+  - **Rule:** NEVER use shell commands like `sed`, `awk`, `echo`, or shell redirection (`>`) to modify code.
+  - **Reason:** Shell scripts bypass IDE memory buffers, cause sync issues, and risk destroying unsaved work. Agents MUST exclusively use native IDE tool calls (e.g., `replace_file_content`, `multi_replace_file_content`, `write_file`) for file manipulation.
+
+## 10. Strict Definition of Done (DoD)
 Before exiting ANY task, an agent MUST self-verify:
 - [ ] No direct Repository injection in ViewModels (UseCases are used instead).
 - [ ] Return types cross boundaries via `Result<T>` or sealed state classes for error handling.
@@ -87,3 +94,4 @@ Before exiting ANY task, an agent MUST self-verify:
 - [ ] Data layer implementations are Main-Safe (`withContext(Dispatchers.IO)`).
 - [ ] Entities/DTOs are mapped to Domain models before leaving the Data layer.
 - [ ] Refactoring (Boy Scout Rule) was applied to the immediate context of the modified code.
+- [ ] NO scratch scripts (`.sh`, `.py`) were left behind in the workspace.

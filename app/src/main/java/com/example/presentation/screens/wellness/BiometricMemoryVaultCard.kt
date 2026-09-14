@@ -18,14 +18,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.core.theme.*
-import com.example.data.local.entity.PetMemoryEntity
+import com.example.domain.model.PetMemory
 import java.util.Locale
 
 @Composable
 fun BiometricMemoryVaultCard(
     isUnlocked: Boolean,
     vaultAuthError: String?,
-    memories: List<PetMemoryEntity>,
+    memories: List<PetMemory>,
     onUnlock: () -> Unit,
     onLock: () -> Unit,
     modifier: Modifier = Modifier

@@ -1,69 +1,51 @@
 package com.example.domain.tools
 
-import com.example.data.local.LumiDatabase
-import com.example.data.local.entity.CalendarEventEntity
-import com.example.data.local.entity.TaskEntity
-import com.example.data.local.entity.WellnessLogEntity
 import com.example.domain.connectors.IntegrationService
+import com.example.domain.model.CalendarEvent
+import com.example.domain.repository.TaskGoalRepository
+import com.example.domain.repository.WellnessRepository
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
-object CoreToolsModule {
-
-    fun register(
-        database: LumiDatabase,
-        integrationService: IntegrationService,
-        registry: ToolRegistry = ToolRegistry.getInstance()
-    ) {
-        registry.registerTools(listOf(
-            AddCalendarEventTool(database),
-            GetDailyScheduleTool(database),
-            CreateTaskTool(database),
-            CompleteTaskTool(database),
-            ListPendingTasksTool(database),
-            LogWellnessTool(database),
-            GoogleSendEmailTool(integrationService)
-        ))
-    }
-}
-
-class AddCalendarEventTool(private val database: LumiDatabase) : LumiTool {
+class AddCalendarEventTool(private val taskGoalRepository: TaskGoalRepository) : LumiTool {
     override val id: String = "add_calendar_event"
-    override val displayName: String = "Schedule Calendar Block 📅"
-    override val description: String = "Adds a new event to the user's calendar"
+    override val displayName: String = "Calendar Block Scheduled 📅"
+    override val description: String = "Adds a time-blocked event to the schedule"
     override val category: ToolCategory = ToolCategory.CALENDAR
-    override val riskLevel: ToolRiskLevel = ToolRiskLevel.MEDIUM
+    override val riskLevel: ToolRiskLevel = ToolRiskLevel.LOW
     override val parameters: List<ToolParameter> = listOf(
-        ToolParameter("title", "string", "Title of the event"),
-        ToolParameter("startTimeOffsetHours", "number", "Hours from now to start"),
+        ToolParameter("title", "string", "Event title"),
+        ToolParameter("startTimeOffsetHours", "number", "Hours from now (e.g. 1.5)"),
         ToolParameter("durationMinutes", "number", "Duration in minutes"),
-        ToolParameter("category", "string", "Event category (e.g. Work, Personal)"),
-        ToolParameter("description", "string", "Optional description", required = false)
+        ToolParameter("category", "string", "Event category (Focus, Meeting, etc)"),
+        ToolParameter("description", "string", "Event details", required = false)
     )
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         val title = params["title"] as? String ?: return ToolExecutionResult(false, "Missing title")
         val offset = (params["startTimeOffsetHours"] as? Number)?.toDouble() ?: 0.0
-        val duration = (params["durationMinutes"] as? Number)?.toInt() ?: 30
+        val duration = (params["durationMinutes"] as? Number)?.toInt() ?: 60
         val cat = params["category"] as? String ?: "General"
         val desc = params["description"] as? String ?: ""
 
-        val now = System.currentTimeMillis()
-        val startMillis = now + (offset * 3600 * 1000).toLong()
-        val endMillis = startMillis + (duration * 60 * 1000).toLong()
+        val startMillis = System.currentTimeMillis() + (offset * 3600000).toLong()
+        val endMillis = startMillis + (duration * 60000).toLong()
 
-        val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
         val timeDisplay = "${timeFormat.format(Date(startMillis))} - ${timeFormat.format(Date(endMillis))}"
 
-        val event = CalendarEventEntity(
+        val event = CalendarEvent(
+            id = 0,
             title = title,
             description = desc,
             startTimeMillis = startMillis,
             endTimeMillis = endMillis,
-            category = cat
+            category = cat,
+            createdAt = System.currentTimeMillis()
         )
-        val id = database.calendarEventDao().insertEvent(event)
-
+        val id = taskGoalRepository.addCalendarEvent(event)
+        
         return ToolExecutionResult(
             success = true,
             resultText = "Added '$title' for $timeDisplay",
@@ -72,7 +54,7 @@ class AddCalendarEventTool(private val database: LumiDatabase) : LumiTool {
     }
 }
 
-class CreateTaskTool(private val database: LumiDatabase) : LumiTool {
+class CreateTaskTool(private val taskGoalRepository: TaskGoalRepository) : LumiTool {
     override val id: String = "create_task"
     override val displayName: String = "New Task Created 🎯"
     override val description: String = "Creates a new task in the productivity manager"
@@ -93,16 +75,14 @@ class CreateTaskTool(private val database: LumiDatabase) : LumiTool {
         val mins = (params["estimatedMinutes"] as? Number)?.toInt() ?: 30
         val notes = params["notes"] as? String ?: ""
 
-        val task = TaskEntity(
+        val id = taskGoalRepository.addTask(
             title = title,
-            priority = priority.uppercase(java.util.Locale.ROOT),
+            priority = priority.uppercase(Locale.ROOT),
             category = cat,
             estimatedMinutes = mins,
-            notes = notes,
-            isCompleted = false
+            notes = notes
         )
-        val id = database.taskDao().insertTask(task)
-
+        
         return ToolExecutionResult(
             success = true,
             resultText = "Added '$title' ($mins m • $priority)",
@@ -111,7 +91,7 @@ class CreateTaskTool(private val database: LumiDatabase) : LumiTool {
     }
 }
 
-class GetDailyScheduleTool(private val database: LumiDatabase) : LumiTool {
+class GetDailyScheduleTool(private val taskGoalRepository: TaskGoalRepository) : LumiTool {
     override val id: String = "get_daily_schedule"
     override val displayName: String = "Calendar Schedule Retrieved 📋"
     override val description: String = "Retrieves today's scheduled events"
@@ -120,8 +100,9 @@ class GetDailyScheduleTool(private val database: LumiDatabase) : LumiTool {
     override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
-        val events = database.calendarEventDao().getAllEventsDirect()
+        val events = taskGoalRepository.getAllEventsSync()
         val formatted = events.map { mapOf("id" to it.id, "title" to it.title, "category" to it.category) }
+        
         return ToolExecutionResult(
             success = true,
             resultText = "Analyzed ${events.size} scheduled blocks for today",
@@ -130,7 +111,7 @@ class GetDailyScheduleTool(private val database: LumiDatabase) : LumiTool {
     }
 }
 
-class CompleteTaskTool(private val database: LumiDatabase) : LumiTool {
+class CompleteTaskTool(private val taskGoalRepository: TaskGoalRepository) : LumiTool {
     override val id: String = "complete_task"
     override val displayName: String = "Task Completed 🎉"
     override val description: String = "Marks a task as completed by title"
@@ -142,14 +123,15 @@ class CompleteTaskTool(private val database: LumiDatabase) : LumiTool {
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         val title = params["taskTitle"] as? String ?: return ToolExecutionResult(false, "Missing task title")
-        val tasks = database.taskDao().getAllTasksDirect()
+        val tasks = taskGoalRepository.getAllTasksSync()
         val match = tasks.find { it.title.contains(title, ignoreCase = true) && !it.isCompleted }
+        
         return if (match != null) {
-            database.taskDao().updateTask(match.copy(isCompleted = true))
+            taskGoalRepository.updateTask(match.copy(isCompleted = true))
             ToolExecutionResult(
                 success = true, 
-                resultText = "Marked '${match.title}' as finished", 
-                payload = mapOf("taskId" to match.id)
+                 resultText = "Marked '${match.title}' as finished", 
+                 payload = mapOf("taskId" to match.id)
             )
         } else {
             ToolExecutionResult(false, "No open task matching '$title'")
@@ -157,7 +139,7 @@ class CompleteTaskTool(private val database: LumiDatabase) : LumiTool {
     }
 }
 
-class ListPendingTasksTool(private val database: LumiDatabase) : LumiTool {
+class ListPendingTasksTool(private val taskGoalRepository: TaskGoalRepository) : LumiTool {
     override val id: String = "list_pending_tasks"
     override val displayName: String = "Task Priority Review 📝"
     override val description: String = "Lists all currently pending tasks"
@@ -166,7 +148,7 @@ class ListPendingTasksTool(private val database: LumiDatabase) : LumiTool {
     override val parameters: List<ToolParameter> = emptyList()
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
-        val openTasks = database.taskDao().getAllTasksDirect().filter { !it.isCompleted }
+        val openTasks = taskGoalRepository.getAllTasksSync().filter { !it.isCompleted }
         return ToolExecutionResult(
             success = true,
             resultText = "Identified ${openTasks.size} open action items",
@@ -175,7 +157,7 @@ class ListPendingTasksTool(private val database: LumiDatabase) : LumiTool {
     }
 }
 
-class LogWellnessTool(private val database: LumiDatabase) : LumiTool {
+class LogWellnessTool(private val wellnessRepository: WellnessRepository) : LumiTool {
     override val id: String = "log_wellness"
     override val displayName: String = "Wellness Checkpoint Saved 🌱"
     override val description: String = "Logs mood, energy, and hydration"
@@ -196,19 +178,12 @@ class LogWellnessTool(private val database: LumiDatabase) : LumiTool {
         val hydration = (params["hydrationIncrementCups"] as? Number)?.toInt() ?: 0
         val gratitude = params["gratitudeNote"] as? String ?: ""
 
-        val log = WellnessLogEntity(
-            timestamp = System.currentTimeMillis(),
-            moodScore = mood,
-            moodLabel = label,
-            energyLevel = energy,
-            hydrationCups = hydration,
-            gratitudeNote = gratitude
-        )
-        val id = database.wellnessLogDao().insertLog(log)
+        wellnessRepository.logWellness(mood, label, energy, hydration, gratitude)
+        
         return ToolExecutionResult(
             success = true,
             resultText = "Logged mood: $label ($mood/5) • Energy: $energy/5",
-            payload = mapOf("logId" to id)
+            payload = mapOf("moodLabel" to label)
         )
     }
 }
@@ -229,13 +204,32 @@ class GoogleSendEmailTool(private val integrationService: IntegrationService) : 
         val to = params["to"] as? String ?: return ToolExecutionResult(false, "Missing recipient")
         val subject = params["subject"] as? String ?: ""
         val body = params["body"] as? String ?: ""
-
+        
         integrationService.googleSendEmail(to, subject, body)
-
+        
         return ToolExecutionResult(
             success = true,
             resultText = "Email sent to $to",
             payload = mapOf("recipient" to to)
         )
+    }
+}
+
+object CoreToolsModule {
+    fun register(
+        taskGoalRepository: TaskGoalRepository,
+        wellnessRepository: WellnessRepository,
+        integrationService: IntegrationService,
+        registry: ToolRegistry = ToolRegistry.getInstance()
+    ) {
+        registry.registerTools(listOf(
+            AddCalendarEventTool(taskGoalRepository),
+            CreateTaskTool(taskGoalRepository),
+            GetDailyScheduleTool(taskGoalRepository),
+            CompleteTaskTool(taskGoalRepository),
+            ListPendingTasksTool(taskGoalRepository),
+            LogWellnessTool(wellnessRepository),
+            GoogleSendEmailTool(integrationService)
+        ))
     }
 }

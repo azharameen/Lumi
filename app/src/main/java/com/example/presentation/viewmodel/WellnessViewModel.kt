@@ -4,10 +4,9 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.firebase.LumiAnalyticsManager
-import com.example.data.local.entity.PetMemoryEntity
-import com.example.data.local.entity.WellnessLogEntity
-import com.example.data.repository.LumiRepositoryImpl
-import com.example.domain.repository.LumiRepository
+import com.example.domain.model.PetMemory
+import com.example.domain.model.WellnessLog
+
 import com.example.data.device.BiometricVaultManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,10 +25,10 @@ class WellnessViewModel(
 
     val pagedWellnessLogs = wellnessRepository.pagedWellnessLogs.cachedIn(viewModelScope)
 
-    val allWellnessLogs: StateFlow<List<WellnessLogEntity>> = wellnessRepository.allWellnessLogs.stateIn(
+    val allWellnessLogs: StateFlow<List<WellnessLog>> = wellnessRepository.allWellnessLogs.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
-    val allMemories: StateFlow<List<PetMemoryEntity>> = memoryRepository.allMemories.stateIn(
+    val allMemories: StateFlow<List<PetMemory>> = memoryRepository.allMemories.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
 

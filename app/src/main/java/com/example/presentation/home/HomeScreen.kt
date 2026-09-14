@@ -322,7 +322,7 @@ private fun QuestsBottomSheet(
                     Text(stringResource(R.string.text_active_quests_bounties), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = TextPrimary)
                 }
                 Surface(color = SurfaceHighlight.copy(alpha = 0.5f), shape = RoundedCornerShape(10.dp)) {
-                    Text("${tasks.count { !it.isCompleted }} Active", color = LumiCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.extraSmall))
+                    Text("${tasks.count { !it.isCompleted }} ${stringResource(R.string.text_active_count)}", color = LumiCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.extraSmall))
                 }
             }
 

@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface PetRepository {
     val petStatus: Flow<PetStatus>
-    val petEvolution: Flow<PetEvolutionEntity?>
     val currentEmotion: Flow<PetEmotion>
     val isSpeaking: Flow<Boolean>
     val isListening: Flow<Boolean>

@@ -16,13 +16,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.core.theme.*
-import com.example.data.local.entity.WellnessLogEntity
+import com.example.domain.model.WellnessLog
 import java.text.SimpleDateFormat
 import java.util.Date
 
 @Composable
 fun WellnessLogItemCard(
-    log: WellnessLogEntity,
+    log: WellnessLog,
     dateFormat: SimpleDateFormat,
     onIncrementHydration: (Long) -> Unit,
     modifier: Modifier = Modifier

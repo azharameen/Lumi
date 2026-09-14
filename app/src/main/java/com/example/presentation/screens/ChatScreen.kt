@@ -20,6 +20,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -285,7 +287,7 @@ fun ChatScreen(
                     ) {
                         Icon(Icons.Default.ArrowDownward, contentDescription = null, tint = LumiCyan, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("New Messages", color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.text_new_messages), color = TextPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

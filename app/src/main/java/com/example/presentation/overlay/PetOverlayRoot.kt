@@ -59,7 +59,9 @@ import com.example.MainActivity
 import com.example.core.theme.*
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
-import com.example.domain.repository.LumiRepository
+import com.example.domain.repository.PetRepository
+import com.example.domain.repository.ChatRepository
+import com.example.data.local.entity.ChatMessageEntity
 import com.example.presentation.overlay.components.OverlaySpeechBubble
 import com.example.presentation.pet.LumiPetView
 import kotlinx.coroutines.Job
@@ -80,7 +82,8 @@ import kotlin.random.Random
 @Composable
 fun PetOverlayRoot(
     context: Context,
-    repository: LumiRepository,
+    petRepository: PetRepository,
+    chatRepository: ChatRepository,
     isDockedPeeking: Boolean = false,
     windowY: Int = 300,
     onDragStart: (Float, Float) -> Unit,
@@ -91,7 +94,7 @@ fun PetOverlayRoot(
 ) {
     val coroutineScope = rememberCoroutineScope()
 
-    val petStatus by repository.petStatus.collectAsStateWithLifecycle(
+    val petStatus by petRepository.petStatus.collectAsStateWithLifecycle(
         initialValue = PetStatus(
             name = "Lumi",
             level = 1,
@@ -101,7 +104,7 @@ fun PetOverlayRoot(
             currentEmotion = PetEmotion.HAPPY
         )
     )
-    val messages by repository.chatMessages.collectAsStateWithLifecycle(initialValue = emptyList())
+    val messages by chatRepository.chatMessages.collectAsStateWithLifecycle(initialValue = emptyList())
 
     // Voice Input Speech Recognizer Setup
     var isListening by remember { mutableStateOf(false) }
@@ -149,7 +152,7 @@ fun PetOverlayRoot(
         val listener = object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle?) {
                 isListening = true
-                coroutineScope.launch { repository.setListening(true) }
+                coroutineScope.launch { petRepository.setListening(true) }
             }
             override fun onBeginningOfSpeech() {}
             override fun onRmsChanged(rmsdB: Float) {}
@@ -159,18 +162,18 @@ fun PetOverlayRoot(
             }
             override fun onError(error: Int) {
                 isListening = false
-                coroutineScope.launch { repository.setListening(false) }
+                coroutineScope.launch { petRepository.setListening(false) }
             }
             override fun onResults(results: Bundle?) {
                 isListening = false
-                coroutineScope.launch { repository.setListening(false) }
+                coroutineScope.launch { petRepository.setListening(false) }
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 val voiceText = matches?.firstOrNull()
                 if (!voiceText.isNullOrBlank()) {
                     coroutineScope.launch {
-                        repository.setPetEmotion(PetEmotion.THINKING)
+                        petRepository.setPetEmotion(PetEmotion.THINKING)
                         showSpeechBubble = true
-                        repository.sendMessage(voiceText)
+                        chatRepository.sendMessage(voiceText)
                         petScale.animateTo(1.18f, tween(100))
                         petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 350f))
                     }
@@ -196,8 +199,8 @@ fun PetOverlayRoot(
             speechRecognizer?.startListening(intent)
             isListening = true
             coroutineScope.launch {
-                repository.setListening(true)
-                repository.setPetEmotion(PetEmotion.ENERGETIC)
+                petRepository.setListening(true)
+                petRepository.setPetEmotion(PetEmotion.ENERGETIC)
             }
         } catch (_: Exception) {
             isListening = false
@@ -209,7 +212,7 @@ fun PetOverlayRoot(
             speechRecognizer?.stopListening()
         } catch (_: Exception) {}
         isListening = false
-        coroutineScope.launch { repository.setListening(false) }
+        coroutineScope.launch { petRepository.setListening(false) }
     }
 
     // Pulsing aura animation when listening
@@ -266,14 +269,14 @@ fun PetOverlayRoot(
                 onBubbleClicked = { if (isListening) stopListening() else showSpeechBubble = false },
                 onPetClicked = {
                     coroutineScope.launch {
-                        repository.petTheCharacter()
+                        petRepository.petTheAnimal()
                         petScale.animateTo(1.25f, tween(100))
                         petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
                     }
                 },
                 onFeedClicked = {
                     coroutineScope.launch {
-                        repository.feedPet("Sweet Berry")
+                        petRepository.feedPet("Sweet Berry")
                         petScale.animateTo(1.2f, tween(100))
                         petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
                     }
@@ -363,7 +366,7 @@ fun PetOverlayRoot(
                                 // SINGLE TAP: Toggle Popover Menu & Pet Lumi
                                 showFidgetPopover = !showFidgetPopover
                                 coroutineScope.launch {
-                                    repository.petTheCharacter()
+                                    petRepository.petTheAnimal()
                                     petScale.animateTo(1.22f, tween(80))
                                     petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
                                 }
@@ -400,8 +403,8 @@ fun PetOverlayRoot(
                 enableInternalGestures = false,
                 externalGazeX = externalGazeX,
                 externalGazeY = externalGazeY,
-                onPetTouched = { coroutineScope.launch { repository.petTheCharacter() } },
-                onPetPetted = { coroutineScope.launch { repository.petTheCharacter() } }
+                onPetTouched = { coroutineScope.launch { petRepository.petTheAnimal() } },
+                onPetPetted = { coroutineScope.launch { petRepository.petTheAnimal() } }
             )
         }
 
@@ -419,14 +422,14 @@ fun PetOverlayRoot(
                 onBubbleClicked = { if (isListening) stopListening() else showSpeechBubble = false },
                 onPetClicked = {
                     coroutineScope.launch {
-                        repository.petTheCharacter()
+                        petRepository.petTheAnimal()
                         petScale.animateTo(1.25f, tween(100))
                         petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
                     }
                 },
                 onFeedClicked = {
                     coroutineScope.launch {
-                        repository.feedPet("Sweet Berry")
+                        petRepository.feedPet("Sweet Berry")
                         petScale.animateTo(1.2f, tween(100))
                         petScale.animateTo(1f, spring(dampingRatio = 0.5f, stiffness = 400f))
                     }

@@ -67,10 +67,7 @@ class LumiViewModel(
     val isBriefingSpeaking: StateFlow<Boolean> = _isBriefingSpeaking.asStateFlow()
 
     val allWellnessLogs = wellnessRepository.allWellnessLogs.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val allMemories = petRepository.petEvolution.map { it?.id ?: 1 }.flatMapLatest { 
-        // This is a bit of a hack since memories weren't fully decomposed yet
-        flowOf(emptyList<PetMemoryEntity>()) 
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allMemories = MutableStateFlow<List<com.example.domain.model.PetMemory>>(emptyList()).asStateFlow()
     
     val chatMessages = chatRepository.chatMessages.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val aiExecutionLogs = chatRepository.aiExecutionLogs.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

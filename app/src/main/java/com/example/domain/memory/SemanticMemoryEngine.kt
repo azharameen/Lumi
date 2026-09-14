@@ -1,8 +1,11 @@
 package com.example.domain.memory
 
-import com.example.data.local.LumiDatabase
-import com.example.data.local.entity.FactKnowledgeEntity
-import com.example.data.local.entity.PetMemoryEntity
+import com.example.domain.model.PetMemory
+import com.example.domain.model.UserFact
+import com.example.domain.repository.PetMemoryRepository
+import com.example.domain.repository.UserMemoryRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * On-Device Semantic Memory Engine.
@@ -10,14 +13,15 @@ import com.example.data.local.entity.PetMemoryEntity
  * the top relevant episodic memories and knowledge graph facts for the active turn.
  */
 class SemanticMemoryEngine(
-    private val database: LumiDatabase
+    private val petMemoryRepository: PetMemoryRepository,
+    private val userMemoryRepository: UserMemoryRepository
 ) {
     /**
      * Retrieves the top [limit] most semantically relevant memories and facts for the given [query].
      */
-    suspend fun retrieveRelevantContext(query: String, limit: Int = 4): String = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
-        val memories = database.petMemoryDao().getAllMemoriesDirect()
-        val facts = database.factKnowledgeDao().getAllFactsDirect()
+    suspend fun retrieveRelevantContext(query: String, limit: Int = 4): String = withContext(Dispatchers.Default) {
+        val memories = petMemoryRepository.getAllMemoriesSync()
+        val facts = userMemoryRepository.getAllFactsSync()
 
         if (memories.isEmpty() && facts.isEmpty()) {
             return@withContext ""
@@ -33,7 +37,7 @@ class SemanticMemoryEngine(
 
         // 2. Score and rank knowledge graph facts
         val scoredFacts = facts.map { fact ->
-            val content = "${fact.predicate} ${fact.objectValue}"
+            val content = "${fact.factKey} ${fact.factValue}"
             val embeddingScore = WordEmbeddingSimilarity.calculateSimilarity(query, content)
             
             fact to embeddingScore
@@ -56,12 +60,12 @@ class SemanticMemoryEngine(
         return@withContext buildContextString(topMemories, topFacts)
     }
 
-    private fun buildContextString(memories: List<PetMemoryEntity>, facts: List<FactKnowledgeEntity>): String {
+    private fun buildContextString(memories: List<PetMemory>, facts: List<UserFact>): String {
         return buildString {
             if (facts.isNotEmpty()) {
                 append("User Profile Knowledge Graph:\n")
                 facts.forEach { fact ->
-                    append("• ${fact.subject} ${fact.predicate}: ${fact.objectValue}\n")
+                    append("• ${fact.factKey}: ${fact.factValue}\n")
                 }
                 append("\n")
             }

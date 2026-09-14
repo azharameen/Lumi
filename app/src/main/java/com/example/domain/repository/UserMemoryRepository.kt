@@ -17,4 +17,6 @@ interface UserMemoryRepository {
     suspend fun saveChatMessage(message: ChatMessage)
     suspend fun clearChatHistory()
     suspend fun generateMorningBriefing(): String
+
+    suspend fun getAllFactsSync(): List<UserFact>
 }

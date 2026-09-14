@@ -7,17 +7,17 @@ import com.example.data.firebase.LumiAnalyticsManager
 import com.example.data.firebase.LumiRemoteConfigManager
 import com.example.domain.model.LumiRemoteConfig
 import com.example.data.local.entity.*
-import com.example.data.repository.LumiRepositoryImpl
 import com.example.domain.briefing.AutonomousBriefingEngine
 import com.example.domain.briefing.BriefingType
 import com.example.domain.briefing.DailyBriefing
 import com.example.data.device.SoundscapeType
 import com.example.domain.usecase.goal.DecomposeGoalUseCase
+import com.example.domain.usecase.goal.ExecuteMilestoneUseCase
+import com.example.domain.usecase.goal.ToggleMilestoneUseCase
 import com.example.domain.repository.TaskGoalRepository
-import com.example.domain.repository.LumiRepository
+import com.example.domain.repository.DeviceStateRepository
 import com.example.data.device.*
 import com.example.data.firebase.*
-import com.example.data.local.entity.*
 import com.example.domain.briefing.*
 import com.example.domain.model.*
 import kotlinx.coroutines.flow.*
@@ -27,7 +27,9 @@ import androidx.lifecycle.viewModelScope
 class LifeHubViewModel(
     val taskGoalRepository: TaskGoalRepository,
     val decomposeGoalUseCase: DecomposeGoalUseCase,
-    val repository: LumiRepository, // Still needed for Soundscape for now
+    val executeMilestoneUseCase: ExecuteMilestoneUseCase,
+    val toggleMilestoneUseCase: ToggleMilestoneUseCase,
+    val deviceStateRepository: DeviceStateRepository,
     val sensorsManager: SensorsManager,
     val briefingEngine: AutonomousBriefingEngine,
     val remoteConfigManager: LumiRemoteConfigManager? = null,
@@ -36,7 +38,7 @@ class LifeHubViewModel(
     val allTasks: StateFlow<List<com.example.domain.model.Task>> = taskGoalRepository.allTasks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val allCalendarEvents: StateFlow<List<com.example.domain.model.CalendarEvent>> = taskGoalRepository.allCalendarEvents.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val allGoalPlans: StateFlow<List<com.example.domain.model.GoalPlan>> = taskGoalRepository.allGoalPlans.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val soundscapeState = repository.soundscapeState
+    val soundscapeState = deviceStateRepository.soundscapeState
 
     val remoteConfig: StateFlow<LumiRemoteConfig> = remoteConfigManager?.config ?: MutableStateFlow(LumiRemoteConfig())
 
@@ -57,7 +59,7 @@ class LifeHubViewModel(
     fun executeMilestone(milestoneId: Long, goalId: Long) {
         viewModelScope.launch {
             sensorsManager.vibrateTap()
-            taskGoalRepository.executeMilestoneTool(milestoneId, goalId)
+            executeMilestoneUseCase(milestoneId, goalId)
         }
     }
 
@@ -67,7 +69,7 @@ class LifeHubViewModel(
             if (isCompleted) {
                 analytics?.logGoalMilestone("Milestone #$milestoneId", "Goal", isCompleted = true)
             }
-            taskGoalRepository.toggleMilestone(milestoneId, goalId, isCompleted)
+            toggleMilestoneUseCase(milestoneId, goalId, isCompleted)
         }
     }
 
@@ -86,30 +88,28 @@ class LifeHubViewModel(
 
     fun startSoundscape(type: SoundscapeType) {
         sensorsManager.vibrateTap()
-        repository.startSoundscape(type)
+        deviceStateRepository.startSoundscape(type)
     }
 
-    fun stopSoundscape() { repository.stopSoundscape() }
-    fun setSoundscapeVolume(volume: Float) { repository.setSoundscapeVolume(volume) }
+    fun stopSoundscape() { deviceStateRepository.stopSoundscape() }
+    fun setSoundscapeVolume(volume: Float) { deviceStateRepository.setSoundscapeVolume(volume) }
 
     fun startFocusTimerWithSoundscape(minutes: Int) {
         sensorsManager.vibrateCelebration()
-        repository.startFocusTimerWithSoundscape(minutes)
+        deviceStateRepository.startFocusTimerWithSoundscape(minutes)
     }
-    fun stopFocusTimerWithSoundscape() { repository.stopFocusTimerWithSoundscape() }
+    fun stopFocusTimerWithSoundscape() { deviceStateRepository.stopFocusTimerWithSoundscape() }
 
     fun refreshDailyBriefing(
         type: BriefingType? = null,
         petStatus: com.example.domain.model.PetStatus,
-        petEvolution: com.example.data.local.entity.PetEvolutionEntity?,
-        wellnessLogs: List<WellnessLogEntity>
+        wellnessLogs: List<WellnessLog>
     ) {
         viewModelScope.launch {
             _isBriefingGenerating.value = true
             val briefing = briefingEngine.generateBriefing(
                 type = type ?: BriefingType.MORNING,
                 petStatus = petStatus,
-                petEvolution = petEvolution,
                 tasks = allTasks.value,
                 events = allCalendarEvents.value,
                 wellnessLogs = wellnessLogs

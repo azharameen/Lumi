@@ -392,23 +392,23 @@ fun ConnectorsControlSection(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Welcome Greeting:", color = TextTertiary, fontSize = 11.sp)
+                                Text(stringResource(R.string.text_welcome_greeting), color = TextTertiary, fontSize = 11.sp)
                                 Text(remoteConfig.welcomeGreeting.take(28) + if (remoteConfig.welcomeGreeting.length > 28) "..." else "", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Tip of the Day:", color = TextTertiary, fontSize = 11.sp)
+                                Text(stringResource(R.string.text_tip_of_the_day), color = TextTertiary, fontSize = 11.sp)
                                 Text(remoteConfig.companionTipOfTheDay.take(28) + if (remoteConfig.companionTipOfTheDay.length > 28) "..." else "", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("AI Creativity Temp:", color = TextTertiary, fontSize = 11.sp)
+                                Text(stringResource(R.string.text_ai_creativity_temp), color = TextTertiary, fontSize = 11.sp)
                                 Text("${remoteConfig.aiCreativityTemperature}", color = LumiGreen, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Proactive Nudge Interval:", color = TextTertiary, fontSize = 11.sp)
-                                Text("${remoteConfig.proactiveNudgeIntervalHours} hours", color = LumiGold, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                                Text(stringResource(R.string.text_proactive_nudge_interval), color = TextTertiary, fontSize = 11.sp)
+                                Text("${remoteConfig.proactiveNudgeIntervalHours} ${stringResource(R.string.text_hours)}", color = LumiGold, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                             }
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Seasonal Theme:", color = TextTertiary, fontSize = 11.sp)
+                                Text(stringResource(R.string.text_seasonal_theme), color = TextTertiary, fontSize = 11.sp)
                                 Text(if (remoteConfig.seasonalThemeEnabled) remoteConfig.seasonalThemeName else "Default Theme", color = TextSecondary, fontSize = 11.sp)
                             }
                         }
@@ -444,7 +444,7 @@ fun ConnectorsControlSection(
                         ) {
                             Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Sync Config", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.text_sync_config), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         }
 
                         Button(
@@ -469,7 +469,7 @@ fun ConnectorsControlSection(
                         ) {
                             Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(14.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Test FCM Push", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.text_test_fcm_push), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

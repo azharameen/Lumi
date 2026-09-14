@@ -80,11 +80,14 @@ class UserMemoryRepositoryImpl(
         val briefing = briefingEngine.generateBriefing(
             type = BriefingType.MORNING,
             petStatus = petStatus,
-            petEvolution = petEvolution,
             tasks = emptyList(),
             events = emptyList(),
             wellnessLogs = emptyList()
         )
         briefing.audioScript
+    }
+
+    override suspend fun getAllFactsSync(): List<UserFact> = withContext(Dispatchers.IO) {
+        factKnowledgeDao.getAllFactsDirect().map { it.toDomain() }
     }
 }

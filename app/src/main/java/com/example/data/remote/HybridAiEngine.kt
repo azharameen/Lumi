@@ -5,7 +5,8 @@ import android.content.Context
 import com.example.data.firebase.LumiAnalyticsManager
 import com.example.data.firebase.LumiCrashlyticsManager
 import com.example.data.firebase.LumiPerformanceManager
-import com.example.data.local.LumiDatabase
+import com.example.domain.repository.AgentStateRepository
+import com.example.domain.memory.SemanticMemoryEngine
 import com.example.data.local.dao.AiExecutionLogDao
 import com.example.data.local.entity.AiExecutionLogEntity
 import com.example.domain.agent.hitl.HitlApprovalManager
@@ -37,15 +38,15 @@ enum class AiRoutingMode {
 class HybridAiEngine(
     private val toolDispatcher: AgentToolDispatcher,
     private val aiAnalyticsDao: AiExecutionLogDao,
-    private val database: LumiDatabase,
+    private val agentStateRepository: AgentStateRepository,
+    private val semanticMemoryEngine: SemanticMemoryEngine,
     private val context: Context? = null,
     private val toolRetriever: ToolRetriever? = null,
     val onDeviceGemmaEngine: OnDeviceGemmaEngine,
     private val modelSelectionEngine: ModelSelectionEngine? = null
 ) {
-    val hitlApprovalManager = HitlApprovalManager(database, toolDispatcher)
-    private val geminiEngine = GeminiAgentEngine(toolDispatcher, database, hitlApprovalManager, onDeviceGemmaEngine)
-    private val semanticMemoryEngine = com.example.domain.memory.SemanticMemoryEngine(database)
+    val hitlApprovalManager = HitlApprovalManager(agentStateRepository, semanticMemoryEngine, toolDispatcher)
+    private val geminiEngine = GeminiAgentEngine(toolDispatcher, agentStateRepository, semanticMemoryEngine, hitlApprovalManager, onDeviceGemmaEngine)
     val downloadManager = context?.let { ModelDownloadManager.getInstance(it) }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

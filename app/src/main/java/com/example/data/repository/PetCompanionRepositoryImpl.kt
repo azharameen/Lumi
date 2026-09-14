@@ -3,41 +3,41 @@ package com.example.data.repository
 import com.example.data.device.ProceduralSoundscapeEngine
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
-import com.example.domain.repository.LumiRepository
+import com.example.domain.repository.PetRepository
 import com.example.domain.repository.PetCompanionRepository
 import kotlinx.coroutines.flow.Flow
 
 class PetCompanionRepositoryImpl(
-    private val lumiRepository: LumiRepository,
+    private val petRepository: PetRepository,
     private val soundscapeEngine: ProceduralSoundscapeEngine? = null
 ) : PetCompanionRepository {
 
-    override val petStatus: Flow<PetStatus> = lumiRepository.petStatus
-    override val currentEmotion: Flow<PetEmotion> = lumiRepository.currentEmotion
-    override val isSpeaking: Flow<Boolean> = lumiRepository.isSpeaking
-    override val isListening: Flow<Boolean> = lumiRepository.isListening
-    override val isThinking: Flow<Boolean> = lumiRepository.isThinking
-    override val speechBubbleText: Flow<String?> = lumiRepository.speechBubbleText
-    override val isOverlayActive: Flow<Boolean> = lumiRepository.isOverlayActive
+    override val petStatus: Flow<PetStatus> = petRepository.petStatus
+    override val currentEmotion: Flow<PetEmotion> = petRepository.currentEmotion
+    override val isSpeaking: Flow<Boolean> = petRepository.isSpeaking
+    override val isListening: Flow<Boolean> = petRepository.isListening
+    override val isThinking: Flow<Boolean> = petRepository.isThinking
+    override val speechBubbleText: Flow<String?> = petRepository.speechBubbleText
+    override val isOverlayActive: Flow<Boolean> = petRepository.isOverlayActive
 
     override fun setOverlayActive(active: Boolean) {
-        lumiRepository.setOverlayActive(active)
+        petRepository.setOverlayActive(active)
     }
 
     override suspend fun setSpeechBubbleText(text: String?) {
-        lumiRepository.setSpeechBubbleText(text)
+        petRepository.setSpeechBubbleText(text)
     }
 
     override suspend fun petTheAnimal() {
-        lumiRepository.petTheAnimal()
+        petRepository.petTheAnimal()
     }
 
     override suspend fun feedPet(foodName: String) {
-        lumiRepository.feedPet(foodName)
+        petRepository.feedPet(foodName)
     }
 
     override suspend fun playWithPet() {
-        lumiRepository.playWithPet()
+        petRepository.playWithPet()
     }
 
     override suspend fun triggerSoundscape(soundType: String) {

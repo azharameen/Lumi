@@ -88,7 +88,7 @@ fun NameAndGoalStep(
             shape = RoundedCornerShape(MaterialTheme.spacing.medium)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Scan Hardware & Models", fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.text_scan_hardware_models), fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                 Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = ObsidianDark)
             }

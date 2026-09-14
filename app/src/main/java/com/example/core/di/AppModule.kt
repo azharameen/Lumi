@@ -10,6 +10,7 @@ import com.example.data.remote.OnDeviceGemmaEngine
 import com.example.data.remote.google.GoogleWorkspaceAuthManager
 import com.example.data.remote.google.GoogleWorkspaceRestEngine
 import com.example.data.repository.*
+import com.example.domain.repository.DeviceStateRepository
 import com.example.data.tools.FastToolIndex
 import com.example.domain.account.UserProfileRepository
 import com.example.domain.ai.ContextRelevancePruner
@@ -94,23 +95,26 @@ val appModule = module {
     // AI Engines
     single { OnDeviceGemmaEngine(get(), get(), androidContext(), get()) }
     single { LocalVisionEngine(androidContext()) }
-    single { HybridAiEngine(get(), get<LumiDatabase>().aiExecutionLogDao(), get(), androidContext(), get(), get(), get()) }
+    single<AgentStateRepository> { AgentStateRepositoryImpl(get<LumiDatabase>().agentCheckpointDao()) }
+    single { com.example.domain.memory.SemanticMemoryEngine(get(), get()) }
+    single { HybridAiEngine(get(), get<LumiDatabase>().aiExecutionLogDao(), get(), get(), androidContext(), get(), get(), get()) }
     single { AutonomousGoalPlanner(get(), get(), get()) }
 
     // Specialized Clean Domain Repositories
     single<PetRepository> { PetRepositoryImpl(get(), get()) }
     single<ChatRepository> { ChatRepositoryImpl(get(), get(), get()) }
     single<WellnessRepository> { WellnessRepositoryImpl(get(), get()) }
-    single<TaskGoalRepository> { TaskGoalRepositoryImpl(get(), get(), get()) }
+    single<TaskGoalRepository> { TaskGoalRepositoryImpl(get(), get()) }
     single<PetMemoryRepository> { PetMemoryRepositoryImpl(get()) }
+    single<DeviceStateRepository> { DeviceStateRepositoryImpl(get()) }
 
     // UseCases
     single { SendMessageUseCase(get()) }
     single { PetInteractionUseCase(get()) }
     single { DecomposeGoalUseCase(get()) }
+    single { com.example.domain.usecase.goal.ExecuteMilestoneUseCase(get()) }
+    single { com.example.domain.usecase.goal.ToggleMilestoneUseCase(get()) }
 
-    // Legacy/Facade Repository
-    single<LumiRepository> { LumiRepositoryImpl.getInstance(androidContext(), get()) }
 
     // Other repositories
     single<AuthRepository> { FirebaseAuthRepositoryImpl(androidContext()) }
@@ -120,8 +124,8 @@ val appModule = module {
     // ViewModels
     viewModel { AuthViewModel(get(), get(), get(), get()) }
     viewModel { AiSettingsViewModel(get(), get(), getOrNull()) }
-    viewModel { ChatViewModel(get(), get(), get(), get(), get(), getOrNull()) }
-    viewModel { LifeHubViewModel(get(), get(), get(), get(), get()) }
+    viewModel { ChatViewModel(get(), get(), get(), get(), get(), get(), getOrNull()) }
+    viewModel { LifeHubViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { 
         LumiViewModel(
             petRepository = get(),

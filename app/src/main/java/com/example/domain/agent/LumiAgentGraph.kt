@@ -1,6 +1,7 @@
 package com.example.domain.agent
 
-import com.example.data.local.LumiDatabase
+import com.example.domain.repository.AgentStateRepository
+import com.example.domain.memory.SemanticMemoryEngine
 import com.example.data.remote.OnDeviceGemmaEngine
 import com.example.domain.agent.nodes.*
 import com.example.domain.tools.AgentToolDispatcher
@@ -11,18 +12,19 @@ object LumiAgentGraph {
      * Builds and configures the DAG Agent State Machine graph for Lumi.
      */
     fun create(
-        database: LumiDatabase,
+        agentStateRepository: AgentStateRepository,
+        semanticMemoryEngine: SemanticMemoryEngine,
         toolDispatcher: AgentToolDispatcher,
         onDeviceGemmaEngine: OnDeviceGemmaEngine? = null,
         onStreamToken: (suspend (String) -> Unit)? = null
     ): AgentStateMachine {
-        val stateMachine = AgentStateMachine(database.agentCheckpointDao())
+        val stateMachine = AgentStateMachine(agentStateRepository)
 
         // 1. Register Nodes
         stateMachine
             .registerNode(StartNode())
             .registerNode(IntentRoutingNode(onDeviceGemmaEngine))
-            .registerNode(MemoryRetrievalNode(database))
+            .registerNode(MemoryRetrievalNode(semanticMemoryEngine))
             .registerNode(PlanningNode(onDeviceGemmaEngine))
             .registerNode(ReasoningNode(onDeviceGemmaEngine, onStreamToken))
             .registerNode(ToolExecutionNode(toolDispatcher))

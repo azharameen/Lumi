@@ -95,7 +95,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.domain.model.CalendarEvent
 import com.example.domain.model.Task
-import com.example.data.local.entity.WellnessLogEntity
+import com.example.domain.model.WellnessLog
 import com.example.core.theme.LumiCoral
 import com.example.core.theme.LumiGold
 import com.example.core.theme.LumiGreen
@@ -119,8 +119,8 @@ import com.example.core.theme.spacing
 @Composable
 fun WellnessVaultSection(
     haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics(),
-    wellnessLogs: List<WellnessLogEntity>,
-    memories: List<com.example.data.local.entity.PetMemoryEntity>,
+    wellnessLogs: List<WellnessLog>,
+    memories: List<com.example.domain.model.PetMemory>,
     uiState: com.example.presentation.viewmodel.LumiUiState,
     viewModel: LumiViewModel,
     onNavigateToChat: (String?) -> Unit

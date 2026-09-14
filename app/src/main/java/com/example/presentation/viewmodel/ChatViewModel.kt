@@ -10,8 +10,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.firebase.LumiAnalyticsManager
 import com.example.data.firebase.LumiPerformanceManager
 import com.example.data.local.entity.ChatMessageEntity
-import com.example.data.repository.LumiRepositoryImpl
-import com.example.domain.repository.LumiRepository
+import com.example.domain.repository.ChatRepository
+import com.example.domain.repository.PetRepository
 import com.example.data.device.VoiceEngine
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 import com.example.domain.prompt.DynamicPromptSuggester
 
 class ChatViewModel(
-    val repository: LumiRepository,
+    val chatRepository: ChatRepository, val petRepository: PetRepository,
     val voiceEngine: VoiceEngine,
     val userProfileManager: UserProfileRepository,
     private val analytics: LumiAnalyticsManager? = null,
@@ -35,20 +35,20 @@ class ChatViewModel(
 ) : ViewModel() {
     private val userProfile = userProfileManager.userProfile
 
-    val pagedChatMessages = repository.pagedChatMessages.cachedIn(viewModelScope)
+    val pagedChatMessages = chatRepository.pagedChatMessages.cachedIn(viewModelScope)
 
-    val chatMessages: StateFlow<List<ChatMessageEntity>> = repository.chatMessages.stateIn(
+    val chatMessages: StateFlow<List<ChatMessageEntity>> = chatRepository.chatMessages.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
 
-    val streamingAiMessage: StateFlow<ChatMessageEntity?> = repository.streamingAiMessage.stateIn(
+    val streamingAiMessage: StateFlow<ChatMessageEntity?> = chatRepository.streamingAiMessage.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), null
     )
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     val quickPrompts: StateFlow<List<String>> = kotlinx.coroutines.flow.combine(
-        repository.chatMessages,
-        repository.streamingAiMessage
+        chatRepository.chatMessages,
+        chatRepository.streamingAiMessage
     ) { messages: List<ChatMessageEntity>, streaming: ChatMessageEntity? ->
         if (streaming != null) messages + streaming else messages
     }.flatMapLatest { combinedMessages ->
@@ -66,7 +66,7 @@ class ChatViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DynamicPromptSuggester.getInitialPrompts())
 
-    val pendingHitlActions = repository.pendingHitlActions.stateIn(
+    val pendingHitlActions = chatRepository.pendingHitlActions.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
 
@@ -76,7 +76,7 @@ class ChatViewModel(
     init {
         viewModelScope.launch {
             voiceEngine.isSpeaking.collect { isSpeaking ->
-                repository.setSpeaking(isSpeaking)
+                petRepository.setSpeaking(isSpeaking)
                 if (!isSpeaking) {
                     _currentlySpeakingMessageId.value = null
                 }
@@ -86,13 +86,13 @@ class ChatViewModel(
 
     fun clearChatHistory() {
         viewModelScope.launch {
-            repository.clearChatHistory()
+            chatRepository.clearChatHistory()
         }
     }
 
     fun deleteMessage(id: Long) {
         viewModelScope.launch {
-            repository.deleteMessage(id)
+            chatRepository.deleteMessage(id)
         }
     }
 
@@ -122,7 +122,7 @@ class ChatViewModel(
 
     fun resolveHitlAction(stateId: String, approved: Boolean) {
         viewModelScope.launch {
-            repository.resolveHitlAction(stateId, approved)
+            chatRepository.resolveHitlAction(stateId, approved)
         }
     }
 
@@ -137,11 +137,11 @@ class ChatViewModel(
             val response = if (performance != null) {
                 performance.traceAsync(LumiPerformanceManager.TRACE_AI_INFERENCE) {
                     val imageBytes = image?.let { val stream = ByteArrayOutputStream(); it.compress(CompressFormat.JPEG, 80, stream); stream.toByteArray() }
-                    repository.sendMessage(text, imageBytes, modelId)
+                    chatRepository.sendMessage(text, imageBytes, modelId)
                 }
             } else {
                 val imageBytes = image?.let { val stream = ByteArrayOutputStream(); it.compress(CompressFormat.JPEG, 80, stream); stream.toByteArray() }
-                repository.sendMessage(text, imageBytes, modelId)
+                chatRepository.sendMessage(text, imageBytes, modelId)
             }
             if (userProfileManager.userProfile.value.enableSpeechOutput) {
                 _currentlySpeakingMessageId.value = response.id
@@ -169,9 +169,9 @@ class ChatViewModel(
     }
 
     fun startVoiceListening() {
-        viewModelScope.launch { repository.setListening(true) }
+        viewModelScope.launch { petRepository.setListening(true) }
         voiceEngine.startListening { text ->
-            viewModelScope.launch { repository.setListening(false) }
+            viewModelScope.launch { petRepository.setListening(false) }
             if (text.isNotBlank()) {
                 sendMessage(text)
             }
@@ -179,7 +179,7 @@ class ChatViewModel(
     }
 
     fun stopVoiceListening() {
-        viewModelScope.launch { repository.setListening(false) }
+        viewModelScope.launch { petRepository.setListening(false) }
         voiceEngine.stopListening()
     }
 

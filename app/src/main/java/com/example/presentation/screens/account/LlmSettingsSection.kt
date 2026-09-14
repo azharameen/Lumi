@@ -697,7 +697,7 @@ fun LlmSettingsSection(
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             if (isActive) {
                                                 Surface(color = LumiGreen.copy(alpha = 0.15f), shape = RoundedCornerShape(4.dp)) {
-                                                    Text("Active", color = LumiGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                    Text(stringResource(R.string.text_active_caps), color = LumiGreen, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                                 }
                                             } else {
                                                 Surface(
@@ -705,7 +705,7 @@ fun LlmSettingsSection(
                                                     shape = RoundedCornerShape(4.dp),
                                                     modifier = Modifier.clickable { onSetActiveLocalModel(model.id) }
                                                 ) {
-                                                    Text("Activate", color = LumiCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                                    Text(stringResource(R.string.text_activate), color = LumiCyan, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                                 }
                                             }
                                             Spacer(modifier = Modifier.width(6.dp))
@@ -752,7 +752,7 @@ fun LlmSettingsSection(
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Icon(Icons.Default.Download, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(12.dp))
                                                 Spacer(modifier = Modifier.width(3.dp))
-                                                Text("Download", color = ObsidianDark, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                                Text(stringResource(R.string.text_download), color = ObsidianDark, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                             }
                                         }
                                     }
@@ -812,7 +812,7 @@ fun LlmSettingsSection(
                                             contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
                                             modifier = Modifier.height(24.dp)
                                         ) {
-                                            Text("Retry", color = LumiCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                            Text(stringResource(R.string.text_retry), color = LumiCyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                         }
                                     }
                                 }

@@ -57,11 +57,12 @@ class LumiApplication : Application() {
     private suspend fun registerTools() {
         // Access Koin on background thread
         val koin = org.koin.core.context.GlobalContext.get()
-        val database: LumiDatabase = koin.get()
+        val taskGoalRepository: com.example.domain.repository.TaskGoalRepository = koin.get()
+        val wellnessRepository: com.example.domain.repository.WellnessRepository = koin.get()
         val integrationService: IntegrationService = koin.get()
         
         SystemToolSuite.registerAll(this)
-        CoreToolsModule.register(database, integrationService)
+        CoreToolsModule.register(taskGoalRepository, wellnessRepository, integrationService)
         IntegrationToolsModule.register(integrationService)
 
         // Initialize and sync SQLite FTS5 fast tool search index

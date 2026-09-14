@@ -10,7 +10,6 @@ import android.widget.RemoteViews
 import com.example.MainActivity
 import com.example.R
 import com.example.data.local.LumiDatabase
-import com.example.data.repository.LumiRepositoryImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,15 +33,15 @@ class LumiAppWidgetProvider : AppWidgetProvider() {
         if (intent.action == ACTION_WIDGET_QUICK_HYDRATE) {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
             scope.launch {
-                val repo = org.koin.core.context.GlobalContext.get().get<com.example.domain.repository.LumiRepository>()
+                val repo = org.koin.core.context.GlobalContext.get().get<com.example.domain.repository.WellnessRepository>()
                 repo.logWellness(8, "Hydrated via Widget", 8, 1, "Quick widget tap")
                 triggerWidgetUpdate(context)
             }
         } else if (intent.action == ACTION_WIDGET_PET) {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
             scope.launch {
-                val repo = org.koin.core.context.GlobalContext.get().get<com.example.domain.repository.LumiRepository>()
-                repo.petTheCharacter()
+                val repo = org.koin.core.context.GlobalContext.get().get<com.example.domain.repository.PetRepository>()
+                repo.petTheAnimal()
                 triggerWidgetUpdate(context)
             }
         }
@@ -104,9 +103,10 @@ class LumiAppWidgetProvider : AppWidgetProvider() {
             val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
             scope.launch {
                 try {
-                    val repo = org.koin.core.context.GlobalContext.get().get<com.example.domain.repository.LumiRepository>()
-                    val pet = repo.petStatus.firstOrNull()
-                    val tasks = repo.allTasks.firstOrNull()
+                    val petRepo = org.koin.core.context.GlobalContext.get().get<com.example.domain.repository.PetRepository>()
+                    val taskRepo = org.koin.core.context.GlobalContext.get().get<com.example.domain.repository.TaskGoalRepository>()
+                    val pet = petRepo.petStatus.firstOrNull()
+                    val tasks = taskRepo.allTasks.firstOrNull()
                     val topTask = tasks?.firstOrNull { !it.isCompleted }?.title ?: "All tasks completed! ✨"
 
                     val levelText = "Lumi Lv.${pet?.level ?: 1} • ${pet?.currentEmotion?.displayName ?: "Happy"}"

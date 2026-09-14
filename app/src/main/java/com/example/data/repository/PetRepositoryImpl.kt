@@ -38,10 +38,10 @@ class PetRepositoryImpl(
     override val speechBubbleText: Flow<String?> = _speechBubbleText.asStateFlow()
     override val isOverlayActive: Flow<Boolean> = _isOverlayActive.asStateFlow()
 
-    override val petEvolution: Flow<PetEvolutionEntity?> = database.petEvolutionDao().getPetEvolution()
+    private val petEvolutionFlow: Flow<PetEvolutionEntity?> = database.petEvolutionDao().getPetEvolution()
 
     override val petStatus: Flow<PetStatus> = combine(
-        combine(petEvolution, _currentEmotion, _isSpeaking) { evo, emotion, speaking ->
+        combine(petEvolutionFlow, _currentEmotion, _isSpeaking) { evo, emotion, speaking ->
             Triple(evo, emotion, speaking)
         },
         combine(_isListening, _isThinking, _speechBubbleText) { listening, thinking, bubbleText ->

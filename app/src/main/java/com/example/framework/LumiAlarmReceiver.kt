@@ -12,7 +12,6 @@ import androidx.core.app.NotificationManagerCompat
 import com.example.MainActivity
 import com.example.R
 import com.example.data.local.LumiDatabase
-import com.example.data.repository.LumiRepositoryImpl
 import com.example.domain.model.PetEmotion
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -159,7 +158,7 @@ class LumiAlarmReceiver : BroadcastReceiver() {
                 // Reschedule upcoming alarms on boot
                 val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
                 scope.launch {
-                    val repository = org.koin.core.context.GlobalContext.get().get<com.example.domain.repository.LumiRepository>()
+                    // Alarms rescheduled
                     // Re-schedule alarms
                     LumiAlarmScheduler.scheduleNextWellnessNudge(context)
                     LumiAlarmScheduler.scheduleDailyBriefings(context)

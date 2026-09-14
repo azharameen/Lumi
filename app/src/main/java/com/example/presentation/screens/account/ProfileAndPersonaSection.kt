@@ -271,7 +271,7 @@ fun ProfileAndPersonaSection(
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Sign Out", color = TextPrimary, fontSize = 13.sp)
+                            Text(stringResource(R.string.text_sign_out), color = TextPrimary, fontSize = 13.sp)
                         }
                     } else {
                         Text(
@@ -288,7 +288,7 @@ fun ProfileAndPersonaSection(
                             shape = RoundedCornerShape(10.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = CyberCyan)
                         ) {
-                            Text("Sign in with Google", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text(stringResource(R.string.text_sign_in_with_google), color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                     }
                 }

@@ -1,29 +1,21 @@
 package com.example.domain.tools
 
-import com.example.data.device.HealthConnectManager
-import com.example.data.local.LumiDatabase
 import com.example.domain.model.ToolExecutionReport
+import com.example.domain.repository.PetRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
-/**
- * Enterprise agent tool dispatcher.
- * Uses structured schemas and typed arguments parsing, eliminating fragile regex parsing.
- * Now refactored to use ToolRegistry pattern.
- */
 class AgentToolDispatcher(
-    private val database: LumiDatabase
+    private val petRepository: PetRepository
 ) {
-
-    /**
-     * Executes the requested tool by looking it up in the ToolRegistry.
-     */
     suspend fun executeTool(
         toolName: String,
         args: Map<String, Any?>?
     ): Pair<Map<String, Any?>, ToolExecutionReport> = withContext(Dispatchers.IO) {
         val registry = ToolRegistry.getInstance()
-        val cleanName = toolName.trim().lowercase(java.util.Locale.ROOT).removePrefix("system_").removePrefix("tool_")
+        val cleanName = toolName.trim().lowercase(Locale.ROOT).removePrefix("system_").removePrefix("tool_")
+        
         val tool = registry.getTool(toolName)
             ?: registry.getAllTools().find { it.id.equals(toolName, ignoreCase = true) }
             ?: registry.getAllTools().find { it.id.removePrefix("system_").equals(cleanName, ignoreCase = true) }
@@ -34,11 +26,11 @@ class AgentToolDispatcher(
             return@withContext handleUnknownTool(toolName)
         }
 
-        // 1. Structured Argument Validation
         val validationResult = ToolParameterValidator.validate(tool, args ?: emptyMap())
         if (!validationResult.isValid) {
             return@withContext handleToolError(toolName, Exception("Validation Error: ${validationResult.errorMessage}"))
         }
+
         val safeParams = validationResult.validatedParams
 
         val result = try {
@@ -57,21 +49,11 @@ class AgentToolDispatcher(
             handleToolError(toolName, e)
         }
 
-        // Reward Pet Evolution on successful tool usage
-        rewardPetProgression()
+        if (result.second.isSuccess) {
+            petRepository.earnCoinsAndExp(coins = 25, exp = 20, reason = "Tool Execution: $toolName")
+        }
 
         result
-    }
-
-    private fun validateArgs(tool: LumiTool, args: Map<String, Any?>?): String? {
-        val params = args ?: emptyMap()
-        for (expected in tool.parameters) {
-            if (expected.required && !params.containsKey(expected.name)) {
-                return "Missing required parameter: ${expected.name}"
-            }
-            // Basic type validation can be added here
-        }
-        return null
     }
 
     private fun handleUnknownTool(toolName: String): Pair<Map<String, Any?>, ToolExecutionReport> {
@@ -80,7 +62,8 @@ class AgentToolDispatcher(
             toolName = toolName,
             title = "Tool Execution Warning ⚠️",
             description = "Tool '$toolName' is not registered in dispatcher",
-            payloadPreview = "Dispatcher bypassed"
+            payloadPreview = "Dispatcher bypassed",
+            isSuccess = false
         )
         return output to report
     }
@@ -91,40 +74,9 @@ class AgentToolDispatcher(
             toolName = toolName,
             title = "Tool Execution Error ⚠️",
             description = "Failed to run $toolName: ${e.localizedMessage ?: "Invalid parameters"}",
-            payloadPreview = "Schema parsing or execution exception"
+            payloadPreview = "Schema parsing or execution exception",
+            isSuccess = false
         )
         return output to report
-    }
-
-    private suspend fun rewardPetProgression() {
-        try {
-            val evolution = database.petEvolutionDao().getPetEvolutionDirect()
-            if (evolution != null) {
-                var newExp = evolution.exp + 20
-                var newLevel = evolution.level
-                var expNeeded = evolution.expToNextLevel
-                var newCoins = evolution.coins + 25
-                var newGems = evolution.gems
-
-                while (newExp >= expNeeded) {
-                    newExp -= expNeeded
-                    newLevel += 1
-                    expNeeded = (expNeeded * 1.3).toInt()
-                    newCoins += 50
-                    newGems += 5
-                }
-
-                database.petEvolutionDao().insertOrUpdate(
-                    evolution.copy(
-                        exp = newExp,
-                        level = newLevel,
-                        expToNextLevel = expNeeded,
-                        coins = newCoins,
-                        gems = newGems,
-                        happiness = (evolution.happiness + 5).coerceAtMost(100)
-                    )
-                )
-            }
-        } catch (_: Exception) {}
     }
 }

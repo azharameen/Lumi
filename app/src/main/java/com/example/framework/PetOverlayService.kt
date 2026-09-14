@@ -29,7 +29,8 @@ import com.example.MainActivity
 import com.example.R
 import com.example.core.theme.MyApplicationTheme
 import com.example.domain.account.UserProfileRepository
-import com.example.domain.repository.LumiRepository
+import com.example.domain.repository.PetRepository
+import com.example.domain.repository.ChatRepository
 import com.example.presentation.overlay.PetOverlayRoot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +63,8 @@ class PetOverlayService : Service() {
     private var settingsWatcherJob: Job? = null
     private var glideAnimator: ValueAnimator? = null
 
-    private lateinit var repository: LumiRepository
+    private lateinit var petRepository: PetRepository
+    private lateinit var chatRepository: ChatRepository
     private lateinit var userProfileRepo: UserProfileRepository
 
     private var isViewAttached = false
@@ -86,9 +88,10 @@ class PetOverlayService : Service() {
 
         // Initialize Shared Singletons
         val koin = org.koin.core.context.GlobalContext.get()
-        repository = koin.get<LumiRepository>()
+        petRepository = koin.get<PetRepository>()
+        chatRepository = koin.get<ChatRepository>()
         userProfileRepo = koin.get<UserProfileRepository>()
-        repository.setOverlayActive(true)
+        petRepository.setOverlayActive(true)
 
         createNotificationChannel()
         
@@ -158,9 +161,9 @@ class PetOverlayService : Service() {
                 userProfileRepo.updateField { it.copy(enableOverlay = false) }
             } catch (_: Exception) {}
         }
-        if (::repository.isInitialized) {
+        if (::petRepository.isInitialized) {
             try {
-                repository.setOverlayActive(false)
+                petRepository.setOverlayActive(false)
             } catch (_: Exception) {}
         }
         cleanupOverlayView()
@@ -229,7 +232,8 @@ class PetOverlayService : Service() {
                 MyApplicationTheme {
                     PetOverlayRoot(
                         context = this@PetOverlayService,
-                        repository = repository,
+                        petRepository = petRepository,
+                        chatRepository = chatRepository,
                         isDockedPeeking = isDockedPeeking,
                         windowY = windowLayoutParams.y,
                         onDragStart = { rawX, rawY ->
@@ -535,9 +539,9 @@ class PetOverlayService : Service() {
             stopForeground(true)
         }
 
-        if (::repository.isInitialized) {
+        if (::petRepository.isInitialized) {
             try {
-                repository.setOverlayActive(false)
+                petRepository.setOverlayActive(false)
             } catch (_: Exception) {}
         }
         super.onDestroy()

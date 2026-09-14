@@ -251,7 +251,7 @@ fun ToolsAndConnectorsSection() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
-                        placeholder = { Text("Search tools by name, ID, or description...", fontSize = 12.sp, color = TextTertiary) },
+                        placeholder = { Text(stringResource(R.string.text_search_tools), fontSize = 12.sp, color = TextTertiary) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextTertiary, modifier = Modifier.size(18.dp)) },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
@@ -281,7 +281,7 @@ fun ToolsAndConnectorsSection() {
                         FilterChip(
                             selected = selectedCategoryFilter == null,
                             onClick = { selectedCategoryFilter = null },
-                            label = { Text("All (${registeredTools.size})", fontSize = 11.sp) },
+                            label = { Text("${stringResource(R.string.text_all_tools)} (${registeredTools.size})", fontSize = 11.sp) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = LumiMint,
                                 selectedLabelColor = ObsidianDark,
@@ -460,15 +460,15 @@ fun ToolsAndConnectorsSection() {
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        Text("Category:", color = TextTertiary, fontSize = 10.sp)
+                                        Text(stringResource(R.string.text_category_label), color = TextTertiary, fontSize = 10.sp)
                                         Text(tool.category.name, color = categoryColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                     }
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        Text("Execution Engine:", color = TextTertiary, fontSize = 10.sp)
-                                        Text("On-Device Gemma & Cloud Gemini", color = TextSecondary, fontSize = 10.sp)
+                                        Text(stringResource(R.string.text_execution_engine), color = TextTertiary, fontSize = 10.sp)
+                                        Text(stringResource(R.string.text_execution_engine_desc), color = TextSecondary, fontSize = 10.sp)
                                     }
 
                                     HorizontalDivider(color = SurfaceHighlight, thickness = 0.5.dp, modifier = Modifier.padding(vertical = 2.dp))
@@ -481,7 +481,7 @@ fun ToolsAndConnectorsSection() {
                                     )
 
                                     if (tool.parameters.isEmpty()) {
-                                        Text("No parameters required (Autonomous zero-arg execution)", color = TextTertiary, fontSize = 10.sp)
+                                        Text(stringResource(R.string.text_no_parameters_required), color = TextTertiary, fontSize = 10.sp)
                                     } else {
                                         tool.parameters.forEach { param ->
                                             Row(
@@ -680,23 +680,23 @@ fun ToolsAndConnectorsSection() {
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("Welcome Greeting:", color = TextTertiary, fontSize = 11.sp)
+                                    Text(stringResource(R.string.text_welcome_greeting), color = TextTertiary, fontSize = 11.sp)
                                     Text(remoteConfig.welcomeGreeting.take(28) + if (remoteConfig.welcomeGreeting.length > 28) "..." else "", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                                 }
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("Tip of the Day:", color = TextTertiary, fontSize = 11.sp)
+                                    Text(stringResource(R.string.text_tip_of_the_day), color = TextTertiary, fontSize = 11.sp)
                                     Text(remoteConfig.companionTipOfTheDay.take(28) + if (remoteConfig.companionTipOfTheDay.length > 28) "..." else "", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                                 }
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("AI Creativity Temp:", color = TextTertiary, fontSize = 11.sp)
+                                    Text(stringResource(R.string.text_ai_creativity_temp), color = TextTertiary, fontSize = 11.sp)
                                     Text("${remoteConfig.aiCreativityTemperature}", color = LumiGreen, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("Proactive Nudge Interval:", color = TextTertiary, fontSize = 11.sp)
-                                    Text("${remoteConfig.proactiveNudgeIntervalHours} hours", color = LumiGold, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                                    Text(stringResource(R.string.text_proactive_nudge_interval), color = TextTertiary, fontSize = 11.sp)
+                                    Text("${remoteConfig.proactiveNudgeIntervalHours} ${stringResource(R.string.text_hours)}", color = LumiGold, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                                 }
                                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                    Text("Seasonal Theme:", color = TextTertiary, fontSize = 11.sp)
+                                    Text(stringResource(R.string.text_seasonal_theme), color = TextTertiary, fontSize = 11.sp)
                                     Text(if (remoteConfig.seasonalThemeEnabled) remoteConfig.seasonalThemeName else "Default Theme", color = TextSecondary, fontSize = 11.sp)
                                 }
                             }
@@ -732,7 +732,7 @@ fun ToolsAndConnectorsSection() {
                             ) {
                                 Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Sync Config", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.text_sync_config), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                             }
 
                             Button(
@@ -757,7 +757,7 @@ fun ToolsAndConnectorsSection() {
                             ) {
                                 Icon(Icons.Default.Bolt, contentDescription = null, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Test FCM Push", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.text_test_fcm_push), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }

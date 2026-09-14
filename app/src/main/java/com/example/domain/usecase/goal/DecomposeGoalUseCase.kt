@@ -1,10 +1,10 @@
 package com.example.domain.usecase.goal
 
+import com.example.domain.planner.AutonomousGoalPlanner
 import com.example.domain.planner.DecomposedGoalResult
-import com.example.domain.repository.TaskGoalRepository
 
 class DecomposeGoalUseCase(
-    private val taskGoalRepository: TaskGoalRepository
+    private val goalPlanner: AutonomousGoalPlanner
 ) {
     suspend operator fun invoke(
         title: String,
@@ -12,6 +12,6 @@ class DecomposeGoalUseCase(
         category: String,
         targetDate: String
     ): DecomposedGoalResult {
-        return taskGoalRepository.decomposeGoal(title, description, category, targetDate)
+        return goalPlanner.decomposeAndSaveGoal(title, description, category, targetDate)
     }
 }

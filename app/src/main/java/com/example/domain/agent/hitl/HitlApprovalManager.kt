@@ -1,6 +1,7 @@
 package com.example.domain.agent.hitl
 
-import com.example.data.local.LumiDatabase
+import com.example.domain.repository.AgentStateRepository
+import com.example.domain.memory.SemanticMemoryEngine
 import com.example.domain.agent.AgentState
 import com.example.domain.agent.AgentStatus
 import com.example.domain.agent.LumiAgentGraph
@@ -16,7 +17,8 @@ import java.util.concurrent.ConcurrentHashMap
  * and holds execution until explicit user confirmation in the Android UI.
  */
 class HitlApprovalManager(
-    private val database: LumiDatabase,
+    private val agentStateRepository: AgentStateRepository,
+    private val semanticMemoryEngine: SemanticMemoryEngine,
     private val toolDispatcher: AgentToolDispatcher
 ) {
 
@@ -76,7 +78,7 @@ class HitlApprovalManager(
         val suspendedState = activeSuspendedStates.remove(stateId) ?: return null
         _pendingActions.value = _pendingActions.value.filter { it.stateId != stateId }
 
-        val stateMachine = LumiAgentGraph.create(database, toolDispatcher)
+        val stateMachine = LumiAgentGraph.create(agentStateRepository, semanticMemoryEngine, toolDispatcher)
         var finalState = suspendedState
 
         stateMachine.resumeFromHitl(suspendedState, approved).collect { state ->

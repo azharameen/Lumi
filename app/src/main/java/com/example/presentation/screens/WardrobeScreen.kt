@@ -7,6 +7,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.core.theme.*
@@ -176,12 +178,12 @@ fun WardrobeScreen(
         if (showRenameDialog) {
             AlertDialog(
                 onDismissRequest = { showRenameDialog = false },
-                title = { Text("Rename Companion", color = TextPrimary) },
+                title = { Text(stringResource(R.string.text_rename_companion), color = TextPrimary) },
                 text = {
                     OutlinedTextField(
                         value = petNameInput,
                         onValueChange = { petNameInput = it },
-                        label = { Text("Companion Name") },
+                        label = { Text(stringResource(R.string.text_companion_name)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -196,12 +198,12 @@ fun WardrobeScreen(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        Text("Save")
+                        Text(stringResource(R.string.text_save))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showRenameDialog = false }) {
-                        Text("Cancel", color = TextSecondary)
+                        Text(stringResource(R.string.text_cancel), color = TextSecondary)
                     }
                 },
                 containerColor = SurfaceDark

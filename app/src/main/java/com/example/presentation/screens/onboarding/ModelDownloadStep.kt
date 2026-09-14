@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,7 +89,7 @@ fun ModelDownloadStep(
             colors = ButtonDefaults.buttonColors(containerColor = LumiCyan),
             shape = RoundedCornerShape(MaterialTheme.spacing.medium)
         ) {
-            Text("Complete Setup & Start Lumi", fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.text_complete_setup_start_lumi), fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
         }
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraLarge))
     }

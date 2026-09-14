@@ -85,7 +85,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.domain.model.CalendarEvent
 import com.example.domain.model.Task
-import com.example.data.local.entity.WellnessLogEntity
+import com.example.domain.model.WellnessLog
 import com.example.core.theme.LumiCoral
 
 import com.example.core.theme.LumiGold
@@ -117,8 +117,8 @@ fun LifeHubScreen(
     uiState: com.example.presentation.viewmodel.LumiUiState,
     tasks: List<com.example.domain.model.Task>,
     events: List<com.example.domain.model.CalendarEvent>,
-    wellnessLogs: List<com.example.data.local.entity.WellnessLogEntity>,
-    memories: List<com.example.data.local.entity.PetMemoryEntity>,
+    wellnessLogs: List<com.example.domain.model.WellnessLog>,
+    memories: List<com.example.domain.model.PetMemory>,
     dailyBriefing: com.example.domain.briefing.DailyBriefing?,
     goalPlans: List<com.example.domain.model.GoalPlan>,
     getMilestonesForGoal: (Long) -> kotlinx.coroutines.flow.Flow<List<com.example.domain.model.GoalMilestone>>,

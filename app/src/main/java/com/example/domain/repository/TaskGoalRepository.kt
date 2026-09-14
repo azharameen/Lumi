@@ -4,7 +4,7 @@ import com.example.domain.model.CalendarEvent
 import com.example.domain.model.GoalMilestone
 import com.example.domain.model.GoalPlan
 import com.example.domain.model.Task
-import com.example.domain.planner.DecomposedGoalResult
+import com.example.domain.planner.PlannedMilestone
 import kotlinx.coroutines.flow.Flow
 
 interface TaskGoalRepository {
@@ -13,7 +13,9 @@ interface TaskGoalRepository {
     val allGoalPlans: Flow<List<GoalPlan>>
     
     fun getMilestonesForGoal(goalId: Long): Flow<List<GoalMilestone>>
-
+    suspend fun getMilestonesForGoalSync(goalId: Long): List<GoalMilestone>
+    suspend fun getMilestoneSync(milestoneId: Long): GoalMilestone?
+    
     suspend fun addTask(
         title: String,
         priority: String = "MEDIUM",
@@ -28,14 +30,14 @@ interface TaskGoalRepository {
     suspend fun addCalendarEvent(event: CalendarEvent): Long
     suspend fun deleteCalendarEvent(eventId: Long)
     
-    suspend fun decomposeGoal(
-        title: String, 
-        description: String, 
-        category: String, 
-        targetDate: String
-    ): DecomposedGoalResult
+    suspend fun insertGoalPlan(title: String, description: String, category: String, targetDate: String): Long
+    suspend fun insertMilestones(goalId: Long, milestones: List<PlannedMilestone>)
+    suspend fun updateMilestone(milestone: GoalMilestone)
+    suspend fun updateGoalMetrics(goalId: Long)
     
-    suspend fun executeMilestoneTool(milestoneId: Long, goalId: Long): String
-    suspend fun toggleMilestone(milestoneId: Long, goalId: Long, isCompleted: Boolean)
     suspend fun deleteGoal(goalId: Long)
+    
+    suspend fun getAllTasksSync(): List<Task>
+    suspend fun getAllEventsSync(): List<CalendarEvent>
+    suspend fun updateTask(task: Task)
 }

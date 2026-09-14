@@ -1,7 +1,8 @@
 package com.example.data.remote
 
 
-import com.example.data.local.LumiDatabase
+import com.example.domain.repository.AgentStateRepository
+import com.example.domain.memory.SemanticMemoryEngine
 import com.example.domain.agent.AgentState
 import com.example.domain.agent.AgentStatus
 import com.example.domain.agent.LumiAgentGraph
@@ -25,7 +26,8 @@ data class AgentExecutionResult(
  */
 class GeminiAgentEngine(
     private val toolDispatcher: AgentToolDispatcher,
-    private val database: LumiDatabase,
+    private val agentStateRepository: AgentStateRepository,
+    private val semanticMemoryEngine: SemanticMemoryEngine,
     private val hitlApprovalManager: HitlApprovalManager? = null,
     private val onDeviceGemmaEngine: OnDeviceGemmaEngine? = null
 ) {
@@ -48,7 +50,7 @@ class GeminiAgentEngine(
                 selectedModelId = selectedModelId
             )
 
-            val stateMachine = LumiAgentGraph.create(database, toolDispatcher, onDeviceGemmaEngine, onStreamToken)
+            val stateMachine = LumiAgentGraph.create(agentStateRepository, semanticMemoryEngine, toolDispatcher, onDeviceGemmaEngine, onStreamToken)
             var finalState = initialState
 
             // Execute the DAG state machine via Kotlin Flow

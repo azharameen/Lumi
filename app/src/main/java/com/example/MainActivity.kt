@@ -140,7 +140,7 @@ class MainActivity : ComponentActivity() {
                 "EVENING" -> com.example.domain.briefing.BriefingType.EVENING
                 else -> null
             }
-            lifeHubViewModel.refreshDailyBriefing(type, petViewModel.petStatus.value, petViewModel.petEvolution.value, wellnessViewModel.allWellnessLogs.value)
+            lifeHubViewModel.refreshDailyBriefing(type, petViewModel.petStatus.value, wellnessViewModel.allWellnessLogs.value)
         }
     }
 

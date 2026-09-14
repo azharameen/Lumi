@@ -1,7 +1,6 @@
 package com.example.domain.agent
 
-import com.example.data.local.dao.AgentCheckpointDao
-import com.example.data.local.entity.AgentCheckpointEntity
+import com.example.domain.repository.AgentStateRepository
 import com.example.domain.model.PetEmotion
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -14,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Supports both sequential and parallel node execution.
  */
 class AgentStateMachine(
-    private val checkpointDao: AgentCheckpointDao? = null,
+    private val agentStateRepository: AgentStateRepository? = null,
     private val hooks: List<com.example.domain.agent.hooks.AgentNodeHook> = listOf(
         com.example.domain.agent.hooks.TelemetryHook(),
         com.example.domain.agent.hooks.SensorContextHook(),
@@ -146,19 +145,9 @@ class AgentStateMachine(
 
     private suspend fun handleCheckpointing(state: AgentState) {
         if (state.status == AgentStatus.WAITING_FOR_HITL) {
-            checkpointDao?.saveCheckpoint(
-                AgentCheckpointEntity(
-                    stateId = state.id,
-                    userQuery = state.userQuery,
-                    currentNodeName = state.currentNodeName,
-                    status = state.status.name,
-                    pendingToolName = state.pendingToolName,
-                    pendingToolArgsJson = state.pendingToolArgs?.toString(),
-                    serializedStateJson = ""
-                )
-            )
+            agentStateRepository?.saveCheckpoint(state)
         } else {
-            checkpointDao?.deleteCheckpoint(state.id)
+            agentStateRepository?.deleteCheckpoint(state.id)
         }
     }
 

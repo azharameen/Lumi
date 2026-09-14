@@ -14,6 +14,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -118,7 +120,7 @@ fun ModelSelectionSheet(
                             )
                             Spacer(Modifier.width(12.dp))
                             Column {
-                                Text("No local models downloaded", color = TextSecondary, fontSize = 13.sp)
+                                Text(stringResource(R.string.text_no_local_models), color = TextSecondary, fontSize = 13.sp)
                                 Text(
                                     text = "Download a model in Account → LLM Hub",
                                     color = LumiGreen,

@@ -15,10 +15,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.core.theme.*
-import com.example.data.local.entity.PetMemoryEntity
+import com.example.domain.model.PetMemory
 import java.util.Locale
 
-fun LazyListScope.memoryVaultSection(memories: List<PetMemoryEntity>) {
+fun LazyListScope.memoryVaultSection(memories: List<PetMemory>) {
     item(key = "memory_header") {
         Text(
             text = stringResource(R.string.text_lumis_longterm_memory_vault),

@@ -82,10 +82,9 @@ class AutonomousBriefingEngine(private val context: Any) {
     suspend fun generateBriefing(
         type: BriefingType? = null,
         petStatus: PetStatus,
-        petEvolution: PetEvolutionEntity?,
         tasks: List<com.example.domain.model.Task>,
         events: List<com.example.domain.model.CalendarEvent>,
-        wellnessLogs: List<WellnessLogEntity>,
+        wellnessLogs: List<com.example.domain.model.WellnessLog>,
         locationCity: String? = null
     ): DailyBriefing = withContext(Dispatchers.IO) {
         val now = Calendar.getInstance()
@@ -111,8 +110,8 @@ class AutonomousBriefingEngine(private val context: Any) {
 
         val totalWaterGlasses = wellnessLogs.sumOf { it.hydrationCups }
         val petName = petStatus.name
-        val petLevel = petEvolution?.level ?: 1
-        val bondScore = petEvolution?.bondScore ?: 50
+        val petLevel = petStatus.level
+        val bondScore = petStatus.bondScore
 
         val rcConfig = remoteConfigManager?.config?.value
         val dynamicTip = rcConfig?.companionTipOfTheDay ?: "Take a mindful deep breath whenever you feel overwhelmed."

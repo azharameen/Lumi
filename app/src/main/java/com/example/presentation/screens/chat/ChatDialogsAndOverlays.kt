@@ -290,14 +290,14 @@ fun DeleteMessageConfirmDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Delete Message", color = TextPrimary, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.text_delete_message_title), color = TextPrimary, fontWeight = FontWeight.Bold)
         },
         text = {
-            Text("Are you sure you want to permanently delete this message?", color = TextSecondary)
+            Text(stringResource(R.string.text_delete_message_confirmation), color = TextSecondary)
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Delete", color = LumiPink, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.text_delete), color = LumiPink, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -353,7 +353,7 @@ fun ChatImagePreviewDialog(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.CameraAlt, contentDescription = null, tint = LumiCyan, modifier = Modifier.size(48.dp))
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text("Vision payload analyzed by Gemini", color = TextSecondary, fontSize = 12.sp)
+                            Text(stringResource(R.string.text_vision_payload_analyzed), color = TextSecondary, fontSize = 12.sp)
                         }
                     }
                 }

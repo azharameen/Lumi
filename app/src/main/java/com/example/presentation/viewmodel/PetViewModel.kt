@@ -1,15 +1,15 @@
 package com.example.presentation.viewmodel
 
 import android.app.Application
+import com.example.domain.service.DeviceSensorsService
+import com.example.domain.service.AnalyticsService
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.firebase.LumiAnalyticsManager
 import com.example.data.firebase.LumiCrashlyticsManager
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
 import com.example.domain.model.BloubShape
 import com.example.domain.model.BloubSkinColor
-import com.example.data.device.SensorsManager
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -17,8 +17,8 @@ import kotlinx.coroutines.launch
 import com.example.domain.repository.PetRepository
 class PetViewModel(
     val petRepository: PetRepository,
-    val sensorsManager: SensorsManager,
-    private val analytics: LumiAnalyticsManager? = null,
+    val sensorsManager: DeviceSensorsService,
+    private val analytics: AnalyticsService? = null,
     private val crashlytics: LumiCrashlyticsManager? = null
 ) : ViewModel() {
     val petStatus = petRepository.petStatus.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PetStatus())

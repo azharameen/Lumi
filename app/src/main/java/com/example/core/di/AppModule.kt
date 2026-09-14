@@ -36,6 +36,10 @@ import kotlinx.coroutines.SupervisorJob
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
+import com.example.domain.service.AnalyticsService
+import com.example.domain.service.DeviceSensorsService
+import com.example.data.firebase.LumiAnalyticsManager
+import com.example.data.device.SensorsManager
 
 val appModule = module {
     // Database instance
@@ -47,7 +51,7 @@ val appModule = module {
 
     // Firebase Enterprise Infrastructure
     single { LumiCrashlyticsManager() }
-    single { LumiAnalyticsManager(androidContext()) }
+    single<AnalyticsService> { LumiAnalyticsManager(androidContext()) }
     single { LumiPerformanceManager() }
     single { LumiRemoteConfigManager() }
     single { LumiAppCheckManager.getInstance() }
@@ -56,7 +60,7 @@ val appModule = module {
     single { HealthConnectManager(androidContext()) }
     single<UserProfileRepository> { UserProfileRepositoryImpl(androidContext()) }
     single { VoiceEngine(androidContext()) }
-    single { SensorsManager(androidContext()) }
+    single<DeviceSensorsService> { SensorsManager(androidContext()) }
     single { BatteryStatusManager(androidContext()) }
     single { ContextLocationEngine(androidContext()) }
     single { ClipboardAssistant(androidContext()) }
@@ -110,7 +114,7 @@ val appModule = module {
 
     // UseCases
     single { SendMessageUseCase(get()) }
-    single { PetInteractionUseCase(get()) }
+    single { PetInteractionUseCase(get(), get(), get()) }
     single { DecomposeGoalUseCase(get()) }
     single { com.example.domain.usecase.goal.ExecuteMilestoneUseCase(get()) }
     single { com.example.domain.usecase.goal.ToggleMilestoneUseCase(get()) }

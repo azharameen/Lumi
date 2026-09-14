@@ -35,7 +35,7 @@ import com.example.core.theme.*
 import com.example.core.utils.LumiHaptics
 import com.example.core.utils.rememberLumiHaptics
 import com.example.data.firebase.LumiRemoteConfigManager
-import com.example.data.local.entity.ChatMessageEntity
+import com.example.domain.model.ChatMessage
 import com.example.domain.agent.hitl.HitlPendingAction
 import com.example.domain.model.LumiRemoteConfig
 import com.example.domain.model.PetEmotion
@@ -50,11 +50,11 @@ fun ChatScreen(
     haptics: LumiHaptics = rememberLumiHaptics(),
     uiState: LumiUiState,
     petStatus: PetStatus,
-    chatMessages: LazyPagingItems<ChatMessageEntity>,
+    chatMessages: LazyPagingItems<ChatMessage>,
     pendingHitlActions: List<HitlPendingAction> = emptyList(),
     isListening: Boolean,
     isSpeaking: Boolean,
-    streamingMessage: ChatMessageEntity? = null,
+    streamingMessage: ChatMessage? = null,
     currentlySpeakingMessageId: Long? = null,
     onSendMessage: (String) -> Unit,
     onSetInputText: (String) -> Unit,

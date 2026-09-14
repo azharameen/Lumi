@@ -28,14 +28,17 @@ import java.util.Locale
 @Composable
 fun WellnessScreen(
     haptics: LumiHaptics = rememberLumiHaptics(),
-    viewModel: WellnessViewModel,
-    appViewModel: LumiViewModel,
+    logs: androidx.paging.compose.LazyPagingItems<com.example.domain.model.WellnessLog>,
+    memories: List<com.example.domain.model.PetMemory>,
+    isMemoryVaultUnlocked: Boolean,
+    vaultAuthError: String?,
+    onLogWellness: (Int, String, Int, Int, String) -> Unit,
+    onIncrementHydration: (Long) -> Unit,
+    onUnlockVault: () -> Unit,
+    onLockVault: () -> Unit,
     onNavigateToChat: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    val logs = viewModel.pagedWellnessLogs.collectAsLazyPagingItems()
-    val memories by viewModel.allMemories.collectAsStateWithLifecycle()
-    val uiState by appViewModel.uiState.collectAsStateWithLifecycle()
 
     var moodScore by remember { mutableFloatStateOf(8f) }
     var energyLevel by remember { mutableFloatStateOf(7f) }
@@ -80,13 +83,7 @@ fun WellnessScreen(
                         moodScore >= 4 -> "Neutral"
                         else -> "Needs Rejuvenation"
                     }
-                    viewModel.logWellness(
-                        moodScore = moodScore.toInt(),
-                        moodLabel = moodLabel,
-                        energyLevel = energyLevel.toInt(),
-                        hydrationCups = hydrationCups,
-                        gratitude = gratitudeText
-                    )
+                    onLogWellness(moodScore.toInt(), moodLabel, energyLevel.toInt(), hydrationCups, gratitudeText)
                     isSubmittedToday = true
                 },
                 haptics = haptics
@@ -96,11 +93,11 @@ fun WellnessScreen(
         // Biometric Secured Private Memory & Reflection Vault
         item {
             BiometricMemoryVaultCard(
-                isUnlocked = uiState.isMemoryVaultUnlocked,
-                vaultAuthError = uiState.vaultAuthError,
+                isUnlocked = isMemoryVaultUnlocked,
+                vaultAuthError = vaultAuthError,
                 memories = memories,
-                onUnlock = { appViewModel.unlockMemoryVault() },
-                onLock = { appViewModel.lockMemoryVault() }
+                onUnlock = { onUnlockVault() },
+                onLock = { onLockVault() }
             )
         }
 
@@ -133,7 +130,7 @@ fun WellnessScreen(
                     WellnessLogItemCard(
                         log = log,
                         dateFormat = dateFormat,
-                        onIncrementHydration = { viewModel.incrementHydration(it) }
+                        onIncrementHydration = { onIncrementHydration(it) }
                     )
                 }
             }

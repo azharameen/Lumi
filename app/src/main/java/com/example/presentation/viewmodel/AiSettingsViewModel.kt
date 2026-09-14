@@ -1,5 +1,7 @@
 package com.example.presentation.viewmodel
 
+import com.example.domain.service.DeviceSensorsService
+import com.example.domain.service.AnalyticsService
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.firebase.LumiRemoteConfigManager

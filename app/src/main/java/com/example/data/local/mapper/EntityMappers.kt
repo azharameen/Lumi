@@ -191,3 +191,47 @@ fun UserFact.toEntity(): FactKnowledgeEntity = FactKnowledgeEntity(
     objectValue = factValue,
     lastUpdatedMillis = createdAt
 )
+
+fun AiExecutionLogEntity.toDomain(): AiExecutionLog = AiExecutionLog(
+    id = id,
+    taskCategory = taskCategory,
+    engineType = engineType,
+    modelName = modelName,
+    promptPreview = promptPreview,
+    responsePreview = responsePreview,
+    promptTokens = promptTokens,
+    completionTokens = completionTokens,
+    totalTokens = totalTokens,
+    estimatedCostUsd = estimatedCostUsd,
+    startTimeMillis = startTimeMillis,
+    finishTimeMillis = finishTimeMillis,
+    durationMs = durationMs,
+    isSuccess = isSuccess,
+    errorMessage = errorMessage,
+    isOffline = isOffline,
+    hardwareTarget = hardwareTarget,
+    routingReason = routingReason,
+    fallbackTriggered = fallbackTriggered
+)
+
+fun AiExecutionLog.toEntity(): AiExecutionLogEntity = AiExecutionLogEntity(
+    id = id,
+    taskCategory = taskCategory,
+    engineType = engineType,
+    modelName = modelName,
+    promptPreview = promptPreview,
+    responsePreview = responsePreview,
+    promptTokens = promptTokens,
+    completionTokens = completionTokens,
+    totalTokens = totalTokens,
+    estimatedCostUsd = estimatedCostUsd,
+    startTimeMillis = startTimeMillis,
+    finishTimeMillis = finishTimeMillis,
+    durationMs = durationMs,
+    isSuccess = isSuccess,
+    errorMessage = errorMessage,
+    isOffline = isOffline,
+    hardwareTarget = hardwareTarget,
+    routingReason = routingReason,
+    fallbackTriggered = fallbackTriggered
+)

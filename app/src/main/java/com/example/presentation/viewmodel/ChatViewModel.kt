@@ -5,11 +5,11 @@ import android.app.Application
 import android.graphics.Bitmap
 import java.io.ByteArrayOutputStream
 import android.graphics.Bitmap.CompressFormat
+import com.example.domain.model.ChatMessage
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.firebase.LumiAnalyticsManager
+import com.example.domain.service.AnalyticsService
 import com.example.data.firebase.LumiPerformanceManager
-import com.example.data.local.entity.ChatMessageEntity
 import com.example.domain.repository.ChatRepository
 import com.example.domain.repository.PetRepository
 import com.example.data.device.VoiceEngine
@@ -29,7 +29,7 @@ class ChatViewModel(
     val chatRepository: ChatRepository, val petRepository: PetRepository,
     val voiceEngine: VoiceEngine,
     val userProfileManager: UserProfileRepository,
-    private val analytics: LumiAnalyticsManager? = null,
+    private val analytics: AnalyticsService? = null,
     private val performance: LumiPerformanceManager? = null,
     private val onDeviceGemmaEngine: com.example.data.remote.OnDeviceGemmaEngine? = null
 ) : ViewModel() {
@@ -37,11 +37,11 @@ class ChatViewModel(
 
     val pagedChatMessages = chatRepository.pagedChatMessages.cachedIn(viewModelScope)
 
-    val chatMessages: StateFlow<List<ChatMessageEntity>> = chatRepository.chatMessages.stateIn(
+    val chatMessages: StateFlow<List<com.example.domain.model.ChatMessage>> = chatRepository.chatMessages.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
 
-    val streamingAiMessage: StateFlow<ChatMessageEntity?> = chatRepository.streamingAiMessage.stateIn(
+    val streamingAiMessage: StateFlow<ChatMessage?> = chatRepository.streamingAiMessage.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), null
     )
 
@@ -49,7 +49,7 @@ class ChatViewModel(
     val quickPrompts: StateFlow<List<String>> = kotlinx.coroutines.flow.combine(
         chatRepository.chatMessages,
         chatRepository.streamingAiMessage
-    ) { messages: List<ChatMessageEntity>, streaming: ChatMessageEntity? ->
+    ) { messages: List<ChatMessage>, streaming: ChatMessage? ->
         if (streaming != null) messages + streaming else messages
     }.flatMapLatest { combinedMessages ->
         flow {

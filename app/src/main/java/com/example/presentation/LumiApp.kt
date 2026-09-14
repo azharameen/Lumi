@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import com.example.domain.model.ChatMessage
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -282,8 +283,14 @@ fun LumiApp(
                             onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                         )
                         NavDestination.Wellness.tabIndex -> WellnessScreen(
-                            viewModel = wellnessViewModel,
-                            appViewModel = viewModel,
+                            logs = wellnessViewModel.pagedWellnessLogs.collectAsLazyPagingItems(),
+                            memories = memories,
+                            isMemoryVaultUnlocked = uiState.isMemoryVaultUnlocked,
+                            vaultAuthError = uiState.vaultAuthError,
+                            onLogWellness = { mood, label, energy, hydration, grat -> wellnessViewModel.logWellness(mood, label, energy, hydration, grat) },
+                            onIncrementHydration = { id -> wellnessViewModel.incrementHydration(id) },
+                            onUnlockVault = { viewModel.unlockMemoryVault() },
+                            onLockVault = { viewModel.lockMemoryVault() },
                             onNavigateToChat = { viewModel.setSelectedTab(NavDestination.Assistant.tabIndex) },
                             onNavigateBack = { haptics.performTick(); viewModel.setSelectedTab(NavDestination.PetCompanion.tabIndex) }
                         )
@@ -297,7 +304,7 @@ fun LumiApp(
                             benchmarkStatus = benchmarkStatus ?: "",
                             tasks = tasks,
                             events = calendarEvents,
-                            messages = chatMessagesList.map { it.toDomain() },
+                            messages = chatMessagesList.map { it },
                             aiRoutingMode = aiRoutingMode,
                             onSetAiRoutingMode = { mode -> viewModel.setAiRoutingMode(mode) },
                             localModelCatalog = aiSettingsViewModel.localModelCatalog,
@@ -384,8 +391,15 @@ fun LumiApp(
 
                 if (uiState.showWardrobeScreen) {
                     WardrobeScreen(
-                        petViewModel = petViewModel,
-                        wellnessViewModel = wellnessViewModel,
+                        petStatus = petStatus,
+                        memories = memories,
+                        onPetTouched = { petViewModel.onPetTouched() },
+                        onPetPetted = { petViewModel.onPetPetted() },
+                        onRenamePet = { name -> petViewModel.updatePetName(name) },
+                        onEquipAccessory = { id -> petViewModel.equipAccessory(id) },
+                        onBuyAccessory = { acc, callback -> petViewModel.buyAccessory(acc, callback) },
+                        onSelectShape = { shape -> petViewModel.setBloubShape(shape) },
+                        onSelectSkin = { skin -> petViewModel.setBloubSkinColor(skin) },
                         onClose = { viewModel.setShowWardrobeScreen(false) }
                     )
                 }

@@ -2,7 +2,10 @@ package com.example.presentation.viewmodel
 
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat
+import com.example.domain.service.DeviceSensorsService
+import com.example.domain.service.AnalyticsService
 import androidx.lifecycle.ViewModel
+import com.example.domain.model.ChatMessage
 import androidx.lifecycle.viewModelScope
 import com.example.data.device.*
 import com.example.data.local.entity.*
@@ -46,7 +49,7 @@ class LumiViewModel(
     private val petInteractionUseCase: PetInteractionUseCase,
     val userProfileManager: UserProfileRepository,
     val voiceEngine: VoiceEngine,
-    val sensorsManager: SensorsManager,
+    val sensorsManager: DeviceSensorsService,
     val batteryManager: BatteryStatusManager,
     val locationEngine: ContextLocationEngine,
     val clipboardAssistant: ClipboardAssistant,

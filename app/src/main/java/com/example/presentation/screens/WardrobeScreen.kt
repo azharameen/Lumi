@@ -26,8 +26,15 @@ import java.util.Locale
 @Composable
 fun WardrobeScreen(
     onClose: () -> Unit = {},
-    petViewModel: PetViewModel,
-    wellnessViewModel: WellnessViewModel
+    petStatus: com.example.domain.model.PetStatus,
+    memories: List<com.example.domain.model.PetMemory>,
+    onPetTouched: () -> Unit,
+    onPetPetted: () -> Unit,
+    onRenamePet: (String) -> Unit,
+    onEquipAccessory: (String) -> Unit,
+    onBuyAccessory: (com.example.domain.model.PetAccessory, (Boolean) -> Unit) -> Unit,
+    onSelectShape: (com.example.domain.model.BloubShape) -> Unit,
+    onSelectSkin: (com.example.domain.model.BloubSkinColor) -> Unit
 ) {
     val remoteConfigManager = remember {
         try {
@@ -38,8 +45,6 @@ fun WardrobeScreen(
     }
     val remoteConfig = remoteConfigManager?.config?.collectAsStateWithLifecycle(initialValue = com.example.domain.model.LumiRemoteConfig())?.value
         ?: com.example.domain.model.LumiRemoteConfig()
-    val petStatus by petViewModel.petStatus.collectAsStateWithLifecycle()
-    val memories by wellnessViewModel.allMemories.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -93,8 +98,8 @@ fun WardrobeScreen(
                     PetShowcaseCard(
                         petStatus = petStatus,
                         evolutionStageTitle = evolutionStageTitle,
-                        onPetTouched = { petViewModel.onPetTouched() },
-                        onPetPetted = { petViewModel.onPetPetted() },
+                        onPetTouched = { onPetTouched() },
+                        onPetPetted = { onPetPetted() },
                         onRenameClick = { showRenameDialog = true }
                     )
                 }
@@ -113,12 +118,12 @@ fun WardrobeScreen(
                             remoteConfig = remoteConfig,
                             onEquipAccessory = { acc, isUnlocked, isEquipped ->
                                 if (isEquipped && !acc.id.equals("NONE", ignoreCase = true)) {
-                                    petViewModel.equipAccessory("NONE")
+                                    onEquipAccessory("NONE")
                                     scope.launch {
                                         snackbarHostState.showSnackbar("Unequipped ${acc.displayName}")
                                     }
                                 } else if (isUnlocked) {
-                                    petViewModel.equipAccessory(acc.id)
+                                    onEquipAccessory(acc.id)
                                     scope.launch {
                                         val msg = if (acc.id.equals("NONE", ignoreCase = true)) "Unequipped accessories" else "Equipped ${acc.displayName}!"
                                         snackbarHostState.showSnackbar(msg)
@@ -128,7 +133,7 @@ fun WardrobeScreen(
                                         snackbarHostState.showSnackbar("Purchases are currently disabled.")
                                     }
                                 } else {
-                                    petViewModel.buyAccessory(acc) { success ->
+                                    onBuyAccessory(acc) { success ->
                                         scope.launch {
                                             if (success) {
                                                 snackbarHostState.showSnackbar("Unlocked & equipped ${acc.displayName}!")
@@ -148,7 +153,7 @@ fun WardrobeScreen(
                     MorphingShapeSection(
                         currentShape = petStatus.bloubShape,
                         onSelectShape = { shape ->
-                            petViewModel.setBloubShape(shape)
+                            onSelectShape(shape)
                             scope.launch {
                                 snackbarHostState.showSnackbar("Morphed into ${shape.displayName}!")
                             }
@@ -161,7 +166,7 @@ fun WardrobeScreen(
                     ClayColorPaletteSection(
                         currentSkin = petStatus.bloubSkinColor,
                         onSelectSkin = { skin ->
-                            petViewModel.setBloubSkinColor(skin)
+                            onSelectSkin(skin)
                             scope.launch {
                                 snackbarHostState.showSnackbar("Applied ${skin.displayName} skin!")
                             }
@@ -192,7 +197,7 @@ fun WardrobeScreen(
                     Button(
                         onClick = {
                             if (petNameInput.isNotBlank()) {
-                                petViewModel.updatePetName(petNameInput.trim())
+                                onRenamePet(petNameInput.trim())
                             }
                             showRenameDialog = false
                         },

@@ -24,6 +24,9 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.MainActivity
 import com.example.R
@@ -229,11 +232,19 @@ class PetOverlayService : Service() {
             setViewTreeViewModelStoreOwner(lifecycleOwner)
 
             setContent {
+                val petStatus by petRepository.petStatus.collectAsStateWithLifecycle(initialValue = com.example.domain.model.PetStatus())
+                val messages by chatRepository.chatMessages.collectAsStateWithLifecycle(initialValue = emptyList())
+                val coroutineScope = rememberCoroutineScope()
                 MyApplicationTheme {
                     PetOverlayRoot(
                         context = this@PetOverlayService,
-                        petRepository = petRepository,
-                        chatRepository = chatRepository,
+                        petStatus = petStatus,
+                        messages = messages,
+                        onSetListening = { coroutineScope.launch { petRepository.setListening(it) } },
+                        onSendMessage = { coroutineScope.launch { chatRepository.sendMessage(it) } },
+                        onSetPetEmotion = { coroutineScope.launch { petRepository.setPetEmotion(it) } },
+                        onPetTheAnimal = { coroutineScope.launch { petRepository.petTheAnimal() } },
+                        onFeedPet = { coroutineScope.launch { petRepository.feedPet(it) } },
                         isDockedPeeking = isDockedPeeking,
                         windowY = windowLayoutParams.y,
                         onDragStart = { rawX, rawY ->

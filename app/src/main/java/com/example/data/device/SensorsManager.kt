@@ -13,27 +13,28 @@ import android.os.VibratorManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import com.example.domain.service.DeviceSensorsService
 import kotlin.math.sqrt
 
-class SensorsManager(private val context: Context) : SensorEventListener {
+class SensorsManager(private val context: Context) : SensorEventListener, DeviceSensorsService {
 
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
     private val lightSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_LIGHT)
     private val accelerometer = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
     private val _ambientLux = MutableStateFlow(250f) // Standard indoor light
-    val ambientLux: StateFlow<Float> = _ambientLux.asStateFlow()
+    override val ambientLux: StateFlow<Float> = _ambientLux.asStateFlow()
 
     private var onShakeListener: (() -> Unit)? = null
     private var lastShakeTime = 0L
 
-    fun startListening(onShake: (() -> Unit)? = null) {
+    override fun startListening(onShake: (() -> Unit)?) {
         this.onShakeListener = onShake
         lightSensor?.let { sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL) }
         accelerometer?.let { sensorManager?.registerListener(this, it, SensorManager.SENSOR_DELAY_UI) }
     }
 
-    fun stopListening() {
+    override fun stopListening() {
         sensorManager?.unregisterListener(this)
     }
 
@@ -61,15 +62,15 @@ class SensorsManager(private val context: Context) : SensorEventListener {
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
 
-    fun vibratePurr() {
+    override fun vibratePurr() {
         vibrate(longArrayOf(0, 30, 40, 20), intArrayOf(0, 70, 0, 40))
     }
 
-    fun vibrateTap() {
+    override fun vibrateTap() {
         vibrate(longArrayOf(0, 25), intArrayOf(0, 100))
     }
 
-    fun vibrateCelebration() {
+    override fun vibrateCelebration() {
         vibrate(longArrayOf(0, 50, 60, 50, 60, 100), intArrayOf(0, 120, 0, 160, 0, 220))
     }
 

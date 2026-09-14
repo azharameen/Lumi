@@ -95,3 +95,24 @@ data class UserFact(
     val createdAt: Long
 )
 
+data class AiExecutionLog(
+    val id: Long = 0,
+    val taskCategory: String,
+    val engineType: String,
+    val modelName: String,
+    val promptPreview: String,
+    val responsePreview: String,
+    val promptTokens: Int,
+    val completionTokens: Int,
+    val totalTokens: Int,
+    val estimatedCostUsd: Double,
+    val startTimeMillis: Long,
+    val finishTimeMillis: Long,
+    val durationMs: Long,
+    val isSuccess: Boolean = true,
+    val errorMessage: String? = null,
+    val isOffline: Boolean = false,
+    val hardwareTarget: String = "GPU (OpenCL/Vulkan)",
+    val routingReason: String = "",
+    val fallbackTriggered: Boolean = false
+)

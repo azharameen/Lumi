@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import com.google.firebase.analytics.FirebaseAnalytics
+import com.example.domain.service.AnalyticsService
 
 /**
  * Manages Firebase Analytics tracking for companion interactions,
@@ -11,7 +12,7 @@ import com.google.firebase.analytics.FirebaseAnalytics
  */
 class LumiAnalyticsManager(
     private val context: Context
-) {
+) : AnalyticsService {
 
     private val analytics: FirebaseAnalytics? by lazy {
         try {
@@ -44,7 +45,7 @@ class LumiAnalyticsManager(
     /**
      * Logs companion pet interactions (e.g. petting, feeding, sleeping, outfit changed).
      */
-    fun logPetInteraction(action: String, petMood: String, happinessLevel: Int) {
+    override fun logPetInteraction(action: String, petMood: String, happinessLevel: Int) {
         try {
             val bundle = Bundle().apply {
                 putString("action_type", action)
@@ -61,7 +62,7 @@ class LumiAnalyticsManager(
     /**
      * Logs companion evolution level up.
      */
-    fun logPetLevelUp(oldLevel: Int, newLevel: Int, formName: String) {
+    override fun logPetLevelUp(oldLevel: Int, newLevel: Int, formName: String) {
         try {
             val bundle = Bundle().apply {
                 putInt("old_level", oldLevel)
@@ -77,7 +78,7 @@ class LumiAnalyticsManager(
     /**
      * Logs ambient soundscape playback state changes.
      */
-    fun logSoundscapeSession(soundscapeTitle: String, isPlaying: Boolean) {
+    override fun logSoundscapeSession(soundscapeTitle: String, isPlaying: Boolean) {
         try {
             val bundle = Bundle().apply {
                 putString("soundscape_title", soundscapeTitle)
@@ -92,7 +93,7 @@ class LumiAnalyticsManager(
     /**
      * Logs Biometric Vault access / lock actions.
      */
-    fun logVaultAction(action: String, isSuccess: Boolean) {
+    override fun logVaultAction(action: String, isSuccess: Boolean) {
         try {
             val bundle = Bundle().apply {
                 putString("action_type", action)
@@ -107,7 +108,7 @@ class LumiAnalyticsManager(
     /**
      * Logs Remote Config manual or real-time sync results.
      */
-    fun logRemoteConfigSync(status: String) {
+    override fun logRemoteConfigSync(status: String) {
         try {
             val bundle = Bundle().apply {
                 putString("sync_status", status)
@@ -121,7 +122,7 @@ class LumiAnalyticsManager(
     /**
      * Logs completion of autonomous goals or tasks.
      */
-    fun logGoalMilestone(goalTitle: String, category: String, isCompleted: Boolean) {
+    override fun logGoalMilestone(goalTitle: String, category: String, isCompleted: Boolean) {
         try {
             val bundle = Bundle().apply {
                 putString("goal_title", goalTitle.take(50))
@@ -137,7 +138,7 @@ class LumiAnalyticsManager(
     /**
      * Logs wellness activities (e.g. breathing exercises, hydration, posture checks).
      */
-    fun logWellnessSession(exerciseType: String, durationSeconds: Int) {
+    override fun logWellnessSession(exerciseType: String, durationSeconds: Int) {
         try {
             val bundle = Bundle().apply {
                 putString("exercise_type", exerciseType)
@@ -152,7 +153,7 @@ class LumiAnalyticsManager(
     /**
      * Logs AI chat prompts and model interactions.
      */
-    fun logAiChatMessage(mode: String, messageLength: Int, modelUsed: String) {
+    override fun logAiChatMessage(mode: String, messageLength: Int, modelUsed: String) {
         try {
             val bundle = Bundle().apply {
                 putString("chat_mode", mode)
@@ -168,7 +169,7 @@ class LumiAnalyticsManager(
     /**
      * Logs user screen navigations.
      */
-    fun logScreenView(screenName: String, screenClass: String = "MainActivity") {
+    override fun logScreenView(screenName: String, screenClass: String) {
         try {
             val bundle = Bundle().apply {
                 putString(FirebaseAnalytics.Param.SCREEN_NAME, screenName)
@@ -183,7 +184,7 @@ class LumiAnalyticsManager(
     /**
      * Logs authentication events (Google Sign-In, Guest mode, Sign-out).
      */
-    fun logAuthEvent(method: String, isNewUser: Boolean) {
+    override fun logAuthEvent(method: String, isNewUser: Boolean) {
         try {
             val eventName = if (isNewUser) FirebaseAnalytics.Event.SIGN_UP else FirebaseAnalytics.Event.LOGIN
             val bundle = Bundle().apply {
@@ -198,7 +199,7 @@ class LumiAnalyticsManager(
     /**
      * Sets custom user properties (e.g. companion level, preferred AI persona).
      */
-    fun setUserProperty(name: String, value: String) {
+    override fun setUserProperty(name: String, value: String) {
         try {
             analytics?.setUserProperty(name, value)
         } catch (e: Exception) {

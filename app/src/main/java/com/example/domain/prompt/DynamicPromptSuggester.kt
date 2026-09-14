@@ -1,6 +1,6 @@
 package com.example.domain.prompt
 
-import com.example.data.local.entity.ChatMessageEntity
+import com.example.domain.model.ChatMessage
 import com.example.data.remote.FirebaseAiCloudEngine
 import com.example.data.remote.OnDeviceGemmaEngine
 import com.example.domain.tools.ToolCategory
@@ -18,7 +18,7 @@ object DynamicPromptSuggester {
      * Fast non-blocking starter prompts for initial render before LLM inference completes.
      */
     fun getInitialPrompts(
-        recentMessages: List<ChatMessageEntity> = emptyList(),
+        recentMessages: List<ChatMessage> = emptyList(),
         tipOfTheDay: String? = null
     ): List<String> {
         val prompts = mutableListOf<String>()
@@ -68,7 +68,7 @@ object DynamicPromptSuggester {
      * Zero keyword matching.
      */
     suspend fun getQuickPrompts(
-        recentMessages: List<ChatMessageEntity> = emptyList(),
+        recentMessages: List<ChatMessage> = emptyList(),
         onDeviceGemmaEngine: OnDeviceGemmaEngine? = null,
         tipOfTheDay: String? = null
     ): List<String> {
@@ -140,7 +140,7 @@ object DynamicPromptSuggester {
      * Dynamically generates categorized prompt templates by querying registered tools,
      * current context, and contextual domains in Lumi.
      */
-    fun getTemplateCategories(recentMessages: List<ChatMessageEntity> = emptyList()): List<Pair<String, List<String>>> {
+    fun getTemplateCategories(recentMessages: List<ChatMessage> = emptyList()): List<Pair<String, List<String>>> {
         val categories = mutableListOf<Pair<String, List<String>>>()
 
         // 0. Suspended Topic Resumption

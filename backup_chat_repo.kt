@@ -3,7 +3,6 @@ package com.example.data.repository
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
-import androidx.paging.map
 import com.example.data.local.LumiDatabase
 import com.example.data.local.entity.AiExecutionLogEntity
 import com.example.data.local.entity.ChatMessageEntity
@@ -11,16 +10,12 @@ import com.example.data.remote.AiRoutingMode
 import com.example.data.remote.HybridAiEngine
 import com.example.domain.agent.hitl.HitlPendingAction
 import com.example.domain.model.PetEmotion
-import com.example.domain.model.ChatMessage
-import com.example.domain.model.AiExecutionLog
-import com.example.data.local.mapper.toDomain
 import com.example.domain.repository.ChatRepository
 import com.example.domain.repository.PetRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 class ChatRepositoryImpl(
@@ -32,23 +27,23 @@ class ChatRepositoryImpl(
     private val _agentThoughts = MutableStateFlow<String?>(null)
     override val agentThoughts: Flow<String?> = _agentThoughts.asStateFlow()
 
-    private val _streamingAiMessage = MutableStateFlow<ChatMessage?>(null)
-    override val streamingAiMessage: Flow<ChatMessage?> = _streamingAiMessage.asStateFlow()
+    private val _streamingAiMessage = MutableStateFlow<ChatMessageEntity?>(null)
+    override val streamingAiMessage: Flow<ChatMessageEntity?> = _streamingAiMessage.asStateFlow()
 
-    override val chatMessages: Flow<List<ChatMessage>> = database.chatMessageDao().getAllMessages().map { list -> list.map { it.toDomain() } }
+    override val chatMessages: Flow<List<ChatMessageEntity>> = database.chatMessageDao().getAllMessages()
 
-    override val pagedChatMessages: Flow<PagingData<ChatMessage>> = Pager(
+    override val pagedChatMessages: Flow<PagingData<ChatMessageEntity>> = Pager(
         config = PagingConfig(pageSize = 20, enablePlaceholders = false),
         pagingSourceFactory = { database.chatMessageDao().getPagedMessages() }
-    ).flow.map { pagingData -> pagingData.map { it.toDomain() } }
+    ).flow
 
-    override val aiExecutionLogs: Flow<List<AiExecutionLog>> = database.aiExecutionLogDao().getAllLogs().map { list -> list.map { it.toDomain() } }
+    override val aiExecutionLogs: Flow<List<AiExecutionLogEntity>> = database.aiExecutionLogDao().getAllLogs()
     
     override val aiRoutingMode: Flow<AiRoutingMode> = hybridAiEngine.routingMode
 
     override val pendingHitlActions: Flow<List<HitlPendingAction>> = hybridAiEngine.hitlApprovalManager.pendingActions
 
-    override suspend fun sendMessage(userText: String, image: ByteArray?, modelId: String?): ChatMessage = withContext(Dispatchers.IO) {
+    override suspend fun sendMessage(userText: String, image: ByteArray?, modelId: String?): ChatMessageEntity = withContext(Dispatchers.IO) {
         // Fetch prior history BEFORE inserting current user message to avoid duplicate turns
         val previousEntities = database.chatMessageDao().getRecentMessagesDirect()
         val historyTurns = previousEntities.reversed().map { it.sender to it.content }
@@ -66,7 +61,7 @@ class ChatRepositoryImpl(
         petRepository.setSpeechBubbleText("Thinking...")
 
         // Stage initial thinking streaming message placeholder
-        _streamingAiMessage.value = ChatMessage(timestamp = System.currentTimeMillis(), 
+        _streamingAiMessage.value = ChatMessageEntity(
             id = -999L,
             sender = "LUMI",
             content = "",
@@ -81,7 +76,7 @@ class ChatRepositoryImpl(
                 selectedModelId = modelId,
                 onThought = { thought -> _agentThoughts.value = thought },
                 onStreamToken = { tokenChunk ->
-                    _streamingAiMessage.value = ChatMessage(timestamp = System.currentTimeMillis(), 
+                    _streamingAiMessage.value = ChatMessageEntity(
                         id = -999L,
                         sender = "LUMI",
                         content = tokenChunk,
@@ -134,7 +129,7 @@ class ChatRepositoryImpl(
         database.chatMessageDao().insertMessage(aiEntity)
         _streamingAiMessage.value = null
 
-        aiEntity.toDomain()
+        aiEntity
     }
 
     override fun setAiRoutingMode(mode: AiRoutingMode) {

@@ -1,9 +1,10 @@
 package com.example.presentation.viewmodel
 
 import android.app.Application
+import com.example.domain.service.DeviceSensorsService
+import com.example.domain.service.AnalyticsService
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.firebase.LumiAnalyticsManager
 import com.example.domain.model.PetMemory
 import com.example.domain.model.WellnessLog
 
@@ -20,7 +21,7 @@ class WellnessViewModel(
     val wellnessRepository: WellnessRepository,
     val memoryRepository: PetMemoryRepository,
     val biometricVault: BiometricVaultManager,
-    private val analytics: LumiAnalyticsManager? = null
+    private val analytics: AnalyticsService? = null
 ) : ViewModel() {
 
     val pagedWellnessLogs = wellnessRepository.pagedWellnessLogs.cachedIn(viewModelScope)

@@ -1,9 +1,10 @@
 package com.example.presentation.viewmodel
 
 import android.app.Application
+import com.example.domain.service.DeviceSensorsService
+import com.example.domain.service.AnalyticsService
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.firebase.LumiAnalyticsManager
 import com.example.data.firebase.LumiRemoteConfigManager
 import com.example.domain.model.LumiRemoteConfig
 import com.example.data.local.entity.*
@@ -22,7 +23,6 @@ import com.example.domain.briefing.*
 import com.example.domain.model.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import androidx.lifecycle.viewModelScope
 
 class LifeHubViewModel(
     val taskGoalRepository: TaskGoalRepository,
@@ -30,10 +30,10 @@ class LifeHubViewModel(
     val executeMilestoneUseCase: ExecuteMilestoneUseCase,
     val toggleMilestoneUseCase: ToggleMilestoneUseCase,
     val deviceStateRepository: DeviceStateRepository,
-    val sensorsManager: SensorsManager,
+    val sensorsManager: DeviceSensorsService,
     val briefingEngine: AutonomousBriefingEngine,
     val remoteConfigManager: LumiRemoteConfigManager? = null,
-    val analytics: LumiAnalyticsManager? = null
+    val analytics: AnalyticsService? = null
 ) : ViewModel() {
     val allTasks: StateFlow<List<com.example.domain.model.Task>> = taskGoalRepository.allTasks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val allCalendarEvents: StateFlow<List<com.example.domain.model.CalendarEvent>> = taskGoalRepository.allCalendarEvents.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

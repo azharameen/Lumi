@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.core.theme.*
 import com.example.core.utils.LumiHaptics
-import com.example.data.local.entity.ChatMessageEntity
+import com.example.domain.model.ChatMessage
 import com.example.presentation.components.MarkdownText
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -51,7 +51,7 @@ import java.util.Locale
 
 @Composable
 fun ChatMessageBubble(
-    message: ChatMessageEntity,
+    message: ChatMessage,
     onCopyMessage: (String) -> Unit,
     onSpeakMessage: (String) -> Unit,
     onDeleteMessage: (Long) -> Unit,

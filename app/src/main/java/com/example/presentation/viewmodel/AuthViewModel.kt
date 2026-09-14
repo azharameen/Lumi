@@ -3,8 +3,8 @@ package com.example.presentation.viewmodel
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.firebase.LumiAnalyticsManager
 import com.example.data.firebase.LumiCrashlyticsManager
+import com.example.domain.service.AnalyticsService
 import com.example.data.repository.AuthCancellationException
 import com.example.domain.account.UserProfileRepository
 import com.example.domain.model.AuthUser
@@ -29,7 +29,7 @@ class AuthViewModel(
     private val authRepository: AuthRepository,
     private val userProfileManager: UserProfileRepository,
     private val crashlytics: LumiCrashlyticsManager? = null,
-    private val analytics: LumiAnalyticsManager? = null
+    private val analytics: AnalyticsService? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AuthUiState())

@@ -21,12 +21,12 @@ class TimerTool(private val context: Context) : LumiTool {
     override val category = ToolCategory.UTILITY
     override val riskLevel = ToolRiskLevel.LOW
     override val parameters = listOf(
-        ToolParameter("seconds", "number", "Duration in seconds", required = true),
+        ToolParameter("seconds", "number", "Duration in seconds (default 60)", required = false),
         ToolParameter("label", "string", "Timer label", required = false)
     )
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
-        val seconds = params["seconds"].toString().toDoubleOrNull()?.toInt() ?: 10
+        val seconds = params["seconds"]?.toString()?.toDoubleOrNull()?.toInt() ?: 60
         val label = params["label"]?.toString() ?: "Timer"
         return try {
             val intent = Intent(AlarmClock.ACTION_SET_TIMER).apply {
@@ -50,15 +50,15 @@ class SetAlarmClockTool(private val context: Context) : LumiTool {
     override val category = ToolCategory.CALENDAR
     override val riskLevel = ToolRiskLevel.MEDIUM
     override val parameters = listOf(
-        ToolParameter("hour", "number", "Hour of day (0-23)", required = true),
-        ToolParameter("minute", "number", "Minute of hour (0-59)", required = true),
+        ToolParameter("hour", "number", "Hour of day (0-23)", required = false),
+        ToolParameter("minute", "number", "Minute of hour (0-59)", required = false),
         ToolParameter("label", "string", "Alarm title", required = false)
     )
 
     override suspend fun execute(params: Map<String, Any?>): ToolExecutionResult {
         return try {
-            val hour = params["hour"].toString().toDoubleOrNull()?.toInt()?.coerceIn(0, 23) ?: 8
-            val minute = params["minute"].toString().toDoubleOrNull()?.toInt()?.coerceIn(0, 59) ?: 0
+            val hour = params["hour"]?.toString()?.toDoubleOrNull()?.toInt()?.coerceIn(0, 23) ?: 8
+            val minute = params["minute"]?.toString()?.toDoubleOrNull()?.toInt()?.coerceIn(0, 59) ?: 0
             val label = params["label"]?.toString() ?: "Lumi Alarm"
 
             val intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {

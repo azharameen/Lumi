@@ -46,7 +46,7 @@ class HybridAiEngine(
     private val modelSelectionEngine: ModelSelectionEngine? = null
 ) {
     val hitlApprovalManager = HitlApprovalManager(agentStateRepository, semanticMemoryEngine, toolDispatcher)
-    private val geminiEngine = GeminiAgentEngine(toolDispatcher, agentStateRepository, semanticMemoryEngine, hitlApprovalManager, onDeviceGemmaEngine)
+    private val geminiEngine = GeminiAgentEngine(toolDispatcher, agentStateRepository, semanticMemoryEngine, hitlApprovalManager, onDeviceGemmaEngine, toolRetriever)
     val downloadManager = context?.let { ModelDownloadManager.getInstance(it) }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -118,7 +118,8 @@ class HybridAiEngine(
         imageAttachment: ByteArray? = null,
         selectedModelId: String? = null,
         onThought: (String?) -> Unit = {},
-        onStreamToken: suspend (String) -> Unit = {}
+        onStreamToken: suspend (String) -> Unit = {},
+        onAgentStreamEvent: (suspend (com.example.domain.agent.AgentStreamEvent) -> Unit)? = null
     ): EngineTurnResult = withContext(Dispatchers.IO) {
         val startTime = System.currentTimeMillis()
         val currentRoutingMode = _routingMode.value
@@ -158,7 +159,8 @@ class HybridAiEngine(
                         imageAttachment = imageAttachment,
                         selectedModelId = decision.selectedModelId,
                         onThought = onThought,
-                        onStreamToken = onStreamToken
+                        onStreamToken = onStreamToken,
+                        onAgentStreamEvent = onAgentStreamEvent
                     )
                     EngineTurnResult(
                         responseText = graphResult.responseText,
@@ -186,7 +188,15 @@ class HybridAiEngine(
                             usedEngine = "ON_DEVICE_GEMMA_ERROR"
                         )
                     } else {
-                        val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment, decision.selectedModelId, onThought, onStreamToken)
+                        val cloudResult = geminiEngine.executeUserTurn(
+                            userMessage = userMessage,
+                            recentHistory = recentHistory,
+                            imageAttachment = imageAttachment,
+                            selectedModelId = decision.selectedModelId,
+                            onThought = onThought,
+                            onStreamToken = onStreamToken,
+                            onAgentStreamEvent = onAgentStreamEvent
+                        )
                         EngineTurnResult(
                             responseText = cloudResult.responseText,
                             inferredEmotion = cloudResult.inferredEmotion,
@@ -198,7 +208,15 @@ class HybridAiEngine(
                 }
             }
         } else {
-            val cloudResult = geminiEngine.executeUserTurn(userMessage, recentHistory, imageAttachment, decision.selectedModelId, onThought, onStreamToken)
+            val cloudResult = geminiEngine.executeUserTurn(
+                userMessage = userMessage,
+                recentHistory = recentHistory,
+                imageAttachment = imageAttachment,
+                selectedModelId = decision.selectedModelId,
+                onThought = onThought,
+                onStreamToken = onStreamToken,
+                onAgentStreamEvent = onAgentStreamEvent
+            )
             EngineTurnResult(
                 responseText = cloudResult.responseText,
                 inferredEmotion = cloudResult.inferredEmotion,

@@ -527,6 +527,24 @@ class PetOverlayService : Service() {
         }
     }
 
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        when (level) {
+            android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL,
+            android.content.ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> {
+                Log.w(TAG, "Critical memory trim ($level) received. Tucking overlay to edge.")
+                // Dock overlay to reduce composable render weight and cancel roaming
+                roamJob?.cancel()
+                roamJob = null
+                smoothGlideToEdgeAndPeek()
+            }
+            android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN -> {
+                roamJob?.cancel()
+            }
+            else -> {}
+        }
+    }
+
     override fun onDestroy() {
         cancelAutoHideTimer()
         glideAnimator?.cancel()

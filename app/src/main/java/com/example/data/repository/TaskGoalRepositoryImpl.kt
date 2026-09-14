@@ -118,6 +118,9 @@ class TaskGoalRepositoryImpl(
 
     override suspend fun updateMilestone(milestone: GoalMilestone) = withContext(Dispatchers.IO) {
         database.goalPlanDao().updateMilestone(milestone.toEntity())
+        if (milestone.isCompleted) {
+            petRepository.earnCoinsAndExp(coins = 40, exp = 35, reason = "Completing Milestone: ${milestone.stepTitle}")
+        }
     }
 
     override suspend fun updateGoalMetrics(goalId: Long) = withContext(Dispatchers.IO) {

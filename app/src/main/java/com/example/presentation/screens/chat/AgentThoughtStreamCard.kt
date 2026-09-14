@@ -39,7 +39,9 @@ import com.example.core.theme.*
 @Composable
 fun AgentThoughtStreamCard(
     thoughtText: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    executingTool: String? = null,
+    completedTools: List<String> = emptyList()
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -212,14 +214,49 @@ fun AgentThoughtStreamCard(
                         border = BorderStroke(0.5.dp, SurfaceHighlight.copy(alpha = 0.4f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = thoughtText,
-                            color = LumiCyan,
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace,
-                            lineHeight = 16.sp,
-                            modifier = Modifier.padding(10.dp)
-                        )
+                        Column(modifier = Modifier.padding(10.dp)) {
+                            Text(
+                                text = thoughtText,
+                                color = LumiCyan,
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace,
+                                lineHeight = 16.sp
+                            )
+                            if (!executingTool.isNullOrBlank()) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Surface(
+                                    color = LumiCyan.copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = "⚡ Running $executingTool...",
+                                        color = LumiCyan,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            if (completedTools.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    completedTools.takeLast(3).forEach { tool ->
+                                        Surface(
+                                            color = LumiGreen.copy(alpha = 0.15f),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                text = "✓ $tool",
+                                                color = LumiGreen,
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

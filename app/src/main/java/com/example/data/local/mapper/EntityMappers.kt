@@ -164,7 +164,8 @@ fun PetMemoryEntity.toDomain(): PetMemory = PetMemory(
     memoryText = memoryText,
     sentiment = sentiment,
     emotionalImpact = emotionalImpact,
-    isPinned = isPinned
+    isPinned = isPinned,
+    embeddingBlob = embeddingBlob
 )
 
 fun PetMemory.toEntity(): PetMemoryEntity = PetMemoryEntity(
@@ -174,22 +175,26 @@ fun PetMemory.toEntity(): PetMemoryEntity = PetMemoryEntity(
     memoryText = memoryText,
     sentiment = sentiment,
     emotionalImpact = emotionalImpact,
-    isPinned = isPinned
+    isPinned = isPinned,
+    embeddingBlob = embeddingBlob
 )
 
 fun FactKnowledgeEntity.toDomain(): UserFact = UserFact(
     id = id.toString(),
     factKey = predicate,
     factValue = objectValue,
-    isPinned = false,
-    createdAt = lastUpdatedMillis
+    isPinned = isPinned,
+    createdAt = lastUpdatedMillis,
+    embeddingBlob = embeddingBlob
 )
 
 fun UserFact.toEntity(): FactKnowledgeEntity = FactKnowledgeEntity(
     id = id.toLongOrNull() ?: 0L,
     predicate = factKey,
     objectValue = factValue,
-    lastUpdatedMillis = createdAt
+    isPinned = isPinned,
+    lastUpdatedMillis = createdAt,
+    embeddingBlob = embeddingBlob
 )
 
 fun AiExecutionLogEntity.toDomain(): AiExecutionLog = AiExecutionLog(

@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
@@ -31,6 +32,9 @@ class ChatRepositoryImpl(
 
     private val _agentThoughts = MutableStateFlow<String?>(null)
     override val agentThoughts: Flow<String?> = _agentThoughts.asStateFlow()
+
+    private val _agentStreamEvents = kotlinx.coroutines.flow.MutableSharedFlow<com.example.domain.agent.AgentStreamEvent>(replay = 10)
+    override val agentStreamEvents: kotlinx.coroutines.flow.SharedFlow<com.example.domain.agent.AgentStreamEvent> = _agentStreamEvents.asSharedFlow()
 
     private val _streamingAiMessage = MutableStateFlow<ChatMessage?>(null)
     override val streamingAiMessage: Flow<ChatMessage?> = _streamingAiMessage.asStateFlow()
@@ -79,7 +83,12 @@ class ChatRepositoryImpl(
                 recentHistory = historyTurns,
                 imageAttachment = image,
                 selectedModelId = modelId,
-                onThought = { thought -> _agentThoughts.value = thought },
+                onThought = { thought -> 
+                    _agentThoughts.value = thought 
+                    if (thought != null) {
+                        _agentStreamEvents.tryEmit(com.example.domain.agent.AgentStreamEvent.ThoughtToken(thought))
+                    }
+                },
                 onStreamToken = { tokenChunk ->
                     _streamingAiMessage.value = ChatMessage(timestamp = System.currentTimeMillis(), 
                         id = -999L,
@@ -87,9 +96,28 @@ class ChatRepositoryImpl(
                         content = tokenChunk,
                         petEmotion = PetEmotion.HAPPY.name
                     )
+                    _agentStreamEvents.tryEmit(com.example.domain.agent.AgentStreamEvent.ResponseChunk(tokenChunk))
                     if (tokenChunk.isNotBlank()) {
                         petRepository.setThinking(false)
                         petRepository.setSpeaking(true)
+                    }
+                },
+                onAgentStreamEvent = { event ->
+                    _agentStreamEvents.emit(event)
+                    when (event) {
+                        is com.example.domain.agent.AgentStreamEvent.ToolExecuting -> {
+                            petRepository.setThinking(true)
+                            petRepository.setSpeechBubbleText("Using ${event.toolName}...")
+                        }
+                        is com.example.domain.agent.AgentStreamEvent.ToolCompleted -> {
+                            petRepository.setSpeechBubbleText("✓ ${event.toolName}")
+                        }
+                        is com.example.domain.agent.AgentStreamEvent.StatusChanged -> {
+                            if (event.status == com.example.domain.agent.AgentStatus.RUNNING) {
+                                petRepository.setThinking(true)
+                            }
+                        }
+                        else -> {}
                     }
                 }
             )

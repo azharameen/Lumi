@@ -16,7 +16,9 @@ object LumiAgentGraph {
         semanticMemoryEngine: SemanticMemoryEngine,
         toolDispatcher: AgentToolDispatcher,
         onDeviceGemmaEngine: OnDeviceGemmaEngine? = null,
-        onStreamToken: (suspend (String) -> Unit)? = null
+        onStreamToken: (suspend (String) -> Unit)? = null,
+        toolRetriever: com.example.domain.tools.ToolRetriever? = null,
+        onAgentStreamEvent: (suspend (AgentStreamEvent) -> Unit)? = null
     ): AgentStateMachine {
         val stateMachine = AgentStateMachine(agentStateRepository)
 
@@ -26,8 +28,8 @@ object LumiAgentGraph {
             .registerNode(IntentRoutingNode(onDeviceGemmaEngine))
             .registerNode(MemoryRetrievalNode(semanticMemoryEngine))
             .registerNode(PlanningNode(onDeviceGemmaEngine))
-            .registerNode(ReasoningNode(onDeviceGemmaEngine, onStreamToken))
-            .registerNode(ToolExecutionNode(toolDispatcher))
+            .registerNode(ReasoningNode(onDeviceGemmaEngine, onStreamToken, toolRetriever))
+            .registerNode(ToolExecutionNode(toolDispatcher, onAgentStreamEvent))
             .registerNode(ReflexionNode())
             .registerNode(FinalSynthesisNode())
 
@@ -37,7 +39,7 @@ object LumiAgentGraph {
             .addEdge("MEMORY_RETRIEVAL") { "PLANNING" }
             .addEdge("PLANNING") { "REASONING" }
             .addEdge("REASONING") { state ->
-                if (state.pendingToolName != null) {
+                if (state.pendingToolName != null || state.pendingToolCalls.isNotEmpty()) {
                     "TOOL_EXECUTION"
                 } else {
                     "FINAL_SYNTHESIS"

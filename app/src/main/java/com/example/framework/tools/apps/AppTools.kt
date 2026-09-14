@@ -30,8 +30,12 @@ class OpenInstalledAppTool(private val context: Context) : LumiTool {
         return try {
             val targetName = params["appName"]?.toString()?.lowercase(java.util.Locale.ROOT) ?: ""
             val pm = context.packageManager
-            @Suppress("DEPRECATION")
-            val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+            val packages = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                pm.getInstalledApplications(PackageManager.ApplicationInfoFlags.of(0L))
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getInstalledApplications(0)
+            }
             
             val matchedApp = packages.find { app ->
                 val label = pm.getApplicationLabel(app).toString().lowercase(java.util.Locale.ROOT)
@@ -41,7 +45,8 @@ class OpenInstalledAppTool(private val context: Context) : LumiTool {
             if (matchedApp != null) {
                 val launchIntent = pm.getLaunchIntentForPackage(matchedApp.packageName)
                 if (launchIntent != null) {
-                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                    launchIntent.setPackage(matchedApp.packageName)
                     context.startActivity(launchIntent)
                     val appLabel = pm.getApplicationLabel(matchedApp)
                     ToolExecutionResult(true, "Launched $appLabel (${matchedApp.packageName})")
@@ -51,6 +56,10 @@ class OpenInstalledAppTool(private val context: Context) : LumiTool {
             } else {
                 ToolExecutionResult(false, "No app matching '$targetName' found on device")
             }
+        } catch (e: android.content.ActivityNotFoundException) {
+            ToolExecutionResult(false, "No activity found to launch application: ${e.localizedMessage}")
+        } catch (e: SecurityException) {
+            ToolExecutionResult(false, "Security restriction prevented launching app: ${e.localizedMessage}")
         } catch (e: Exception) {
             ToolExecutionResult(false, "App launch error: ${e.localizedMessage}")
         }

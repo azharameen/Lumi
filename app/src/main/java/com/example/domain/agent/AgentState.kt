@@ -44,6 +44,7 @@ data class AgentState(
     // Tools & Retries
     val pendingToolName: String? = null,
     val pendingToolArgs: Map<String, Any?>? = null,
+    val pendingToolCalls: List<PendingToolCall> = emptyList(),
     val hitlRequired: Boolean = false,
     val executedToolReports: List<ToolExecutionReport> = emptyList(),
     val retryCount: Int = 0,
@@ -55,4 +56,10 @@ data class AgentState(
     // Final output
     val finalResponseText: String? = null,
     val inferredEmotion: PetEmotion = PetEmotion.HAPPY
+)
+
+data class PendingToolCall(
+    val id: String = java.util.UUID.randomUUID().toString(),
+    val toolName: String,
+    val args: Map<String, Any?> = emptyMap()
 )

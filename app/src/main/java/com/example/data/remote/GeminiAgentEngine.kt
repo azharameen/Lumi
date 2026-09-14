@@ -29,7 +29,8 @@ class GeminiAgentEngine(
     private val agentStateRepository: AgentStateRepository,
     private val semanticMemoryEngine: SemanticMemoryEngine,
     private val hitlApprovalManager: HitlApprovalManager? = null,
-    private val onDeviceGemmaEngine: OnDeviceGemmaEngine? = null
+    private val onDeviceGemmaEngine: OnDeviceGemmaEngine? = null,
+    private val toolRetriever: com.example.domain.tools.ToolRetriever? = null
 ) {
     private val firebaseAiEngine = FirebaseAiCloudEngine.getInstance()
 
@@ -39,7 +40,8 @@ class GeminiAgentEngine(
         imageAttachment: ByteArray? = null,
         selectedModelId: String? = null,
         onThought: (String?) -> Unit = {},
-        onStreamToken: suspend (String) -> Unit = {}
+        onStreamToken: suspend (String) -> Unit = {},
+        onAgentStreamEvent: (suspend (com.example.domain.agent.AgentStreamEvent) -> Unit)? = null
     ): AgentExecutionResult = withContext(Dispatchers.IO) {
         val cloudModel = if (selectedModelId?.startsWith("gemini") == true) selectedModelId else null
         try {
@@ -50,13 +52,30 @@ class GeminiAgentEngine(
                 selectedModelId = selectedModelId
             )
 
-            val stateMachine = LumiAgentGraph.create(agentStateRepository, semanticMemoryEngine, toolDispatcher, onDeviceGemmaEngine, onStreamToken)
+            val wrappedStreamToken: suspend (String) -> Unit = { token ->
+                onStreamToken(token)
+                onAgentStreamEvent?.invoke(com.example.domain.agent.AgentStreamEvent.ResponseChunk(token))
+            }
+
+            val stateMachine = LumiAgentGraph.create(
+                agentStateRepository = agentStateRepository,
+                semanticMemoryEngine = semanticMemoryEngine,
+                toolDispatcher = toolDispatcher,
+                onDeviceGemmaEngine = onDeviceGemmaEngine,
+                onStreamToken = wrappedStreamToken,
+                toolRetriever = toolRetriever,
+                onAgentStreamEvent = onAgentStreamEvent
+            )
             var finalState = initialState
 
             // Execute the DAG state machine via Kotlin Flow
             stateMachine.run(initialState).collect { state ->
                 finalState = state
                 onThought(state.currentThought)
+                state.currentThought?.let { t ->
+                    onAgentStreamEvent?.invoke(com.example.domain.agent.AgentStreamEvent.ThoughtToken(t))
+                }
+                onAgentStreamEvent?.invoke(com.example.domain.agent.AgentStreamEvent.StatusChanged(state.status))
             }
 
             if (finalState.status == AgentStatus.WAITING_FOR_HITL) {

@@ -50,13 +50,16 @@ class ChatViewModel(
         chatRepository.chatMessages,
         chatRepository.streamingAiMessage
     ) { messages: List<ChatMessage>, streaming: ChatMessage? ->
-        if (streaming != null) messages + streaming else messages
-    }.flatMapLatest { combinedMessages ->
+        Pair(messages, streaming)
+    }.flatMapLatest { (messages, streaming) ->
         flow {
-            emit(DynamicPromptSuggester.getInitialPrompts(combinedMessages))
-            if (combinedMessages.isNotEmpty()) {
+            val allMessages = if (streaming != null) messages + streaming else messages
+            emit(DynamicPromptSuggester.getInitialPrompts(allMessages))
+            // Only run heavy on-device follow-up suggestion inference when AI has finished replying (streaming == null)
+            // and the last message is from the companion. Completely avoids contention with active user reasoning turns.
+            if (streaming == null && allMessages.isNotEmpty() && allMessages.lastOrNull()?.sender != "user") {
                 val aiSuggestions = DynamicPromptSuggester.getQuickPrompts(
-                    recentMessages = combinedMessages.takeLast(4),
+                    recentMessages = allMessages.takeLast(4),
                     onDeviceGemmaEngine = onDeviceGemmaEngine
                 )
                 if (aiSuggestions.isNotEmpty()) {

@@ -230,7 +230,9 @@ fun ChatScreen(
                                     ChatThinkingShimmerBubble(
                                         petStatus = petStatus,
                                         thoughtText = uiState.agentThought,
-                                        haptics = haptics
+                                        haptics = haptics,
+                                        executingTool = uiState.executingTool,
+                                        completedTools = uiState.completedTools
                                     )
                                 }
                             }
@@ -239,7 +241,9 @@ fun ChatScreen(
                                 ChatThinkingShimmerBubble(
                                     petStatus = petStatus,
                                     thoughtText = uiState.agentThought,
-                                    haptics = haptics
+                                    haptics = haptics,
+                                    executingTool = uiState.executingTool,
+                                    completedTools = uiState.completedTools
                                 )
                             }
                         }

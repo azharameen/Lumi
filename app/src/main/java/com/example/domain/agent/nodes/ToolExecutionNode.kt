@@ -8,8 +8,17 @@ import com.example.domain.agent.AgentState
 import com.example.domain.agent.AgentStatus
 import com.example.domain.tools.AgentToolDispatcher
 
+import com.example.domain.agent.PendingToolCall
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+
+import com.example.domain.agent.AgentStreamEvent
+
 class ToolExecutionNode(
-    private val toolDispatcher: AgentToolDispatcher
+    private val toolDispatcher: AgentToolDispatcher,
+    private val onEvent: (suspend (AgentStreamEvent) -> Unit)? = null
 ) : AgentNode {
     override val name: String = "TOOL_EXECUTION"
 
@@ -22,34 +31,61 @@ class ToolExecutionNode(
     )
 
     override suspend fun execute(state: AgentState): AgentState {
-        val toolName = state.pendingToolName ?: return state.copy(lastError = "No pending tool call found")
+        val callsToExecute: List<PendingToolCall> = if (state.pendingToolCalls.isNotEmpty()) {
+            state.pendingToolCalls
+        } else if (state.pendingToolName != null) {
+            listOf(PendingToolCall(toolName = state.pendingToolName, args = state.pendingToolArgs ?: emptyMap()))
+        } else {
+            return state.copy(lastError = "No pending tool call found")
+        }
 
-        // Check HITL gate
-        if (hitlTools.contains(toolName) && !state.hitlRequired && state.executedToolReports.none { it.toolName == toolName }) {
+        // Check HITL gate for calls requiring user approval
+        val hitlCall = callsToExecute.find { hitlTools.contains(it.toolName) }
+        if (hitlCall != null && !state.hitlRequired && state.executedToolReports.none { it.toolName == hitlCall.toolName }) {
             return state.copy(
                 status = AgentStatus.WAITING_FOR_HITL,
-                hitlRequired = true
+                hitlRequired = true,
+                pendingToolName = hitlCall.toolName,
+                pendingToolArgs = hitlCall.args
             )
         }
 
         return try {
-            val (toolResult, report) = toolDispatcher.executeTool(toolName, state.pendingToolArgs)
+            val executed = coroutineScope {
+                callsToExecute.map { call ->
+                    async(Dispatchers.IO) {
+                        onEvent?.invoke(AgentStreamEvent.ToolExecuting(call.toolName, call.args))
+                        val (toolResult, report) = toolDispatcher.executeTool(call.toolName, call.args)
+                        onEvent?.invoke(AgentStreamEvent.ToolCompleted(call.toolName, report.description, report.isSuccess))
+                        Triple(call, toolResult, report)
+                    }
+                }.awaitAll()
+            }
 
-            val updatedReports = state.executedToolReports.toMutableList().apply { add(report) }
+            val updatedReports = state.executedToolReports.toMutableList()
+            val responseParts = mutableListOf<GeminiPart>()
+            var lastErr: String? = null
 
-            // Append function response turn to Gemini context list
+            for ((call, toolResult, report) in executed) {
+                updatedReports.add(report)
+                responseParts.add(
+                    GeminiPart(
+                        functionResponse = GeminiFunctionResponse(
+                            name = call.toolName,
+                            response = toolResult
+                        )
+                    )
+                )
+                if (toolResult["status"] == "error") {
+                    lastErr = toolResult["message"] as? String
+                }
+            }
+
             val updatedContents = state.contentsList.toMutableList().apply {
                 add(
                     GeminiContent(
                         role = "user",
-                        parts = listOf(
-                            GeminiPart(
-                                functionResponse = GeminiFunctionResponse(
-                                    name = toolName,
-                                    response = toolResult
-                                )
-                            )
-                        )
+                        parts = responseParts
                     )
                 )
             }
@@ -59,7 +95,8 @@ class ToolExecutionNode(
                 executedToolReports = updatedReports,
                 pendingToolName = null,
                 pendingToolArgs = null,
-                lastError = if (toolResult["status"] == "error") toolResult["message"] as? String else null
+                pendingToolCalls = emptyList(),
+                lastError = lastErr
             )
         } catch (e: Exception) {
             state.copy(

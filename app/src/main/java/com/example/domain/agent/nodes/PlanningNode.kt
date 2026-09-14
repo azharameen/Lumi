@@ -11,6 +11,14 @@ class PlanningNode(
     override val name: String = "PLANNING"
 
     override suspend fun execute(state: AgentState): AgentState {
+        // If on-device local model is selected or ready, bypass cloud planning call to avoid cloud dependency & billing errors
+        val isLocalModel = state.isLocalExecution ||
+            (onDeviceGemmaEngine?.isModelReady() == true && state.selectedModelId?.startsWith("gemini") != true)
+
+        if (isLocalModel) {
+            return state.copy(currentThought = "Analyzing request locally with Gemma.")
+        }
+
         val query = state.userQuery.trim()
 
         // Planning step for multi-step reasoning

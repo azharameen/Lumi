@@ -23,7 +23,23 @@ object ToolParameterValidator {
         val errors = mutableListOf<String>()
 
         for (paramSpec in tool.parameters) {
-            val rawVal = rawParams[paramSpec.name]
+            var rawVal = rawParams[paramSpec.name]
+
+            // Small LLM alias fallback resolution if key was omitted or passed under semantic alias
+            if (rawVal == null || (rawVal is String && rawVal.isBlank())) {
+                rawVal = when (paramSpec.name) {
+                    "seconds" -> rawParams["duration"] ?: rawParams["time"] ?: rawParams["minutes"] ?: rawParams["mins"]
+                    "phoneNumber" -> rawParams["phone"] ?: rawParams["number"] ?: rawParams["to"] ?: rawParams["recipient"]
+                    "message" -> rawParams["text"] ?: rawParams["body"] ?: rawParams["content"]
+                    "appName" -> rawParams["app"] ?: rawParams["name"] ?: rawParams["application"] ?: rawParams["package"]
+                    "level" -> rawParams["volume"] ?: rawParams["percentage"] ?: rawParams["val"]
+                    "hour" -> rawParams["hours"] ?: rawParams["hr"]
+                    "minute" -> rawParams["minutes"] ?: rawParams["min"]
+                    "query" -> rawParams["search"] ?: rawParams["q"] ?: rawParams["text"]
+                    "label" -> rawParams["name"] ?: rawParams["title"]
+                    else -> null
+                }
+            }
 
             if (rawVal == null || (rawVal is String && rawVal.isBlank())) {
                 if (paramSpec.required) {

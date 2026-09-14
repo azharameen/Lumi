@@ -40,10 +40,47 @@ class UserMemoryRepositoryImpl(
 
     override suspend fun addUserFact(factKey: String, factValue: String, isPinned: Boolean) {
         withContext(Dispatchers.IO) {
+            val content = "$factKey $factValue"
+            val vec = com.example.domain.memory.WordEmbeddingSimilarity.getEmbedding(content)
+            val blob = if (vec.isNotEmpty()) com.example.domain.memory.VectorEmbeddingUtils.floatArrayToByteArray(vec) else null
+            
+            // TASK-4.2: Fact Deduplication & Contradiction Resolution
+            val existingFact = factKnowledgeDao.getFactByPredicate(factKey)
+            if (existingFact != null) {
+                // If identical fact value, reinforce confidence and bump accessCount
+                if (existingFact.objectValue.equals(factValue.trim(), ignoreCase = true)) {
+                    val reinforced = existingFact.copy(
+                        confidence = (existingFact.confidence + 0.05f).coerceAtMost(1.0f),
+                        accessCount = existingFact.accessCount + 1,
+                        isPinned = isPinned || existingFact.isPinned,
+                        lastUpdatedMillis = System.currentTimeMillis(),
+                        embeddingBlob = blob ?: existingFact.embeddingBlob
+                    )
+                    factKnowledgeDao.insertOrUpdateFact(reinforced)
+                    return@withContext
+                } else {
+                    // Contradiction resolution: New fact updates the existing predicate
+                    val updatedFact = existingFact.copy(
+                        objectValue = factValue.trim(),
+                        confidence = 0.95f,
+                        accessCount = existingFact.accessCount + 1,
+                        isPinned = isPinned || existingFact.isPinned,
+                        lastUpdatedMillis = System.currentTimeMillis(),
+                        embeddingBlob = blob
+                    )
+                    factKnowledgeDao.insertOrUpdateFact(updatedFact)
+                    return@withContext
+                }
+            }
+
             val fact = FactKnowledgeEntity(
                 predicate = factKey,
-                objectValue = factValue,
-                lastUpdatedMillis = System.currentTimeMillis()
+                objectValue = factValue.trim(),
+                confidence = 0.95f,
+                lastUpdatedMillis = System.currentTimeMillis(),
+                accessCount = 1,
+                isPinned = isPinned,
+                embeddingBlob = blob
             )
             factKnowledgeDao.insertOrUpdateFact(fact)
         }

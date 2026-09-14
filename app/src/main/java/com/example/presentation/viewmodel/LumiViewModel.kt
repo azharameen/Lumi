@@ -36,7 +36,9 @@ data class LumiUiState(
     val isMemoryVaultUnlocked: Boolean = false,
     val vaultAuthError: String? = null,
     val sharedIncomingBanner: String? = null,
-    val agentThought: String? = null
+    val agentThought: String? = null,
+    val executingTool: String? = null,
+    val completedTools: List<String> = emptyList()
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -58,7 +60,8 @@ class LumiViewModel(
     val headsetManager: AudioHeadsetManager,
     val zenManager: ZenModeManager,
     val biometricVault: BiometricVaultManager,
-    val briefingEngine: AutonomousBriefingEngine
+    val briefingEngine: AutonomousBriefingEngine,
+    private val petMemoryRepository: com.example.domain.repository.PetMemoryRepository? = null
 ) : ViewModel() {
     val userProfile = userProfileManager.userProfile
     val userFacts = userProfileManager.userFacts
@@ -70,7 +73,11 @@ class LumiViewModel(
     val isBriefingSpeaking: StateFlow<Boolean> = _isBriefingSpeaking.asStateFlow()
 
     val allWellnessLogs = wellnessRepository.allWellnessLogs.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val allMemories = MutableStateFlow<List<com.example.domain.model.PetMemory>>(emptyList()).asStateFlow()
+    val allMemories = (petMemoryRepository?.allMemories ?: kotlinx.coroutines.flow.emptyFlow()).stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
     
     val chatMessages = chatRepository.chatMessages.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val aiExecutionLogs = chatRepository.aiExecutionLogs.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -134,6 +141,29 @@ class LumiViewModel(
         viewModelScope.launch {
             chatRepository.agentThoughts.collect { thought ->
                 _uiState.update { it.copy(agentThought = thought) }
+            }
+        }
+        viewModelScope.launch {
+            chatRepository.agentStreamEvents.collect { event ->
+                when (event) {
+                    is com.example.domain.agent.AgentStreamEvent.ToolExecuting -> {
+                        _uiState.update { it.copy(executingTool = event.toolName) }
+                    }
+                    is com.example.domain.agent.AgentStreamEvent.ToolCompleted -> {
+                        _uiState.update { state ->
+                            state.copy(
+                                executingTool = null,
+                                completedTools = state.completedTools + event.toolName
+                            )
+                        }
+                    }
+                    is com.example.domain.agent.AgentStreamEvent.StatusChanged -> {
+                        if (event.status == com.example.domain.agent.AgentStatus.COMPLETED || event.status == com.example.domain.agent.AgentStatus.FAILED) {
+                            _uiState.update { it.copy(executingTool = null) }
+                        }
+                    }
+                    else -> {}
+                }
             }
         }
     }

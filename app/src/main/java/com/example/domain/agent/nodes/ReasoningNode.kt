@@ -7,11 +7,14 @@ import com.example.data.remote.*
 import com.example.domain.agent.AgentNode
 import com.example.domain.agent.AgentState
 import com.example.domain.skill.SkillRegistry
+import com.example.domain.tools.ToolRetriever
+import com.example.domain.tools.toGeminiToolWrapper
 import org.koin.core.context.GlobalContext
 
 class ReasoningNode(
     private val onDeviceGemmaEngine: OnDeviceGemmaEngine? = null,
-    private val onStreamToken: (suspend (String) -> Unit)? = null
+    private val onStreamToken: (suspend (String) -> Unit)? = null,
+    private val toolRetriever: ToolRetriever? = null
 ) : AgentNode {
     override val name: String = "REASONING"
 
@@ -61,7 +64,16 @@ class ReasoningNode(
 
     override suspend fun execute(state: AgentState): AgentState {
         val activeSkill = SkillRegistry.getInstance().getSkill(state.selectedSkillName)
-        val filteredTools = activeSkill.tools
+        val retrievedTools = try {
+            if (activeSkill.id == "GENERAL_COMPANION" || activeSkill.tools.isEmpty()) {
+                toolRetriever?.getRelevantTools(state.userQuery, maxTools = 6)?.map { it.toGeminiToolWrapper() } ?: emptyList()
+            } else {
+                emptyList()
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+        val filteredTools = if (retrievedTools.isNotEmpty()) retrievedTools else activeSkill.tools
 
         // 1. Context Compression — suppressed during transactional actions to prevent topic bleed
         val compressionContext = if (!activeSkill.isTransactional && state.history.size > 8) {
@@ -87,29 +99,18 @@ class ReasoningNode(
             }
         }
 
-        // 0. If a tool was just executed in this turn, synthesize the final confirmation response immediately
-        if (state.executedToolReports.isNotEmpty()) {
-            val lastReport = state.executedToolReports.last()
-            val confirmation = if (lastReport.isSuccess) {
-                "${lastReport.description} ✨"
-            } else {
-                "I couldn't complete that action: ${lastReport.description}"
-            }
-            onStreamToken?.invoke(confirmation)
-            return state.copy(
-                finalResponseText = confirmation,
-                pendingToolName = null,
-                pendingToolArgs = null,
-                currentThought = "Action completed: ${lastReport.title}"
-            )
-        }
-
-
         // 2. Local-First Reasoning Strategy (Gemma 2B / Phi-2)
-        if (onDeviceGemmaEngine?.isModelReady() == true && shouldExecuteLocally(state)) {
+        val wantsLocal = onDeviceGemmaEngine?.isModelReady() == true && shouldExecuteLocally(state)
+        if (wantsLocal) {
             try {
+                val effectiveUserMessage = if (state.executedToolReports.isNotEmpty()) {
+                    val reportSummary = state.executedToolReports.joinToString("\n") { "• ${it.toolName}: ${it.description}" }
+                    "${state.userQuery}\n\n[Action Results]:\n$reportSummary\n\nPlease respond warmly and concisely to the user incorporating the action results."
+                } else {
+                    state.userQuery
+                }
                 val localResult = onDeviceGemmaEngine.executeOnDeviceTurn(
-                    userMessage = state.userQuery,
+                    userMessage = effectiveUserMessage,
                     recentHistory = state.history,
                     memoryContext = state.retrievedContext,
                     onStreamToken = onStreamToken ?: {}
@@ -120,10 +121,23 @@ class ReasoningNode(
                     executedToolReports = state.executedToolReports + localResult.toolReports,
                     pendingToolName = null,
                     pendingToolArgs = null,
-                    currentThought = "Lumi reasoned locally and generated a response."
+                    pendingToolCalls = emptyList(),
+                    currentThought = if (state.executedToolReports.isNotEmpty()) "Lumi synthesized action results locally." else "Lumi reasoned locally and generated a response."
                 )
             } catch (e: Exception) {
-                crashlyticsManager?.logBreadcrumb("ReasoningNode", "Local reasoning failed, falling back: ${e.message}")
+                crashlyticsManager?.logBreadcrumb("ReasoningNode", "Local reasoning failed: ${e.message}")
+                val isStrictLocal = state.isLocalExecution || (state.selectedModelId != null && !state.selectedModelId.startsWith("gemini"))
+                if (isStrictLocal) {
+                    val fallbackMessage = "I'm right here with you! Let me take another look at that for you. ✨"
+                    onStreamToken?.invoke(fallbackMessage)
+                    return state.copy(
+                        finalResponseText = fallbackMessage,
+                        pendingToolName = null,
+                        pendingToolArgs = null,
+                        pendingToolCalls = emptyList(),
+                        currentThought = "Local reasoning completed with companion fallback."
+                    )
+                }
             }
         }
 
@@ -159,35 +173,50 @@ class ReasoningNode(
                 }
 
                 val candidate = response.candidates?.firstOrNull()?.content
-                val firstPart = candidate?.parts?.firstOrNull()
+                val funcCallParts = candidate?.parts?.filter { it.functionCall != null } ?: emptyList()
 
-                if (firstPart?.functionCall != null) {
-                    val funcCall = firstPart.functionCall
-                    
+                if (funcCallParts.isNotEmpty()) {
+                    val calls = funcCallParts.mapNotNull { part ->
+                        part.functionCall?.let { fc ->
+                            com.example.domain.agent.PendingToolCall(
+                                toolName = fc.name,
+                                args = fc.args ?: emptyMap()
+                            )
+                        }
+                    }
+
                     val updatedContents = state.contentsList.toMutableList().apply {
                         add(
                             GeminiContent(
                                 role = "model",
-                                parts = listOf(GeminiPart(functionCall = funcCall))
+                                parts = funcCallParts
                             )
                         )
                     }
 
                     return state.copy(
                         contentsList = updatedContents,
-                        pendingToolName = funcCall.name,
-                        pendingToolArgs = funcCall.args,
+                        pendingToolCalls = calls,
+                        pendingToolName = calls.firstOrNull()?.toolName,
+                        pendingToolArgs = calls.firstOrNull()?.args,
                         lastError = null,
-                        currentThought = "Decided to execute tool: ${funcCall.name}"
+                        currentThought = "Decided to execute: ${calls.joinToString { it.toolName }}"
                     )
                 } else {
-                    val responseText = firstPart?.text ?: "I'm right here beside you, friend! ✨"
+                    val responseText = candidate?.parts?.firstOrNull { !it.text.isNullOrBlank() }?.text
+                        ?: if (state.executedToolReports.isNotEmpty()) {
+                            val lastReport = state.executedToolReports.last()
+                            if (lastReport.isSuccess) "${lastReport.description} ✨" else "Action failed: ${lastReport.description}"
+                        } else {
+                            "I'm right here beside you, friend! ✨"
+                        }
                     onStreamToken?.invoke(responseText)
                     return state.copy(
                         finalResponseText = responseText,
                         pendingToolName = null,
                         pendingToolArgs = null,
-                        currentThought = "Generated final response via Cloud Gemini."
+                        pendingToolCalls = emptyList(),
+                        currentThought = if (state.executedToolReports.isNotEmpty()) "Synthesized response after tool execution." else "Generated final response via Cloud Gemini."
                     )
                 }
             } catch (e: Exception) {
@@ -195,12 +224,19 @@ class ReasoningNode(
             }
         }
 
-        // 3. Default Zero-Key Execution: Firebase AI Logic SDK with App Check / Play Integrity
+        // 4. Default Zero-Key Execution: Firebase AI Logic SDK with App Check / Play Integrity
         return try {
             val cloudModel = if (state.selectedModelId?.startsWith("gemini") == true) state.selectedModelId else null
+            val effectivePrompt = if (state.executedToolReports.isNotEmpty()) {
+                val reportSummary = state.executedToolReports.joinToString("\n") { "• ${it.toolName}: ${it.description}" }
+                "${state.userQuery}\n\n[Action Results]:\n$reportSummary\n\nPlease respond to the user warmly and concisely incorporating the action results."
+            } else {
+                state.userQuery
+            }
+
             val responseText = if (onStreamToken != null) {
                 firebaseAiEngine.generateChatResponseStream(
-                    prompt = state.userQuery,
+                    prompt = effectivePrompt,
                     history = state.history,
                     image = state.imageAttachment,
                     systemPrompt = systemInstructionText,
@@ -210,7 +246,7 @@ class ReasoningNode(
                 )
             } else {
                 firebaseAiEngine.generateChatResponse(
-                    prompt = state.userQuery,
+                    prompt = effectivePrompt,
                     history = state.history,
                     image = state.imageAttachment,
                     systemPrompt = systemInstructionText,
@@ -223,8 +259,9 @@ class ReasoningNode(
                 finalResponseText = responseText,
                 pendingToolName = null,
                 pendingToolArgs = null,
+                pendingToolCalls = emptyList(),
                 lastError = null,
-                currentThought = "Generated response via Firebase AI."
+                currentThought = if (state.executedToolReports.isNotEmpty()) "Synthesized response via Firebase AI." else "Generated response via Firebase AI."
             )
         } catch (e: Exception) {
             crashlyticsManager?.logBreadcrumb("ReasoningNode", "Firebase AI reasoning failed: ${e.message}")
@@ -238,6 +275,10 @@ class ReasoningNode(
     private fun shouldExecuteLocally(state: AgentState): Boolean {
         // Image attachments require multimodal vision models (Cloud Gemini)
         if (state.imageAttachment != null) return false
+
+        // If user explicitly selected an on-device model, always execute locally
+        val isExplicitLocalModel = state.selectedModelId != null && !state.selectedModelId.startsWith("gemini")
+        if (isExplicitLocalModel || state.isLocalExecution) return true
 
         // If user explicitly selected a Cloud Gemini model, do not execute conversational turns locally
         if (state.selectedModelId?.startsWith("gemini") == true) return false

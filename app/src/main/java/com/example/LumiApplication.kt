@@ -51,6 +51,7 @@ class LumiApplication : Application() {
 
             registerTools()
             createNotificationChannels()
+            com.example.framework.workers.MemoryConsolidationWorker.schedule(this@LumiApplication)
         }
     }
 

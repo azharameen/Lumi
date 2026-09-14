@@ -55,3 +55,29 @@ interface LumiTool {
 
     suspend fun execute(params: Map<String, Any?>): ToolExecutionResult
 }
+
+fun LumiTool.toGeminiToolWrapper(): com.example.data.remote.GeminiToolWrapper {
+    val props = parameters.associate { param ->
+        val propType = when (param.type.lowercase(java.util.Locale.ROOT)) {
+            "number", "int", "integer", "float", "double" -> "NUMBER"
+            "boolean", "bool" -> "BOOLEAN"
+            "array", "list" -> "ARRAY"
+            "object", "map" -> "OBJECT"
+            else -> "STRING"
+        }
+        param.name to com.example.data.remote.GeminiPropertySchema(
+            type = propType,
+            description = param.description
+        )
+    }
+    val requiredProps = parameters.filter { it.required }.map { it.name }
+    val decl = com.example.data.remote.GeminiFunctionDeclaration(
+        name = id,
+        description = description,
+        parameters = com.example.data.remote.GeminiParametersSchema(
+            properties = props,
+            required = requiredProps
+        )
+    )
+    return com.example.data.remote.GeminiToolWrapper(functionDeclarations = listOf(decl))
+}

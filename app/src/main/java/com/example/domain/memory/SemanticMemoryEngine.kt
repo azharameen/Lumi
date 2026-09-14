@@ -27,20 +27,36 @@ class SemanticMemoryEngine(
             return@withContext ""
         }
 
+        // Single query embedding inference pass
+        val queryVector = WordEmbeddingSimilarity.getEmbedding(query)
+
         // 1. Score and rank episodic memories
         val scoredMemories = memories.map { memory ->
-            val content = "${memory.category} ${memory.memoryText}"
-            val embeddingScore = WordEmbeddingSimilarity.calculateSimilarity(query, content)
-            
+            val embeddingScore = if (memory.embeddingBlob != null && queryVector.isNotEmpty()) {
+                val targetVec = VectorEmbeddingUtils.byteArrayToFloatArray(memory.embeddingBlob)
+                WordEmbeddingSimilarity.calculateSimilarityPrecomputed(queryVector, targetVec)
+            } else {
+                val content = "${memory.category} ${memory.memoryText}"
+                WordEmbeddingSimilarity.calculateSimilarity(query, content)
+            }
             memory to embeddingScore
         }.sortedByDescending { it.second }
 
         // 2. Score and rank knowledge graph facts
         val scoredFacts = facts.map { fact ->
-            val content = "${fact.factKey} ${fact.factValue}"
-            val embeddingScore = WordEmbeddingSimilarity.calculateSimilarity(query, content)
-            
-            fact to embeddingScore
+            val baseSimilarity = if (fact.embeddingBlob != null && queryVector.isNotEmpty()) {
+                val targetVec = VectorEmbeddingUtils.byteArrayToFloatArray(fact.embeddingBlob)
+                WordEmbeddingSimilarity.calculateSimilarityPrecomputed(queryVector, targetVec)
+            } else {
+                val content = "${fact.factKey} ${fact.factValue}"
+                WordEmbeddingSimilarity.calculateSimilarity(query, content)
+            }
+            // Temporal decay weighting: Pinned facts keep full score; unpinned decay with 30-day half-life
+            val ageMillis = (System.currentTimeMillis() - fact.createdAt).coerceAtLeast(0L)
+            val thirtyDaysMillis = 30L * 24L * 60L * 60L * 1000L
+            val temporalWeight = if (fact.isPinned) 1.0f else Math.pow(0.5, ageMillis.toDouble() / thirtyDaysMillis.toDouble()).toFloat().coerceIn(0.2f, 1.0f)
+            val finalScore = baseSimilarity * (0.6f + 0.4f * temporalWeight)
+            fact to finalScore
         }.sortedByDescending { it.second }
 
         val topMemories = scoredMemories

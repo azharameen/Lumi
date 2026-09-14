@@ -16,11 +16,15 @@ class PetMemoryRepositoryImpl(
         database.petMemoryDao().getAllMemories().map { list -> list.map { it.toDomain() } }
 
     override suspend fun addMemory(topic: String, note: String, sentiment: String) {
+        val content = "$topic $note"
+        val vec = com.example.domain.memory.WordEmbeddingSimilarity.getEmbedding(content)
+        val blob = if (vec.isNotEmpty()) com.example.domain.memory.VectorEmbeddingUtils.floatArrayToByteArray(vec) else null
         database.petMemoryDao().insertMemory(
             PetMemoryEntity(
                 category = topic,
                 memoryText = note,
-                sentiment = sentiment
+                sentiment = sentiment,
+                embeddingBlob = blob
             )
         )
     }

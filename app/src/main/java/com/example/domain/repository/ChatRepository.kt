@@ -16,6 +16,7 @@ interface ChatRepository {
     val pendingHitlActions: Flow<List<HitlPendingAction>>
     val agentThoughts: Flow<String?>
     val streamingAiMessage: Flow<ChatMessage?>
+    val agentStreamEvents: kotlinx.coroutines.flow.SharedFlow<com.example.domain.agent.AgentStreamEvent>
 
     suspend fun sendMessage(userText: String, image: ByteArray? = null, modelId: String? = null): ChatMessage
     fun setAiRoutingMode(mode: AiRoutingMode)

@@ -14,6 +14,18 @@ object WordEmbeddingSimilarity {
         embedder = embedderInstance
     }
 
+    suspend fun getEmbedding(text: String): FloatArray {
+        return embedder?.embed(text) ?: FloatArray(0)
+    }
+
+    fun calculateSimilarityPrecomputed(queryVector: FloatArray, targetVector: FloatArray): Float {
+        val activeEmbedder = embedder
+        if (activeEmbedder != null && queryVector.isNotEmpty() && targetVector.isNotEmpty()) {
+            return activeEmbedder.cosineSimilarity(queryVector, targetVector)
+        }
+        return VectorEmbeddingUtils.cosineSimilarity(queryVector, targetVector)
+    }
+
     suspend fun calculateSimilarity(textA: String, textB: String): Float {
         val activeEmbedder = embedder
         if (activeEmbedder != null) {

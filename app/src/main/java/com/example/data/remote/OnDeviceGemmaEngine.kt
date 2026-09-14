@@ -14,7 +14,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONObject
+import com.example.domain.tools.ToolParameterValidator
+
 
 
 sealed class OnDeviceInferenceException(message: String, cause: Throwable? = null) : Exception(message, cause) {
@@ -22,7 +26,9 @@ sealed class OnDeviceInferenceException(message: String, cause: Throwable? = nul
     class ModelNotFound(val modelId: String, message: String) : OnDeviceInferenceException(message)
     class InsufficientMemory(val requiredBytes: Long, val availableBytes: Long, message: String) : OnDeviceInferenceException(message)
     class InferenceExecutionError(message: String, cause: Throwable? = null) : OnDeviceInferenceException(message, cause)
+    class FallbackToCloud(val reason: String) : OnDeviceInferenceException("Local on-device reasoning escalated to cloud: $reason")
 }
+
 
 data class GemmaModelStatus(
     val isModelLoaded: Boolean,
@@ -54,6 +60,7 @@ class OnDeviceGemmaEngine(
 
     private var llmInference: LlmInference? = null
     private var loadedModelPath: String? = null
+    private val inferenceMutex = Mutex()
 
     private val _selectedAccelerator = kotlinx.coroutines.flow.MutableStateFlow(HardwareAccelerator.GPU_OPENCL)
     val selectedAccelerator: kotlinx.coroutines.flow.StateFlow<HardwareAccelerator> = _selectedAccelerator.asStateFlow()
@@ -225,24 +232,26 @@ class OnDeviceGemmaEngine(
             }
 
             // Stage 2: Real True Local Inference Execution
-            val rawOutput = try {
-                llmInference?.generateResponse(prompt)
-                    ?: throw OnDeviceInferenceException.InferenceExecutionError("Local engine returned null.")
-            } catch (t: Throwable) {
-                if (t is LinkageError || t is UnsatisfiedLinkError) {
-                    throw OnDeviceInferenceException.HardwareIncompatible(
-                        "MediaPipe GenAI native library requires an ARM-compatible device (arm64-v8a)."
-                    )
+            val rawOutput = inferenceMutex.withLock {
+                try {
+                    llmInference?.generateResponse(prompt)
+                        ?: throw OnDeviceInferenceException.InferenceExecutionError("Local engine returned null.")
+                } catch (t: Throwable) {
+                    if (t is LinkageError || t is UnsatisfiedLinkError) {
+                        throw OnDeviceInferenceException.HardwareIncompatible(
+                            "MediaPipe GenAI native library requires an ARM-compatible device (arm64-v8a)."
+                        )
+                    }
+                    if (t.message?.contains("model identifier") == true || t.message?.contains("TFL3") == true) {
+                        // Critical Corruption Detected: Wipe model file and notify download manager to show Download button in UI
+                        modelFile.delete()
+                        loadedModelPath = null
+                        llmInference = null
+                        downloadManager?.notifyCorruptedOrDeleted(activeSpec.id)
+                        throw OnDeviceInferenceException.ModelNotFound(activeSpec.id, "Corrupted model detected and removed. Please re-download.")
+                    }
+                    throw t
                 }
-                if (t.message?.contains("model identifier") == true || t.message?.contains("TFL3") == true) {
-                    // Critical Corruption Detected: Wipe model file and notify download manager to show Download button in UI
-                    modelFile.delete()
-                    loadedModelPath = null
-                    llmInference = null
-                    downloadManager?.notifyCorruptedOrDeleted(activeSpec.id)
-                    throw OnDeviceInferenceException.ModelNotFound(activeSpec.id, "Corrupted model detected and removed. Please re-download.")
-                }
-                throw t
             }
 
             val toolReports = mutableListOf<ToolExecutionReport>()
@@ -307,7 +316,16 @@ class OnDeviceGemmaEngine(
                         jsonObj.keys().forEach { key -> rawParams[key] = jsonObj.get(key) }
                     } catch (_: Exception) {}
 
-                    val safeParams = normalizeParams(tool, rawParams)
+                    val normalized = normalizeParams(tool, rawParams)
+                    val validationResult = ToolParameterValidator.validate(tool, normalized)
+                    if (!validationResult.isValid) {
+                        // Parameter schema violation on local model: escalate to cloud
+                        throw OnDeviceInferenceException.FallbackToCloud(
+                            "Parameter schema validation failed for '${tool.id}': ${validationResult.errorMessage}"
+                        )
+                    }
+
+                    val safeParams = validationResult.validatedParams
                     val execResult = tool.execute(safeParams)
 
                     toolReports.add(
@@ -456,16 +474,54 @@ class OnDeviceGemmaEngine(
                 normalized["state"] = boolState
             }
             "system_open_app" -> {
-                val appVal = rawArgs["appName"] ?: rawArgs["app"] ?: rawArgs["name"] ?: rawArgs["application"]
+                val appVal = rawArgs["appName"] ?: rawArgs["app"] ?: rawArgs["name"] ?: rawArgs["application"] ?: rawArgs["package"]
                 if (appVal != null) normalized["appName"] = appVal.toString()
             }
             "system_set_media_volume", "system_set_ringer_volume", "system_set_alarm_volume" -> {
                 val lvl = rawArgs["level"] ?: rawArgs["volume"] ?: rawArgs["percentage"] ?: rawArgs["val"] ?: 50
                 normalized["level"] = lvl
             }
-            "set_timer" -> {
-                val sec = rawArgs["seconds"] ?: rawArgs["duration"] ?: rawArgs["time"] ?: 60
-                normalized["seconds"] = sec
+            "system_set_quick_timer", "set_timer" -> {
+                // Support seconds, minutes, duration, time strings like "5m", "10 minutes"
+                val rawSec = rawArgs["seconds"] ?: rawArgs["duration"] ?: rawArgs["time"]
+                val rawMin = rawArgs["minutes"] ?: rawArgs["mins"]
+                val rawHours = rawArgs["hours"] ?: rawArgs["hrs"]
+                
+                var totalSec: Double? = null
+                if (rawHours != null) {
+                    val h = rawHours.toString().filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 0.0
+                    totalSec = (totalSec ?: 0.0) + (h * 3600.0)
+                }
+                if (rawMin != null) {
+                    val m = rawMin.toString().filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 0.0
+                    totalSec = (totalSec ?: 0.0) + (m * 60.0)
+                }
+                if (rawSec != null) {
+                    val sStr = rawSec.toString().lowercase(java.util.Locale.ROOT).trim()
+                    if (sStr.contains("min")) {
+                        val m = sStr.filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 0.0
+                        totalSec = (totalSec ?: 0.0) + (m * 60.0)
+                    } else if (sStr.contains("hour") || sStr.contains("hr")) {
+                        val h = sStr.filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 0.0
+                        totalSec = (totalSec ?: 0.0) + (h * 3600.0)
+                    } else {
+                        val s = sStr.filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 60.0
+                        totalSec = (totalSec ?: 0.0) + s
+                    }
+                }
+                normalized["seconds"] = totalSec ?: 60.0
+            }
+            "system_set_alarm_clock", "set_alarm" -> {
+                val rawHour = rawArgs["hour"] ?: rawArgs["hours"] ?: rawArgs["hr"] ?: 8
+                val rawMinute = rawArgs["minute"] ?: rawArgs["minutes"] ?: rawArgs["min"] ?: 0
+                normalized["hour"] = rawHour
+                normalized["minute"] = rawMinute
+            }
+            "communication_draft_sms", "communication_dial_number" -> {
+                val phone = rawArgs["phoneNumber"] ?: rawArgs["phone"] ?: rawArgs["number"] ?: rawArgs["to"] ?: rawArgs["recipient"]
+                if (phone != null) normalized["phoneNumber"] = phone.toString()
+                val message = rawArgs["message"] ?: rawArgs["text"] ?: rawArgs["body"] ?: rawArgs["content"]
+                if (message != null) normalized["message"] = message.toString()
             }
         }
         return normalized
@@ -506,7 +562,9 @@ class OnDeviceGemmaEngine(
             }
             
             val start = System.currentTimeMillis()
-            val response = llmInference?.generateResponse("Test") ?: "Failed"
+            val response = inferenceMutex.withLock {
+                llmInference?.generateResponse("Test") ?: "Failed"
+            }
             Pair(response, System.currentTimeMillis() - start)
         } catch (h: OnDeviceInferenceException) {
             throw h
@@ -520,10 +578,29 @@ class OnDeviceGemmaEngine(
 
     /**
      * Semantically classifies a user query into a structured Intent/Skill category.
+     * Uses ultra-fast pattern heuristics first, with a non-blocking local LLM fallback.
      */
     suspend fun classifyIntent(userQuery: String): String = withContext(Dispatchers.Default) {
+        val lower = userQuery.lowercase(java.util.Locale.ROOT)
+        val fastSkill = when {
+            lower.contains("flashlight") || lower.contains("torch") || lower.contains("bluetooth") || lower.contains("wifi") || lower.contains("volume") || lower.contains("battery") || lower.contains("alarm") || lower.contains("timer") || lower.contains("app") || lower.contains("launch") || lower.contains("open") -> "DEVICE_CONTROLS"
+            lower.contains("call") || lower.contains("dial") || lower.contains("sms") || lower.contains("text") || lower.contains("contact") -> "COMMUNICATION"
+            lower.contains("email") || lower.contains("gmail") || lower.contains("doc") || lower.contains("sheet") || lower.contains("drive") -> "GOOGLE_WORKSPACE"
+            lower.contains("github") || lower.contains("repo") || lower.contains("commit") || lower.contains("pull request") || lower.contains("issue") -> "GITHUB"
+            lower.contains("slack") || lower.contains("channel") -> "SLACK"
+            lower.contains("task") || lower.contains("todo") || lower.contains("calendar") || lower.contains("schedule") || lower.contains("reminder") || lower.contains("plan") -> "LIFE_ORGANIZER"
+            lower.contains("breath") || lower.contains("mood") || lower.contains("meditat") || lower.contains("water") || lower.contains("hydrat") || lower.contains("stress") || lower.contains("relax") -> "WELLNESS"
+            else -> null
+        }
+        if (fastSkill != null) return@withContext fastSkill
+
         if (!isModelReady() || !isHardwareSupported() || context == null) return@withContext "GENERAL_COMPANION"
-        
+
+        // Non-blocking tryLock: Never block or collide with an active conversation turn
+        if (!inferenceMutex.tryLock()) {
+            return@withContext "GENERAL_COMPANION"
+        }
+
         val prompt = """
             You are a semantic classifier. Categorize the user's message into EXACTLY ONE of these categories:
             - COMMUNICATION (if about dialing numbers, phone calls, texting, drafting SMS)
@@ -567,12 +644,15 @@ class OnDeviceGemmaEngine(
             }
         } catch (t: Throwable) {
             "GENERAL_COMPANION"
+        } finally {
+            inferenceMutex.unlock()
         }
     }
 
     /**
      * Intelligently generates context-aware follow-up suggestion pills from recent dialogue turns
      * using the on-device Gemma LLM. Zero keyword matching.
+     * Uses non-blocking tryLock so prompt suggestions never compete with or delay user chat turns.
      */
     suspend fun generateFollowUpSuggestions(
         recentHistory: List<Pair<String, String>>,
@@ -582,26 +662,31 @@ class OnDeviceGemmaEngine(
             return@withContext emptyList()
         }
 
-        val dialogueContext = recentHistory.takeLast(3).joinToString("\n") { (sender, text) ->
-            val role = if (sender.equals("user", ignoreCase = true)) "User" else "Lumi"
-            "$role: ${text.take(120).trim()}"
+        // Secondary background prompt suggestion: if model is currently busy with user turn, yield immediately
+        if (!inferenceMutex.tryLock()) {
+            return@withContext emptyList()
         }
 
-        val prompt = """
-            <start_of_turn>user
-            You are Lumi's suggestion engine. Given this recent conversation between a user and their AI companion Lumi:
-            $dialogueContext
-
-            Generate $maxSuggestions short, helpful follow-up actions or questions the user might want to say or do next.
-            Strict rules:
-            - Output each suggestion on its own line.
-            - Start each suggestion with an emoji.
-            - Keep each suggestion under 6 words.
-            - Do NOT include numbering, bullet points, asterisks, or explanations.<end_of_turn>
-            <start_of_turn>model
-        """.trimIndent()
-
         try {
+            val dialogueContext = recentHistory.takeLast(3).joinToString("\n") { (sender, text) ->
+                val role = if (sender.equals("user", ignoreCase = true)) "User" else "Lumi"
+                "$role: ${text.take(120).trim()}"
+            }
+
+            val prompt = """
+                <start_of_turn>user
+                You are Lumi's suggestion engine. Given this recent conversation between a user and their AI companion Lumi:
+                $dialogueContext
+
+                Generate $maxSuggestions short, helpful follow-up actions or questions the user might want to say or do next.
+                Strict rules:
+                - Output each suggestion on its own line.
+                - Start each suggestion with an emoji.
+                - Keep each suggestion under 6 words.
+                - Do NOT include numbering, bullet points, asterisks, or explanations.<end_of_turn>
+                <start_of_turn>model
+            """.trimIndent()
+
             if (llmInference == null) {
                 val activeSpec = downloadManager?.getActiveModelSpec() ?: return@withContext emptyList()
                 val modelFile = downloadManager.getModelFile(activeSpec.id)
@@ -627,6 +712,8 @@ class OnDeviceGemmaEngine(
                 .take(maxSuggestions)
         } catch (t: Throwable) {
             emptyList()
+        } finally {
+            inferenceMutex.unlock()
         }
     }
 }

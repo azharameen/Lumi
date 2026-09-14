@@ -24,7 +24,7 @@ import com.example.data.local.dao.ToolFtsDao
         AgentCheckpointEntity::class,
         ToolFtsEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class LumiDatabase : RoomDatabase() {

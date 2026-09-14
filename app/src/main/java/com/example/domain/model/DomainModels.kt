@@ -84,7 +84,8 @@ data class PetMemory(
     val memoryText: String,
     val sentiment: String = "Positive",
     val emotionalImpact: Int = 3,
-    val isPinned: Boolean = false
+    val isPinned: Boolean = false,
+    val embeddingBlob: ByteArray? = null
 )
 
 data class UserFact(
@@ -92,7 +93,8 @@ data class UserFact(
     val factKey: String,
     val factValue: String,
     val isPinned: Boolean,
-    val createdAt: Long
+    val createdAt: Long,
+    val embeddingBlob: ByteArray? = null
 )
 
 data class AiExecutionLog(

@@ -51,7 +51,8 @@ val appModule = module {
 
     // Firebase Enterprise Infrastructure
     single { LumiCrashlyticsManager() }
-    single<AnalyticsService> { LumiAnalyticsManager(androidContext()) }
+    single { LumiAnalyticsManager(androidContext()) }
+    single<AnalyticsService> { get<LumiAnalyticsManager>() }
     single { LumiPerformanceManager() }
     single { LumiRemoteConfigManager() }
     single { LumiAppCheckManager.getInstance() }
@@ -126,10 +127,10 @@ val appModule = module {
     single<UserMemoryRepository> { UserMemoryRepositoryImpl(get(), get<LumiDatabase>().factKnowledgeDao(), get<LumiDatabase>().chatMessageDao(), get()) }
 
     // ViewModels
-    viewModel { AuthViewModel(get(), get(), get(), get()) }
+    viewModel { AuthViewModel(get(), get(), getOrNull(), getOrNull()) }
     viewModel { AiSettingsViewModel(get(), get(), getOrNull()) }
-    viewModel { ChatViewModel(get(), get(), get(), get(), get(), get(), getOrNull()) }
-    viewModel { LifeHubViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { ChatViewModel(get(), get(), get(), get(), getOrNull(), getOrNull(), getOrNull()) }
+    viewModel { LifeHubViewModel(get(), get(), get(), get(), get(), get(), get(), getOrNull(), getOrNull()) }
     viewModel { 
         LumiViewModel(
             petRepository = get(),
@@ -149,9 +150,10 @@ val appModule = module {
             headsetManager = get(),
             zenManager = get(),
             biometricVault = get(),
-            briefingEngine = get()
+            briefingEngine = get(),
+            petMemoryRepository = getOrNull()
         ) 
     }
-    viewModel { PetViewModel(get(), get(), get(), get()) }
-    viewModel { WellnessViewModel(get(), get(), get()) }
+    viewModel { PetViewModel(get(), get(), getOrNull(), getOrNull()) }
+    viewModel { WellnessViewModel(get(), get(), get(), getOrNull()) }
 }

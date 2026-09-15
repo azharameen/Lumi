@@ -79,6 +79,7 @@ import com.example.core.theme.TextPrimary
 import com.example.core.theme.TextSecondary
 import androidx.compose.material3.MaterialTheme
 import com.example.core.theme.spacing
+import java.util.Locale
 
 
 @Composable
@@ -217,7 +218,7 @@ fun AmbientSoundscapesScreen(
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
-                                        text = String.format("%02d:%02d", mins, secs),
+                                        text = String.format(Locale.ROOT, "%02d:%02d", mins, secs),
                                         color = LumiGold,
                                         style = MaterialTheme.typography.displayMedium,
                                         fontWeight = FontWeight.Bold

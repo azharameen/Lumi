@@ -140,6 +140,7 @@ import com.example.domain.connectors.ConnectorRepository
 import com.example.core.theme.*
 import androidx.compose.material3.MaterialTheme
 import com.example.core.theme.spacing
+import java.util.Locale
 
 
 @Composable
@@ -785,7 +786,7 @@ fun LlmSettingsSection(
                                         )
                                         if (progress.speedMegaBytesPerSec > 0.0) {
                                             Text(
-                                                text = String.format("%.1f MB/s", progress.speedMegaBytesPerSec),
+                                                text = String.format(Locale.ROOT, "%.1f MB/s", progress.speedMegaBytesPerSec),
                                                 color = TextSecondary,
                                                 fontSize = 10.sp
                                             )

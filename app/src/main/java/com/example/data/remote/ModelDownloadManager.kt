@@ -20,6 +20,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.security.MessageDigest
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
@@ -114,8 +115,8 @@ class ModelDownloadManager private constructor(private val context: Context) {
             return if (availableForApp >= requiredBytes) {
                 Pair(true, "Perfect for your device.")
             } else {
-                val reqGb = String.format("%.1f", requiredBytes / 1_000_000_000.0)
-                val totalGb = String.format("%.1f", totalDeviceRam / 1_000_000_000.0)
+                val reqGb = String.format(Locale.ROOT, "%.1f", requiredBytes / 1_000_000_000.0)
+                val totalGb = String.format(Locale.ROOT, "%.1f", totalDeviceRam / 1_000_000_000.0)
                 Pair(false, "Requires ${reqGb}GB free RAM. Your device total is ${totalGb}GB.")
             }
         }

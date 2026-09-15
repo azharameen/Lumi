@@ -89,6 +89,7 @@ class AudioHeadsetManager(private val context: Context) {
                         isBluetooth = true
                     )
                 }
+                else -> { /* Other audio output devices */ }
             }
         }
         return AudioHeadsetStatus(

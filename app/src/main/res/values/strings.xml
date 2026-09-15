@@ -222,7 +222,7 @@
     <string name="text_ai_mode_local">Local On-Device</string>
     <string name="text_ai_mode_hybrid">Hybrid (Both)</string>
     <string name="text_ai_mode_cloud_desc">All requests execute on Google Cloud via Gemini 2.5 Flash / Pro. Maximum capability, multimodal vision &amp; fast reasoning.</string>
-    <string name="text_ai_mode_local_desc">100% offline &amp; private on-device execution via MediaPipe &amp; Gemma 2B. Zero data leaves your device.</string>
+    <string name="text_ai_mode_local_desc">100%% offline &amp; private on-device execution via MediaPipe &amp; Gemma 2B. Zero data leaves your device.</string>
     <string name="text_ai_mode_hybrid_desc">Intelligent auto-routing: Wellness, personal reflections &amp; quick chat run locally on-device. Deep reasoning, vision &amp; planning route to Cloud.</string>
     <string name="text_hybrid_routing_policy">Hybrid Auto-Routing Policy</string>
     <string name="text_sent_to_local">⚡ Sent to Local On-Device (Gemma)</string>

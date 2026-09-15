@@ -8,6 +8,7 @@ import android.net.NetworkCapabilities
 import android.os.*
 import androidx.core.app.NotificationCompat
 import com.example.domain.tools.*
+import java.util.Locale
 
 object SystemToolsModule {
     fun register(context: Context, registry: ToolRegistry = ToolRegistry.getInstance()) {
@@ -61,8 +62,8 @@ class StorageInfoTool : LumiTool {
             val stat = StatFs(Environment.getDataDirectory().path)
             val availableBytes = stat.availableBlocksLong * stat.blockSizeLong
             val totalBytes = stat.blockCountLong * stat.blockSizeLong
-            val freeGb = String.format("%.1f", availableBytes / (1024.0 * 1024.0 * 1024.0))
-            val totalGb = String.format("%.1f", totalBytes / (1024.0 * 1024.0 * 1024.0))
+            val freeGb = String.format(Locale.ROOT, "%.1f", availableBytes / (1024.0 * 1024.0 * 1024.0))
+            val totalGb = String.format(Locale.ROOT, "%.1f", totalBytes / (1024.0 * 1024.0 * 1024.0))
             ToolExecutionResult(true, "Internal Storage: $freeGb GB free out of $totalGb GB")
         } catch (e: Exception) {
             ToolExecutionResult(false, "Storage info failed: ${e.localizedMessage}")
@@ -84,8 +85,8 @@ class RamUsageTool(private val context: Context) : LumiTool {
                 ?: return ToolExecutionResult(false, "ActivityManager unavailable")
             val memInfo = android.app.ActivityManager.MemoryInfo()
             am.getMemoryInfo(memInfo)
-            val availGb = String.format("%.1f", memInfo.availMem / (1024.0 * 1024.0 * 1024.0))
-            val totalGb = String.format("%.1f", memInfo.totalMem / (1024.0 * 1024.0 * 1024.0))
+            val availGb = String.format(Locale.ROOT, "%.1f", memInfo.availMem / (1024.0 * 1024.0 * 1024.0))
+            val totalGb = String.format(Locale.ROOT, "%.1f", memInfo.totalMem / (1024.0 * 1024.0 * 1024.0))
             ToolExecutionResult(true, "Device RAM: $availGb GB free out of $totalGb GB (Low RAM state: ${memInfo.lowMemory})")
         } catch (e: Exception) {
             ToolExecutionResult(false, "RAM check failed: ${e.localizedMessage}")

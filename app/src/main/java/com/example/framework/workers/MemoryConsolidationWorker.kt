@@ -32,7 +32,6 @@ class MemoryConsolidationWorker(
             try {
                 val constraints = Constraints.Builder()
                     .setRequiresCharging(true)
-                    .setRequiresDeviceIdle(true)
                     .build()
 
                 val consolidationRequest = PeriodicWorkRequestBuilder<MemoryConsolidationWorker>(

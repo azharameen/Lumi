@@ -274,39 +274,44 @@ fun ToolsAndConnectorsSection() {
                     )
 
                     // Category Filter Chips
-                    FlowRow(
+                    LazyRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        FilterChip(
-                            selected = selectedCategoryFilter == null,
-                            onClick = { selectedCategoryFilter = null },
-                            label = { Text("${stringResource(R.string.text_all_tools)} (${registeredTools.size})", fontSize = 11.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = LumiMint,
-                                selectedLabelColor = ObsidianDark,
-                                containerColor = SurfaceDarkVariant,
-                                labelColor = TextSecondary
-                            )
-                        )
-                        ToolCategory.values().forEach { cat ->
-                            val count = registeredTools.count { it.category == cat }
-                            if (count > 0) {
-                                FilterChip(
-                                    selected = selectedCategoryFilter == cat,
-                                    onClick = {
-                                        selectedCategoryFilter = if (selectedCategoryFilter == cat) null else cat
-                                    },
-                                    label = { Text("${cat.name} ($count)", fontSize = 11.sp) },
-                                    colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = LumiMint,
-                                        selectedLabelColor = ObsidianDark,
-                                        containerColor = SurfaceDarkVariant,
-                                        labelColor = TextSecondary
-                                    )
+                        item {
+                            FilterChip(
+                                selected = selectedCategoryFilter == null,
+                                onClick = { selectedCategoryFilter = null },
+                                label = { Text("${stringResource(R.string.text_all_tools)} (${registeredTools.size})", fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = LumiMint,
+                                    selectedLabelColor = ObsidianDark,
+                                    containerColor = SurfaceDarkVariant,
+                                    labelColor = TextSecondary
                                 )
-                            }
+                            )
+                        }
+                        
+                        val activeCategories = ToolCategory.values().filter { cat -> registeredTools.any { it.category == cat } }
+                        items(
+                            count = activeCategories.size,
+                            key = { index -> activeCategories[index].name }
+                        ) { index ->
+                            val cat = activeCategories[index]
+                            val count = registeredTools.count { it.category == cat }
+                            FilterChip(
+                                selected = selectedCategoryFilter == cat,
+                                onClick = {
+                                    selectedCategoryFilter = if (selectedCategoryFilter == cat) null else cat
+                                },
+                                label = { Text("${cat.name} ($count)", fontSize = 11.sp) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = LumiMint,
+                                    selectedLabelColor = ObsidianDark,
+                                    containerColor = SurfaceDarkVariant,
+                                    labelColor = TextSecondary
+                                )
+                            )
                         }
                     }
                 }

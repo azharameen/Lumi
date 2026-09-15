@@ -95,12 +95,12 @@ fun AccessoryShopSection(
                         modifier = Modifier.padding(12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = acc.iconEmoji, fontSize = 28.sp)
+                        Text(text = acc.iconEmoji, style = MaterialTheme.typography.displaySmall)
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = acc.displayName,
                             color = if (isEquipped) LumiGold else TextPrimary,
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1
                         )
@@ -118,7 +118,7 @@ fun AccessoryShopSection(
                                     Text(
                                         text = stringResource(R.string.text_equipped),
                                         color = LumiGold,
-                                        fontSize = 10.sp,
+                                        style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -127,7 +127,7 @@ fun AccessoryShopSection(
                                 Text(
                                     text = stringResource(R.string.text_equip),
                                     color = MaterialTheme.colorScheme.primary,
-                                    fontSize = 10.sp,
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
@@ -147,7 +147,7 @@ fun AccessoryShopSection(
                                             Text(
                                                 text = "${acc.coinCost}",
                                                 color = LumiGold,
-                                                fontSize = 10.sp,
+                                                style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Icon(
@@ -163,7 +163,7 @@ fun AccessoryShopSection(
                                             Text(
                                                 text = "${acc.gemCost}",
                                                 color = LumiCyanLight,
-                                                fontSize = 10.sp,
+                                                style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Icon(

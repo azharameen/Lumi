@@ -151,8 +151,8 @@ fun ToggleSettingRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            Text(text = subtitle, color = TextSecondary, fontSize = 11.sp)
+            Text(text = title, color = TextPrimary, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(text = subtitle, color = TextSecondary, style = MaterialTheme.typography.labelMedium)
         }
 
         Spacer(modifier = Modifier.width(12.dp))

@@ -40,17 +40,64 @@ Dependencies point INWARD toward the Domain layer.
   - ViewModels back state with `private val _uiState = MutableStateFlow(LumiUiState())` and expose it via `asStateFlow()`.
   - **Rule:** UI Events (clicks, inputs) MUST flow UP as lambdas to the ViewModel. The UI must NEVER mutate state directly.
 
-## 4. Jetpack Compose Best Practices
+## 4. Jetpack Compose & Design System (STRICT)
 
-- **The Modifier Rule (CRITICAL):**
-  - **Rule:** EVERY public Composable function MUST accept a `modifier: Modifier = Modifier` as its first optional parameter (or right after required data parameters).
-  - **Rule:** This passed `modifier` MUST be applied to the root layout element of that Composable.
-- **Compose Stability:** 
-  - Keep Composables stateless where possible (pass data in, pass events out).
-  - Use `remember` for local UI state or expensive derived computations.
-  - ALWAYS use the `key` parameter in `LazyColumn`/`LazyRow` items to prevent unnecessary recompositions.
-- **Hardcoded Strings:**
-  - **Rule:** AI Agents MUST NOT hardcode strings in Composables. All user-facing text MUST be extracted to `res/values/strings.xml` and referenced via `stringResource(id = R.string.xxx)`.
+The Lumi design system is a dark cyberpunk/ethereal aesthetic. ALL visual values
+MUST come from the centralized theme in `core/theme/`. Hardcoded values are **PROHIBITED**.
+
+### 4.1 The Modifier Rule (CRITICAL)
+- **Rule:** EVERY public Composable function MUST accept a `modifier: Modifier = Modifier` as its first optional parameter (or right after required data parameters).
+- **Rule:** This passed `modifier` MUST be applied to the root layout element of that Composable.
+
+### 4.2 Typography (CRITICAL)
+- **Rule:** ALL `Text()` composables MUST use `style = MaterialTheme.typography.XXX`. Raw `fontSize = X.sp` combined with `fontWeight = ...` is **PROHIBITED**.
+- **Rule:** The minimum readable font size is `labelSmall` (10sp). Text below 10sp is **ILLEGAL**.
+- **Rule:** Fractional font sizes (e.g., `11.5.sp`) are **PROHIBITED**. Use integer values only.
+- **Rule:** When a `Text()` needs a non-default color, pass `color = ...` alongside `style = ...`. Never bypass the typography scale for color changes.
+- **Available styles:** `displayLarge(32sp/Black)`, `displayMedium(28sp/ExtraBold)`, `displaySmall(24sp/Bold)`, `headlineLarge(22sp/Bold)`, `headlineMedium(19sp/Bold)`, `headlineSmall(17sp/SemiBold)`, `titleLarge(16sp/Bold)`, `titleMedium(14sp/SemiBold)`, `titleSmall(13sp/Medium)`, `bodyLarge(15sp/Normal)`, `bodyMedium(13sp/Normal)`, `bodySmall(12sp/Normal)`, `labelLarge(13sp/Bold)`, `labelMedium(11sp/SemiBold)`, `labelSmall(10sp/Medium)`.
+
+### 4.3 Colors (CRITICAL)
+- **Rule:** ALL colors MUST come from `core/theme/Color.kt` or `MaterialTheme.colorScheme`. Raw `Color(0xFF...)` literals in composables are **PROHIBITED**.
+- **Rule:** `Color.White` and `Color.Black` are **PROHIBITED** in composables. Use `TextPrimary` / `ObsidianDark` / `SurfaceHighlight` etc. instead.
+- **Rule:** NO duplicate color definitions. If a color exists in `Color.kt`, import it. Defining `private val SomeColor = Color(0xFF...)` in a composable file is **PROHIBITED**.
+- **Rule:** All new brand colors MUST be added to `Color.kt` with a descriptive `Lumi*` prefix and a corresponding glow variant (`XxxGlow = Color(0x33...)`).
+- **Available tokens:** See `Color.kt` for the full palette — brand accents (LumiCyan, LumiViolet, LumiPink, LumiGold, LumiMint, LumiCoral), surfaces (ObsidianDark, SpaceDark, SlateDark, SurfaceDark, SurfaceDarkVariant, SurfaceHighlight, SurfaceGlass), text (TextPrimary, TextSecondary, TextTertiary, TextMuted), and gradient brushes (LumiPrimaryGradient, LumiGlassCardBorder, etc.).
+
+### 4.4 Corner Radius (STRICT)
+- **Rule:** ALL `RoundedCornerShape` values MUST use the defined tiers from `MaterialTheme.spacing`: `cornerMicro(6dp)`, `cornerSmall(10dp)`, `cornerMedium(14dp)`, `cornerLarge(20dp)`, `cornerExtraLarge(24dp)`. Arbitrary values (e.g., `RoundedCornerShape(13.dp)`) are **PROHIBITED**.
+- **Tier usage guide:**
+  - `cornerMicro` — tiny badges, pills, tags
+  - `cornerSmall` — chips, small surfaces, input fields
+  - `cornerMedium` — standard cards, list items
+  - `cornerLarge` — message bubbles, large cards, dialogs
+  - `cornerExtraLarge` — bottom sheets, hero cards, full-screen overlays
+
+### 4.5 Spacing (STRICT)
+- **Rule:** ALL padding, margin, and spacer values MUST come from the spacing scale in `MaterialTheme.spacing`: `extraSmall(4dp)`, `small(8dp)`, `medium(16dp)`, `large(24dp)`, `extraLarge(32dp)`. Off-scale values (e.g., `6.dp`, `10.dp`, `12.dp`, `14.dp`, `22.dp`) are **PROHIBITED**.
+- **Rule:** Border widths MUST be `1.dp` or `2.dp`. Fractional border widths (e.g., `1.2.dp`, `1.5.dp`) are **PROHIBITED**.
+
+### 4.6 Icon Sizes (STRICT)
+- **Rule:** ALL icon sizes MUST use the defined scale from `MaterialTheme.spacing`: `iconXS(12dp)`, `iconSM(16dp)`, `iconMD(20dp)`, `iconLG(24dp)`, `iconXL(32dp)`, `iconHero(48dp)`. Arbitrary icon sizes (e.g., `15.dp`, `22.dp`, `36.dp`) are **PROHIBITED**.
+
+### 4.7 Card & Surface Standardization (CRITICAL)
+- **Rule:** ALL card-like surfaces MUST use `LumiCard` (the glassmorphic card in `LumiPrimitives.kt`). Raw `Box` + `Modifier.background(...)` + `Modifier.clip(...)` patterns for cards are **PROHIBITED**.
+- **Rule:** `LumiCard` MUST have `shadowElevation >= 1.dp` to differentiate from the background.
+- **Rule:** Interactive cards MUST use `Surface(onClick = ...)` or `LumiCard` with `onClick` to ensure proper ripple indication. Bare `Modifier.clickable` on card-like elements is **PROHIBITED**.
+
+### 4.8 Compose Stability
+- Keep Composables stateless where possible (pass data in, pass events out).
+- Use `remember` for local UI state or expensive derived computations.
+- ALWAYS use the `key` parameter in `LazyColumn`/`LazyRow` items to prevent unnecessary recompositions.
+
+### 4.9 Hardcoded Strings (CRITICAL)
+- **Rule:** AI Agents MUST NOT hardcode strings in Composables. ALL user-facing text MUST be extracted to `res/values/strings.xml` and referenced via `stringResource(id = R.string.xxx)`.
+- **Rule:** This includes: button labels, error messages, status text, content descriptions, accessibility labels, notification text, and empty-state copy.
+- **Rule:** `contentDescription` on icon-only clickable elements MUST use `stringResource(R.string.xxx)`. `contentDescription = null` on actionable icons is **PROHIBITED**.
+
+### 4.10 Accessibility (STRICT)
+- **Rule:** Every icon-only clickable element MUST have a non-null `contentDescription`.
+- **Rule:** `contentDescription` values MUST use `stringResource(R.string.xxx)`, never hardcoded English strings.
+- **Rule:** Touch targets MUST be at least `48dp x 48dp` (Material Design minimum).
 
 ## 5. Navigation
 
@@ -95,3 +142,11 @@ Before exiting ANY task, an agent MUST self-verify:
 - [ ] Entities/DTOs are mapped to Domain models before leaving the Data layer.
 - [ ] Refactoring (Boy Scout Rule) was applied to the immediate context of the modified code.
 - [ ] NO scratch scripts (`.sh`, `.py`) were left behind in the workspace.
+- [ ] **No raw `fontSize = X.sp` in any `Text()` — all use `MaterialTheme.typography.XXX`.**
+- [ ] **No `Color(0xFF...)`, `Color.White`, or `Color.Black` in composables — all from `Color.kt` or `MaterialTheme.colorScheme`.**
+- [ ] **No `RoundedCornerShape(X.dp)` with off-tier values — all use spacing corner tiers (6/10/14/20/24dp).**
+- [ ] **No off-scale spacing (6dp, 10dp, 12dp, 14dp, 22dp, etc.) — all use 4/8/16/24/32dp scale.**
+- [ ] **No off-scale icon sizes — all use 12/16/20/24/32/48dp scale.**
+- [ ] **All card-like surfaces use `LumiCard` — no raw Box+background+clip patterns.**
+- [ ] **All icon-only clickables have non-null `contentDescription` via `stringResource`.**
+- [ ] **No text below 10sp. No fractional font sizes.**

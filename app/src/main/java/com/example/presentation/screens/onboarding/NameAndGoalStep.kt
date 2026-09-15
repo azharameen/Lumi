@@ -48,7 +48,7 @@ fun NameAndGoalStep(
             value = name,
             onValueChange = { name = it },
             label = { Text(stringResource(id = R.string.text_your_name), color = TextSecondary) },
-            textStyle = LocalTextStyle.current.copy(color = TextPrimary, fontSize = 16.sp),
+            textStyle = MaterialTheme.typography.titleMedium.copy(color = TextPrimary),
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = LumiCyan,
@@ -66,7 +66,7 @@ fun NameAndGoalStep(
             value = goal,
             onValueChange = { goal = it },
             label = { Text(stringResource(id = R.string.text_primary_focus_goal), color = TextSecondary) },
-            textStyle = LocalTextStyle.current.copy(color = TextPrimary, fontSize = 15.sp),
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = TextPrimary),
             modifier = Modifier.fillMaxWidth(),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = LumiCyan,
@@ -88,7 +88,7 @@ fun NameAndGoalStep(
             shape = RoundedCornerShape(MaterialTheme.spacing.medium)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.text_scan_hardware_models), fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.text_scan_hardware_models), style = MaterialTheme.typography.titleMedium, color = ObsidianDark, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                 Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = ObsidianDark)
             }

@@ -153,7 +153,7 @@ fun AmbientSoundscapesScreen(
                                     Text(
                                         text = stringResource(R.string.text_ambient_focus_room),
                                         color = TextPrimary,
-                                        fontSize = 17.sp,
+                                        style = MaterialTheme.typography.headlineSmall,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -164,7 +164,7 @@ fun AmbientSoundscapesScreen(
                                     Text(
                                         text = if (soundState.isPlaying) "PLAYING" else "IDLE",
                                         color = if (soundState.isPlaying) LumiGreen else TextSecondary,
-                                        fontSize = 10.sp,
+                                        style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = 3.dp)
                                     )
@@ -184,7 +184,7 @@ fun AmbientSoundscapesScreen(
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
                                         text = soundState.activeType.iconEmoji,
-                                        fontSize = 44.sp
+                                        style = MaterialTheme.typography.displayLarge
                                     )
                                 }
                             }
@@ -193,13 +193,13 @@ fun AmbientSoundscapesScreen(
                             Text(
                                 text = soundState.activeType.title,
                                 color = TextPrimary,
-                                fontSize = 18.sp,
+                                style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = soundState.activeType.description,
                                 color = TextSecondary,
-                                fontSize = 12.sp,
+                                style = MaterialTheme.typography.bodySmall,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 modifier = Modifier.padding(horizontal = 12.dp)
                             )
@@ -219,7 +219,7 @@ fun AmbientSoundscapesScreen(
                                     Text(
                                         text = String.format("%02d:%02d", mins, secs),
                                         color = LumiGold,
-                                        fontSize = 28.sp,
+                                        style = MaterialTheme.typography.displayMedium,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
@@ -310,7 +310,7 @@ fun AmbientSoundscapesScreen(
                             Text(
                                 text = stringResource(R.string.text_focus_session_timers),
                                 color = TextPrimary,
-                                fontSize = 15.sp,
+                                style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -341,13 +341,13 @@ fun AmbientSoundscapesScreen(
                                         Text(
                                             text = label,
                                             color = LumiGold,
-                                            fontSize = 14.sp,
+                                            style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold
                                         )
                                         Text(
                                             text = sub,
                                             color = TextSecondary,
-                                            fontSize = 10.sp
+                                            style = MaterialTheme.typography.labelSmall
                                         )
                                     }
                                 }
@@ -381,14 +381,14 @@ fun AmbientSoundscapesScreen(
                                 Text(
                                     text = stringResource(R.string.text_soundscape_volume),
                                     color = TextPrimary,
-                                    fontSize = 14.sp,
+                                    style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
                             Text(
                                 text = "${(soundState.volume * 100).toInt()}%",
                                 color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                fontSize = 13.sp,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -411,7 +411,7 @@ fun AmbientSoundscapesScreen(
                 Text(
                     text = stringResource(R.string.text_select_procedural_soundscape),
                     color = TextPrimary,
-                    fontSize = 15.sp,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(top = MaterialTheme.spacing.extraSmall)
                 )
@@ -440,7 +440,7 @@ fun AmbientSoundscapesScreen(
                             modifier = Modifier.size(42.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
-                                Text(text = type.iconEmoji, fontSize = 20.sp)
+                                Text(text = type.iconEmoji, style = MaterialTheme.typography.titleLarge)
                             }
                         }
 
@@ -450,14 +450,14 @@ fun AmbientSoundscapesScreen(
                             Text(
                                 text = type.title,
                                 color = if (isSelected) androidx.compose.material3.MaterialTheme.colorScheme.primary else TextPrimary,
-                                fontSize = 15.sp,
+                                style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = type.description,
                                 color = TextSecondary,
-                                fontSize = 12.sp
+                                style = MaterialTheme.typography.bodySmall
                             )
                         }
 

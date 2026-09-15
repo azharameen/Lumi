@@ -42,6 +42,7 @@ fun MinimalPetSpeechCard(
     petStatus: PetStatus,
     petPrimary: Color,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics()
 ) {
     val speechText = petStatus.speechBubbleText ?: "Hey friend! How are you feeling today?"
@@ -51,7 +52,7 @@ fun MinimalPetSpeechCard(
         shape = RoundedCornerShape(18.dp),
         border = BorderStroke(1.dp, petPrimary.copy(alpha = 0.3f)),
         shadowElevation = 6.dp,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable { 
                 haptics.performTick()
@@ -78,8 +79,7 @@ fun MinimalPetSpeechCard(
                 Text(
                     text = speechText,
                     color = TextPrimary,
-                    fontSize = 13.sp,
-                    lineHeight = 17.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -97,7 +97,7 @@ fun MinimalPetSpeechCard(
                 Text(
                     text = petStatus.currentEmotion.displayName.split(" ")[0],
                     color = petPrimary,
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                 )
@@ -115,6 +115,7 @@ fun RemoteConfigSeasonalBanner(
     seasonalThemeName: String = "",
     petPrimary: Color = LumiCyan,
     onClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
     haptics: com.example.core.utils.LumiHaptics = com.example.core.utils.rememberLumiHaptics()
 ) {
     Surface(
@@ -122,7 +123,7 @@ fun RemoteConfigSeasonalBanner(
         shape = RoundedCornerShape(14.dp),
         border = BorderStroke(1.dp, Brush.horizontalGradient(listOf(petPrimary.copy(alpha = 0.8f), LumiGold.copy(alpha = 0.8f)))),
         shadowElevation = 4.dp,
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable { 
                 haptics.performTick()
@@ -140,7 +141,7 @@ fun RemoteConfigSeasonalBanner(
                     Text(
                         text = seasonalThemeName.uppercase(java.util.Locale.ROOT),
                         color = LumiGold,
-                        fontSize = 9.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Black,
                         letterSpacing = 1.sp
                     )
@@ -148,7 +149,7 @@ fun RemoteConfigSeasonalBanner(
                 Text(
                     text = bannerText,
                     color = TextPrimary,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -159,12 +160,13 @@ fun RemoteConfigSeasonalBanner(
 }
 
 @Composable
-fun QuestItemRow(task: Task, onToggle: (Boolean) -> Unit) {
+fun QuestItemRow(task: Task, onToggle: (Boolean) -> Unit, modifier: Modifier = Modifier) {
     Surface(
         color = SurfaceDarkVariant.copy(alpha = 0.8f),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(MaterialTheme.spacing.cornerMedium),
         border = BorderStroke(1.dp, SurfaceHighlight.copy(alpha = 0.4f)),
-        modifier = Modifier.fillMaxWidth()
+        shadowElevation = MaterialTheme.spacing.extraSmall,
+        modifier = modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.small),
@@ -186,7 +188,7 @@ fun QuestItemRow(task: Task, onToggle: (Boolean) -> Unit) {
                 Text(
                     text = task.title,
                     color = if (task.isCompleted) TextSecondary else TextPrimary,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold,
                     textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None,
                     maxLines = 1,
@@ -204,14 +206,14 @@ fun QuestItemRow(task: Task, onToggle: (Boolean) -> Unit) {
                     Text(
                         text = task.priority.uppercase(java.util.Locale.ROOT),
                         color = priorityColor,
-                        fontSize = 9.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.ExtraBold
                     )
-                    Text(stringResource(id = R.string.bullet_point), color = TextTertiary, fontSize = 9.sp)
+                    Text(stringResource(id = R.string.bullet_point), color = TextTertiary, style = MaterialTheme.typography.labelSmall)
                     Text(
                         text = "${task.estimatedMinutes}m",
                         color = TextSecondary,
-                        fontSize = 9.sp
+                        style = MaterialTheme.typography.labelSmall
                     )
                 }
             }
@@ -223,7 +225,7 @@ fun QuestItemRow(task: Task, onToggle: (Boolean) -> Unit) {
                 Text(
                     text = stringResource(R.string.text_50_xp),
                     color = LumiGold,
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.ExtraBold,
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                 )

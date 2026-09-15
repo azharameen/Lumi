@@ -154,7 +154,7 @@ fun WellnessVaultSection(
                         Text(
                             text = stringResource(R.string.text_daily_wellness_checkin),
                             color = TextPrimary,
-                            fontSize = 17.sp,
+                            style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold
                         )
                         Icon(imageVector = Icons.Default.SelfImprovement, contentDescription = null, tint = LumiPink)
@@ -166,7 +166,7 @@ fun WellnessVaultSection(
                     Text(
                         text = "Mood Balance: ${moodScore.toInt()}/10 ${getMoodEmoji(moodScore.toInt())}",
                         color = LumiPink,
-                        fontSize = 13.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Slider(
@@ -190,7 +190,7 @@ fun WellnessVaultSection(
                     Text(
                         text = "Energy Level: ${energyScore.toInt()}/10 ⚡",
                         color = LumiYellow,
-                        fontSize = 13.sp,
+                        style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Slider(
@@ -222,7 +222,7 @@ fun WellnessVaultSection(
                             Text(
                                 text = "Hydration: $waterCount / 8 cups",
                                 color = TextPrimary,
-                                fontSize = 13.sp,
+                                style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -233,7 +233,7 @@ fun WellnessVaultSection(
                                     .size(34.dp)
                                     .background(SurfaceDarkVariant, CircleShape)
                             ) {
-                                Text(text = "−", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "−", color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
                             IconButton(
                                 onClick = { waterCount++ },
@@ -241,7 +241,7 @@ fun WellnessVaultSection(
                                     .size(34.dp)
                                     .background(androidx.compose.material3.MaterialTheme.colorScheme.primary, CircleShape)
                             ) {
-                                Text(text = "+", color = ObsidianDark, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Text(text = "+", color = ObsidianDark, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -315,14 +315,14 @@ fun WellnessVaultSection(
                             Text(
                                 text = stringResource(R.string.text_biometric_memory_vault),
                                 color = TextPrimary,
-                                fontSize = 16.sp,
+                                style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
                         }
 
                         if (uiState.isMemoryVaultUnlocked) {
                             TextButton(onClick = { viewModel.lockMemoryVault() }) {
-                                Text(text = stringResource(R.string.text_lock_vault), color = LumiPink, fontSize = 12.sp)
+                                Text(text = stringResource(R.string.text_lock_vault), color = LumiPink, style = MaterialTheme.typography.bodySmall)
                             }
                         }
                     }
@@ -333,7 +333,7 @@ fun WellnessVaultSection(
                         Text(
                             text = stringResource(R.string.text_lumi_securely_stores_your_habits_preferences),
                             color = TextSecondary,
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             lineHeight = 17.sp
                         )
                         Spacer(modifier = Modifier.height(14.dp))
@@ -372,20 +372,20 @@ fun WellnessVaultSection(
                                                 Text(
                                                     text = mem.category.uppercase(java.util.Locale.ROOT),
                                                     color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                                    fontSize = 10.sp,
+                                                    style = MaterialTheme.typography.labelSmall,
                                                     fontWeight = FontWeight.Bold
                                                 )
                                                 Text(
                                                     text = "${mem.sentiment} • Impact ${mem.emotionalImpact}/5",
                                                     color = TextSecondary,
-                                                    fontSize = 10.sp
+                                                    style = MaterialTheme.typography.labelSmall
                                                 )
                                             }
                                             Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                                             Text(
                                                 text = mem.memoryText,
                                                 color = TextPrimary,
-                                                fontSize = 13.sp
+                                                style = MaterialTheme.typography.bodyMedium
                                             )
                                         }
                                     }

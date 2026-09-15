@@ -82,7 +82,7 @@ fun ClayColorPaletteSection(
                         Text(
                             text = skin.displayName,
                             color = if (isSelected) Color(skin.primaryHex) else TextPrimary,
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
                     }

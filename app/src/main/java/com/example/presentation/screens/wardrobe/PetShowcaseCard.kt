@@ -54,7 +54,7 @@ fun PetShowcaseCard(
                 Text(
                     text = "${petStatus.name} • $evolutionStageTitle",
                     color = TextPrimary,
-                    fontSize = 18.sp,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.width(6.dp))
@@ -81,7 +81,7 @@ fun PetShowcaseCard(
                     Text(
                         text = "Level ${petStatus.level}",
                         color = LumiGold,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = 3.dp)
                     )
@@ -90,7 +90,7 @@ fun PetShowcaseCard(
                 Text(
                     text = "${petStatus.exp} / ${petStatus.expToNextLevel} XP to Level ${petStatus.level + 1}",
                     color = TextSecondary,
-                    fontSize = 12.sp
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
 

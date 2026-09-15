@@ -37,7 +37,8 @@ fun WellnessScreen(
     onUnlockVault: () -> Unit,
     onLockVault: () -> Unit,
     onNavigateToChat: () -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
 
     var moodScore by remember { mutableFloatStateOf(8f) }
@@ -49,7 +50,7 @@ fun WellnessScreen(
     val dateFormat = remember { SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()) }
 
     LazyColumn(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(ObsidianDark)
             .navigationBarsPadding()
@@ -106,7 +107,7 @@ fun WellnessScreen(
             Text(
                 text = stringResource(R.string.text_recent_wellness_logs),
                 color = TextPrimary,
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -116,7 +117,7 @@ fun WellnessScreen(
                 Text(
                     text = stringResource(R.string.text_no_previous_logs_complete_your_first),
                     color = TextSecondary,
-                    fontSize = 12.sp
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         } else {

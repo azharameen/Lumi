@@ -47,8 +47,6 @@ import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
 import com.example.presentation.pet.LumiPetView
 
-private val LumiAmber = Color(0xFFFFB300)
-
 @Composable
 fun ChatTopAppBar(
     petStatus: PetStatus,
@@ -181,7 +179,7 @@ fun ChatTopAppBar(
                                 Text(
                                     text = petStatus.currentEmotion.name.lowercase().replaceFirstChar { it.uppercase() },
                                     color = emotionColor,
-                                    fontSize = 10.sp,
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
@@ -201,8 +199,7 @@ fun ChatTopAppBar(
                                 petStatus.isThinking -> LumiViolet
                                 else -> TextTertiary
                             },
-                            style = MaterialTheme.typography.bodySmall,
-                            fontSize = 11.sp
+                            style = MaterialTheme.typography.labelMedium
                         )
                     }
                 }
@@ -289,7 +286,7 @@ fun ChatTopAppBar(
                     BasicTextField(
                         value = searchQuery,
                         onValueChange = onSearchQueryChange,
-                        textStyle = TextStyle(color = TextPrimary, fontSize = 14.sp),
+                        textStyle = MaterialTheme.typography.titleMedium.copy(color = TextPrimary),
                         cursorBrush = SolidColor(LumiCyan),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                         modifier = Modifier.weight(1f),
@@ -299,7 +296,7 @@ fun ChatTopAppBar(
                                 Text(
                                     stringResource(R.string.text_search_messages),
                                     color = TextTertiary,
-                                    fontSize = 14.sp
+                                    style = MaterialTheme.typography.titleMedium
                                 )
                             }
                             innerTextField()

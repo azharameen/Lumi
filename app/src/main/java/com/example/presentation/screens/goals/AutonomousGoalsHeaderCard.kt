@@ -70,13 +70,13 @@ fun AutonomousGoalsHeaderCard(
                             Text(
                                 text = stringResource(R.string.text_autonomous_goal_swarms),
                                 color = TextPrimary,
-                                fontSize = 17.sp,
+                                style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = stringResource(R.string.text_multistep_ai_planner_tool_executor),
                                 color = TextSecondary,
-                                fontSize = 12.sp
+                                style = MaterialTheme.typography.bodySmall
                             )
                         }
                     }
@@ -86,7 +86,7 @@ fun AutonomousGoalsHeaderCard(
                 Text(
                     text = stringResource(R.string.text_define_any_objective_lumis_agent_swarm),
                     color = TextPrimary.copy(alpha = 0.9f),
-                    fontSize = 13.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     lineHeight = 18.sp
                 )
 
@@ -106,9 +106,9 @@ fun AutonomousGoalsHeaderCard(
                     Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                     Text(
                         text = stringResource(R.string.text_decompose_new_big_objective),
-                        color = Color.White,
+                        color = ObsidianDark,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
             }

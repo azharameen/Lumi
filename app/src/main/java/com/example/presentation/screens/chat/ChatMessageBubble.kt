@@ -123,7 +123,7 @@ fun ChatMessageBubble(
                     modifier = Modifier.size(18.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(text = "✨", fontSize = 10.sp)
+                        Text(text = "✨", style = MaterialTheme.typography.labelSmall)
                     }
                 }
 
@@ -132,7 +132,7 @@ fun ChatMessageBubble(
                 Text(
                     text = stringResource(R.string.text_lumi),
                     color = LumiCyan,
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold
                 )
 
@@ -145,8 +145,7 @@ fun ChatMessageBubble(
                     Text(
                         text = message.petEmotion,
                         color = LumiCyan,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                     )
                 }
@@ -160,7 +159,7 @@ fun ChatMessageBubble(
                     Text(
                         text = if (isGemmaOnDevice) "⚡ Gemma Local" else "☁️ Gemini 2.5",
                         color = if (isGemmaOnDevice) LumiGreen else LumiViolet,
-                        fontSize = 9.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                     )
@@ -204,7 +203,7 @@ fun ChatMessageBubble(
                             Text(
                                 text = "📷 Vision Attachment",
                                 color = if (isUser) ObsidianDark else TextPrimary,
-                                fontSize = 11.sp,
+                                style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -313,14 +312,14 @@ fun ChatMessageBubble(
                                     Text(
                                         text = formattedToolTitle,
                                         color = TextPrimary,
-                                        fontSize = 11.sp,
+                                        style = MaterialTheme.typography.labelMedium,
                                         fontWeight = FontWeight.Bold
                                     )
                                     if (!isToolExpanded && !rawToolResult.isNullOrBlank()) {
                                         Text(
                                             text = rawToolResult,
                                             color = TextTertiary,
-                                            fontSize = 10.sp,
+                                            style = MaterialTheme.typography.labelSmall,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
@@ -334,7 +333,7 @@ fun ChatMessageBubble(
                                     Text(
                                         text = "Executed",
                                         color = LumiGreen,
-                                        fontSize = 9.sp,
+                                        style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                     )
@@ -371,7 +370,7 @@ fun ChatMessageBubble(
                                             Text(
                                                 text = rawToolResult,
                                                 color = LumiCyan,
-                                                fontSize = 10.sp,
+                                                style = MaterialTheme.typography.labelSmall,
                                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                                                 lineHeight = 14.sp,
                                                 modifier = Modifier.padding(8.dp)
@@ -394,7 +393,7 @@ fun ChatMessageBubble(
             Text(
                 text = timeFormat.format(Date(message.timestamp)),
                 color = TextTertiary,
-                fontSize = 10.sp
+                style = MaterialTheme.typography.labelSmall
             )
 
             Spacer(modifier = Modifier.width(8.dp))

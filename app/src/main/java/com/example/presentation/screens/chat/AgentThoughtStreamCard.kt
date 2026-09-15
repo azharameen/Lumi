@@ -132,8 +132,7 @@ fun AgentThoughtStreamCard(
                             text = stringResource(R.string.text_neural_thought_stream),
                             color = LumiViolet,
                             style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp
+                            fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         // Pulsing Live Indicator Dots
@@ -167,7 +166,6 @@ fun AgentThoughtStreamCard(
                             text = thoughtText,
                             color = TextPrimary,
                             style = MaterialTheme.typography.bodySmall,
-                            fontSize = 12.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -181,7 +179,7 @@ fun AgentThoughtStreamCard(
                     Text(
                         text = "Synthesizing",
                         color = LumiCyan,
-                        fontSize = 9.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
@@ -218,7 +216,7 @@ fun AgentThoughtStreamCard(
                             Text(
                                 text = thoughtText,
                                 color = LumiCyan,
-                                fontSize = 11.sp,
+                                style = MaterialTheme.typography.labelMedium,
                                 fontFamily = FontFamily.Monospace,
                                 lineHeight = 16.sp
                             )
@@ -231,7 +229,7 @@ fun AgentThoughtStreamCard(
                                     Text(
                                         text = "⚡ Running $executingTool...",
                                         color = LumiCyan,
-                                        fontSize = 10.sp,
+                                        style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.SemiBold,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                     )

@@ -138,7 +138,8 @@ import com.example.core.theme.spacing
 fun MetricBadge(title: String, value: String, icon: ImageVector, color: Color, modifier: Modifier = Modifier) {
     Surface(
         color = SurfaceDarkVariant,
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(MaterialTheme.spacing.cornerMedium),
+        shadowElevation = MaterialTheme.spacing.extraSmall,
         modifier = modifier
     ) {
         Column(
@@ -147,8 +148,8 @@ fun MetricBadge(title: String, value: String, icon: ImageVector, color: Color, m
         ) {
             Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
-            Text(text = title, color = TextSecondary, fontSize = 10.sp)
-            Text(text = value, color = color, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(text = title, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+            Text(text = value, color = color, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
         }
     }
 }

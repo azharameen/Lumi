@@ -174,13 +174,13 @@ fun MemoryFeederSection(
                             Text(
                                 text = stringResource(R.string.text_personal_context_feeder),
                                 color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                fontSize = 16.sp,
+                                style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = stringResource(R.string.text_facts_preferences_rules_fed_directly_into),
                                 color = TextSecondary,
-                                fontSize = 12.sp
+                                style = MaterialTheme.typography.bodySmall
                             )
                         }
 
@@ -193,7 +193,7 @@ fun MemoryFeederSection(
                         ) {
                             Icon(Icons.Default.Add, contentDescription = null, tint = ObsidianDark, modifier = Modifier.size(MaterialTheme.spacing.medium))
                             Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
-                            Text(stringResource(id = R.string.text_add_fact), color = ObsidianDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(id = R.string.text_add_fact), color = ObsidianDark, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -238,7 +238,7 @@ fun MemoryFeederSection(
                         Icon(Icons.Default.Lightbulb, contentDescription = null, tint = androidx.compose.material3.MaterialTheme.colorScheme.primary, modifier = Modifier.size(36.dp))
                         Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
                         Text(stringResource(id = R.string.text_no_memory_facts_in_this_catego), color = TextPrimary, fontWeight = FontWeight.Medium)
-                        Text(stringResource(id = R.string.text_tap_add_fact_above_to_teach_lu), color = TextSecondary, fontSize = 12.sp)
+                        Text(stringResource(id = R.string.text_tap_add_fact_above_to_teach_lu), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
@@ -277,7 +277,7 @@ fun MemoryFeederSection(
                                 Text(
                                     text = fact.category,
                                     color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                                    fontSize = 10.sp,
+                                    style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
@@ -286,7 +286,7 @@ fun MemoryFeederSection(
                             Text(
                                 text = fact.factText,
                                 color = TextPrimary,
-                                fontSize = 13.sp,
+                                style = MaterialTheme.typography.bodyMedium,
                                 lineHeight = 18.sp
                             )
                         }

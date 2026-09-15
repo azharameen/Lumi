@@ -29,8 +29,9 @@ fun ClipboardPromptBanner(
 ) {
     Surface(
         color = SurfaceDarkVariant.copy(alpha = 0.95f),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(MaterialTheme.spacing.cornerLarge),
         border = BorderStroke(1.dp, LumiCyan.copy(alpha = 0.5f)),
+        shadowElevation = MaterialTheme.spacing.extraSmall,
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = MaterialTheme.spacing.medium, vertical = 6.dp)
@@ -53,14 +54,12 @@ fun ClipboardPromptBanner(
                     text = "Clipboard Text Detected",
                     color = LumiCyan,
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = snippet,
                     color = TextPrimary,
                     style = MaterialTheme.typography.bodySmall,
-                    fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -80,7 +79,7 @@ fun ClipboardPromptBanner(
             ) {
                 Text(
                     text = "Analyze",
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold
                 )
             }

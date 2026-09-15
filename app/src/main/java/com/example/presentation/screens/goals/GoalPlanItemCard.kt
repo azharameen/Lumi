@@ -72,7 +72,7 @@ fun GoalPlanItemCard(
                                 "Learning" -> LumiGold
                                 else -> MaterialTheme.colorScheme.primary
                             },
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = MaterialTheme.spacing.small, vertical = 3.dp)
                         )
@@ -86,7 +86,7 @@ fun GoalPlanItemCard(
                             Text(
                                 text = stringResource(R.string.text_completed),
                                 color = LumiGreen,
-                                fontSize = 10.sp,
+                                style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                             )
@@ -111,7 +111,7 @@ fun GoalPlanItemCard(
             Text(
                 text = goal.title,
                 color = TextPrimary,
-                fontSize = 18.sp,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             if (goal.description.isNotBlank()) {
@@ -119,7 +119,7 @@ fun GoalPlanItemCard(
                 Text(
                     text = goal.description,
                     color = TextSecondary,
-                    fontSize = 13.sp,
+                    style = MaterialTheme.typography.bodyMedium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -135,13 +135,13 @@ fun GoalPlanItemCard(
                 Text(
                     text = "${goal.completedSteps} of ${goal.totalSteps} Milestones",
                     color = TextSecondary,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
                     text = "${(progress * 100).toInt()}%",
                     color = if (isAllDone) LumiGreen else MaterialTheme.colorScheme.primary,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -232,7 +232,7 @@ private fun MilestoneItemRow(
                     Text(
                         text = milestone.stepTitle,
                         color = if (milestone.isCompleted) TextSecondary else TextPrimary,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         textDecoration = if (milestone.isCompleted) TextDecoration.LineThrough else null
                     )
@@ -241,7 +241,7 @@ private fun MilestoneItemRow(
                 Text(
                     text = milestone.stepDescription,
                     color = TextSecondary.copy(alpha = 0.8f),
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     lineHeight = 16.sp
                 )
 
@@ -250,7 +250,7 @@ private fun MilestoneItemRow(
                     Text(
                         text = "⚡ ${milestone.executionOutput}",
                         color = MaterialTheme.colorScheme.primary,
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium
                     )
                 }
@@ -291,8 +291,8 @@ private fun MilestoneItemRow(
                     Spacer(modifier = Modifier.width(MaterialTheme.spacing.extraSmall))
                     Text(
                         text = stringResource(R.string.text_autorun),
-                        color = Color.Black,
-                        fontSize = 11.sp,
+                        color = ObsidianDark,
+                        style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold
                     )
                 }

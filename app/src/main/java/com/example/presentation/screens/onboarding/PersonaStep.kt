@@ -107,7 +107,7 @@ fun PersonaStep(
         ) {
             Text(
                 text = stringResource(id = R.string.text_continue),
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleMedium,
                 color = ObsidianDark,
                 fontWeight = FontWeight.Bold
             )

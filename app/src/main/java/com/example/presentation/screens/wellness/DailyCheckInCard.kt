@@ -74,7 +74,7 @@ fun DailyCheckInCard(
             }
             Text(
                 text = moodEmojis[selectedEmojiIndex],
-                fontSize = 24.sp
+                style = MaterialTheme.typography.displaySmall
             )
         }
 
@@ -84,7 +84,7 @@ fun DailyCheckInCard(
         Text(
             text = "Mood State: ${moodScore.toInt()}/10",
             color = TextSecondary,
-            fontSize = 12.sp,
+            style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Medium
         )
         Slider(
@@ -108,7 +108,7 @@ fun DailyCheckInCard(
         Text(
             text = "Energy Battery: ${energyLevel.toInt()}/10",
             color = TextSecondary,
-            fontSize = 12.sp,
+            style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Medium
         )
         Slider(
@@ -145,7 +145,7 @@ fun DailyCheckInCard(
                 Text(
                     text = "Hydration: $hydrationCups cups (Goal: 8)",
                     color = TextPrimary,
-                    fontSize = 13.sp,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -190,7 +190,7 @@ fun DailyCheckInCard(
                 Text(
                     text = stringResource(id = R.string.text_what_are_you_grateful_for_toda),
                     color = TextSecondary,
-                    fontSize = 12.sp
+                    style = MaterialTheme.typography.bodySmall
                 )
             },
             colors = OutlinedTextFieldDefaults.colors(
@@ -219,7 +219,7 @@ fun DailyCheckInCard(
             Text(
                 text = if (isSubmittedToday) "Logged! ✨" else "Save Daily Check-In (+25 Pet XP)",
                 fontWeight = FontWeight.Bold,
-                fontSize = 14.sp
+                style = MaterialTheme.typography.titleSmall
             )
         }
     }

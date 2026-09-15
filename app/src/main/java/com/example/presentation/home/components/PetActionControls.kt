@@ -212,7 +212,7 @@ fun PetRightSideActionButtons(
                         Text(
                             text = "$pendingQuestsCount",
                             color = ObsidianDark,
-                            fontSize = 9.sp,
+                            style = MaterialTheme.typography.labelSmall,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.Black
                         )
                     }

@@ -96,7 +96,7 @@ fun HardwareScanStep(
         ) {
             Text(
                 "View Recommended Models",
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleMedium,
                 color = ObsidianDark,
                 fontWeight = FontWeight.Bold
             )

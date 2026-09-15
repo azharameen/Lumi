@@ -175,7 +175,7 @@ fun PrivacyAndVaultSection(
                     Text(
                         text = stringResource(R.string.text_floating_companion_overlay),
                         color = LumiPink,
-                        fontSize = 15.sp,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold
                     )
 
@@ -194,12 +194,12 @@ fun PrivacyAndVaultSection(
                             Icon(Icons.Default.Layers, contentDescription = null, tint = LumiPink, modifier = Modifier.size(MaterialTheme.spacing.large))
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text(stringResource(id = R.string.text_lumi_floating_pet), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text(stringResource(id = R.string.text_lumi_floating_pet), color = TextPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                                 Text(
                                     if (!hasSystemOverlayPermission) "Permission needed (tap to configure)"
                                     else stringResource(id = R.string.text_keep_lumi_active_on_screen_ove),
                                     color = if (!hasSystemOverlayPermission) LumiYellow else TextSecondary,
-                                    fontSize = 12.sp
+                                    style = MaterialTheme.typography.bodySmall
                                 )
                             }
                         }
@@ -233,7 +233,7 @@ fun PrivacyAndVaultSection(
                     Text(
                         text = stringResource(R.string.text_security_biometric_access),
                         color = LumiMint,
-                        fontSize = 15.sp,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold
                     )
 
@@ -248,8 +248,8 @@ fun PrivacyAndVaultSection(
                             Icon(Icons.Default.Fingerprint, contentDescription = null, tint = LumiMint, modifier = Modifier.size(MaterialTheme.spacing.large))
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text(stringResource(id = R.string.text_biometric_lock_for_memory_vaul), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                                Text(stringResource(id = R.string.text_require_fingerprint_face_to_vi), color = TextSecondary, fontSize = 12.sp)
+                                Text(stringResource(id = R.string.text_biometric_lock_for_memory_vaul), color = TextPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                                Text(stringResource(id = R.string.text_require_fingerprint_face_to_vi), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
                             }
                         }
 
@@ -294,12 +294,12 @@ fun PrivacyAndVaultSection(
                                     text = stringResource(R.string.text_firebase_app_check),
                                     color = TextPrimary,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
+                                    style = MaterialTheme.typography.bodySmall
                                 )
                                 Text(
                                     text = stringResource(R.string.text_app_check_desc),
                                     color = TextSecondary,
-                                    fontSize = 10.sp,
+                                    style = MaterialTheme.typography.labelSmall,
                                     lineHeight = 13.sp
                                 )
                             }
@@ -320,13 +320,13 @@ fun PrivacyAndVaultSection(
                     Text(
                         text = stringResource(R.string.text_ondevice_storage_statistics),
                         color = androidx.compose.material3.MaterialTheme.colorScheme.primary,
-                        fontSize = 15.sp,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = stringResource(R.string.text_all_data_is_securely_stored_locally),
                         color = TextSecondary,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 2.dp, bottom = 12.dp)
                     )
 
@@ -354,7 +354,7 @@ fun PrivacyAndVaultSection(
                     Text(
                         text = stringResource(R.string.text_data_portability_backup),
                         color = LumiGold,
-                        fontSize = 15.sp,
+                        style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold
                     )
 

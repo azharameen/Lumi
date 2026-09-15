@@ -125,14 +125,13 @@ fun ChatInputComposer(
                                     Text(
                                         text = stringResource(R.string.text_listening_now),
                                         color = TextPrimary,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = "Speak to Lumi... Tap to finish",
                                         color = TextTertiary,
-                                        fontSize = 11.sp
+                                        style = MaterialTheme.typography.labelMedium
                                     )
                                 }
                             }
@@ -188,17 +187,14 @@ fun ChatInputComposer(
                                     Text(
                                         text = stringResource(R.string.text_ask_lumi_anything),
                                         color = TextTertiary,
-                                        fontSize = 14.sp,
-                                        lineHeight = 20.sp
+                                        style = MaterialTheme.typography.titleMedium
                                     )
                                 }
                                 BasicTextField(
                                     value = inputText,
                                     onValueChange = onSetInputText,
-                                    textStyle = TextStyle(
-                                        color = TextPrimary,
-                                        fontSize = 14.sp,
-                                        lineHeight = 20.sp
+                                    textStyle = MaterialTheme.typography.titleMedium.copy(
+                                        color = TextPrimary
                                     ),
                                     cursorBrush = SolidColor(LumiCyan),
                                     keyboardOptions = KeyboardOptions(
@@ -298,7 +294,7 @@ fun ChatInputComposer(
                                             Text(
                                                 text = badgeLabel,
                                                 color = badgeColor,
-                                                fontSize = 9.sp,
+                                                style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.SemiBold
                                             )
                                         }

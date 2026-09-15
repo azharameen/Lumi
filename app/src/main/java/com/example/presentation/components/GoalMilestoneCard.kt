@@ -42,7 +42,7 @@ fun GoalMilestoneCard(
                 Text(
                     text = goal.title,
                     color = TextPrimary,
-                    fontSize = 15.sp,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -55,7 +55,7 @@ fun GoalMilestoneCard(
                     Text(
                         text = "${goal.completedSteps}/${goal.totalSteps.coerceAtLeast(1)}",
                         color = LumiCyan,
-                        fontSize = 11.sp,
+                        style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
@@ -101,13 +101,13 @@ fun GoalMilestoneCard(
                                 Text(
                                     text = m.stepTitle,
                                     color = if (m.isCompleted) TextSecondary else TextPrimary,
-                                    fontSize = 12.sp,
+                                    style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
                                     text = "Tool: ${m.suggestedTool}",
                                     color = LumiGold,
-                                    fontSize = 10.sp
+                                    style = MaterialTheme.typography.labelSmall
                                 )
                             }
                             if (!m.isCompleted) {

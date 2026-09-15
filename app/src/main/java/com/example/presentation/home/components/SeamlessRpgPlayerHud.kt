@@ -46,12 +46,13 @@ fun SeamlessRpgPlayerHud(
     locationContext: LocationContext,
     userProfile: UserProfileData,
     authUser: AuthUser? = null,
-    onNavigateToAccount: () -> Unit
+    onNavigateToAccount: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val displayName = authUser?.displayName?.takeIf { it.isNotBlank() } ?: userProfile.userName.ifBlank { "User" }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable { onNavigateToAccount() }
             .padding(horizontal = MaterialTheme.spacing.medium, vertical = 14.dp)
@@ -92,7 +93,7 @@ private fun HudAvatarSection(authUser: AuthUser?, displayName: String, level: In
                 if (authUser?.photoUrl != null) {
                     AsyncImage(model = authUser.photoUrl, contentDescription = "Profile", modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 } else {
-                    Text(text = initials, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    Text(text = initials, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
                 }
             }
         }
@@ -125,7 +126,7 @@ private fun HudInfoSection(displayName: String, petStatus: PetStatus, batterySta
             HudCurrencyRow(petStatus.coins, petStatus.gems)
         }
 
-        SciFiProgressBar(label = "HP", labelColor = Color.White.copy(alpha = 0.7f), fillRatio = hpFill, gradient = energyColors, height = 10.dp, trailingText = "${batteryStatus.levelPercent}%", trailingTextColor = Color.White.copy(alpha = 0.9f))
+        SciFiProgressBar(label = "HP", labelColor = TextPrimary.copy(alpha = 0.7f), fillRatio = hpFill, gradient = energyColors, height = 10.dp, trailingText = "${batteryStatus.levelPercent}%", trailingTextColor = TextPrimary.copy(alpha = 0.9f))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             SciFiProgressBar(label = "XP", labelColor = LumiCyan, fillRatio = xpFill, gradient = listOf(LumiCyanDark, LumiCyan), height = MaterialTheme.spacing.small, modifier = Modifier.weight(1f), trailingText = "${petStatus.exp}/${petStatus.expToNextLevel}", trailingTextColor = LumiCyan)
@@ -148,7 +149,7 @@ private fun HudCurrencyItem(icon: androidx.compose.ui.graphics.vector.ImageVecto
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(imageVector = icon, contentDescription = null, tint = color, modifier = Modifier.size(12.dp))
         Spacer(modifier = Modifier.width(2.dp))
-        Text(text = text, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        Text(text = text, color = color, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -157,7 +158,7 @@ private fun HudBeacon(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.End, modifier = Modifier.width(60.dp)) {
         Box(modifier = Modifier.size(MaterialTheme.spacing.extraSmall).clip(CircleShape).background(color))
         Spacer(modifier = Modifier.width(3.dp))
-        Text(text = label, color = color, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+        Text(text = label, color = color, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -173,14 +174,14 @@ fun SciFiProgressBar(
     trailingTextColor: Color = Color.Unspecified
 ) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
-        Text(text = label, color = labelColor, fontSize = 9.sp, fontWeight = FontWeight.Black, modifier = Modifier.width(20.dp))
+        Text(text = label, color = labelColor, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, modifier = Modifier.width(20.dp))
         Box(modifier = Modifier.weight(1f).height(height)) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val skew = size.height * 0.5f
                 val w = size.width
                 val h = size.height
                 val bgPath = Path().apply { moveTo(skew, 0f); lineTo(w, 0f); lineTo(w - skew, h); lineTo(0f, h); close() }
-                drawPath(bgPath, color = Color.White.copy(alpha = 0.1f))
+                drawPath(bgPath, color = TextPrimary.copy(alpha = 0.1f))
                 
                 val fillW = (w * fillRatio).coerceAtLeast(0f)
                 if (fillW > 0) {
@@ -191,7 +192,7 @@ fun SciFiProgressBar(
         }
         if (trailingText != null) {
             Spacer(modifier = Modifier.width(6.dp))
-            Text(text = trailingText, color = trailingTextColor, fontSize = 9.sp, fontWeight = FontWeight.Bold, modifier = Modifier.width(30.dp), textAlign = TextAlign.End)
+            Text(text = trailingText, color = trailingTextColor, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, modifier = Modifier.width(30.dp), textAlign = TextAlign.End)
         }
     }
 }
@@ -208,6 +209,6 @@ fun SeamlessHexagonLevelBadge(level: Int) {
             }
             drawPath(path, color = LumiCyan)
         }
-        Text(text = "$level", color = ObsidianDark, fontSize = 9.sp, fontWeight = FontWeight.Black)
+        Text(text = "$level", color = ObsidianDark, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black)
     }
 }

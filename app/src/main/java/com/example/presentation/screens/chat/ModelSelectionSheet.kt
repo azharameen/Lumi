@@ -1,5 +1,6 @@
 package com.example.presentation.screens.chat
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,25 +39,27 @@ fun ModelSelectionSheet(
     availableCloudModels: List<CloudModelSpec>,
     onSelectModel: (String) -> Unit,
     onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
     onNavigateToDownloadHub: () -> Unit = {}
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = SurfaceDark,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        modifier = modifier
     ) {
         Column(modifier = Modifier.padding(horizontal = 20.dp).fillMaxWidth()) {
             Text(
                 text = "Select AI Model",
                 color = TextPrimary,
-                fontSize = 18.sp,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "Choose which AI model processes your messages.",
                 color = TextSecondary,
-                fontSize = 12.sp
+                style = MaterialTheme.typography.bodySmall
             )
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -71,7 +74,7 @@ fun ModelSelectionSheet(
                 Text(
                     text = "INTELLIGENT ROUTING",
                     color = LumiCyan,
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                 )
@@ -95,7 +98,7 @@ fun ModelSelectionSheet(
                 Text(
                     text = "ON-DEVICE (PRIVATE)",
                     color = LumiGreen,
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                 )
@@ -120,11 +123,11 @@ fun ModelSelectionSheet(
                             )
                             Spacer(Modifier.width(12.dp))
                             Column {
-                                Text(stringResource(R.string.text_no_local_models), color = TextSecondary, fontSize = 13.sp)
+                                Text(stringResource(R.string.text_no_local_models), color = TextSecondary, style = MaterialTheme.typography.titleSmall)
                                 Text(
                                     text = "Download a model in Account → LLM Hub",
                                     color = LumiGreen,
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.labelMedium,
                                     modifier = Modifier.clickable { onNavigateToDownloadHub() }
                                 )
                             }
@@ -151,7 +154,7 @@ fun ModelSelectionSheet(
                 Text(
                     text = "CLOUD (ONLINE)",
                     color = LumiViolet,
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                 )
@@ -186,10 +189,11 @@ private fun ModelOptionCard(
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) accentColor.copy(alpha = 0.12f) else ObsidianDark
         ),
-        shape = RoundedCornerShape(12.dp),
-        border = if (isSelected) androidx.compose.foundation.BorderStroke(
+        shape = RoundedCornerShape(MaterialTheme.spacing.cornerMedium),
+        border = if (isSelected) BorderStroke(
             1.dp, accentColor.copy(alpha = 0.4f)
         ) else null,
+        elevation = CardDefaults.cardElevation(defaultElevation = MaterialTheme.spacing.extraSmall),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onSelect() }
@@ -206,8 +210,8 @@ private fun ModelOptionCard(
             )
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(displayName, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                Text(subtitle, color = TextSecondary, fontSize = 11.sp, lineHeight = 14.sp)
+                Text(displayName, color = TextPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(subtitle, color = TextSecondary, style = MaterialTheme.typography.labelMedium, lineHeight = 14.sp)
             }
             if (isSelected) {
                 Icon(

@@ -22,8 +22,6 @@ import com.example.core.theme.*
 import com.example.core.utils.LumiHaptics
 import com.example.domain.model.LumiRemoteConfig
 
-private val LumiAmber = Color(0xFFFFB300)
-
 @Composable
 fun ChatEmptyStateView(
     remoteConfig: LumiRemoteConfig?,
@@ -65,7 +63,7 @@ fun ChatEmptyStateView(
                 ) {
                     Text(
                         text = "✨",
-                        fontSize = 32.sp
+                        style = MaterialTheme.typography.displayLarge
                     )
                 }
 
@@ -133,7 +131,7 @@ fun ChatEmptyStateView(
                     ) {
                         Text(
                             text = item.title.take(2),
-                            fontSize = 16.sp
+                            style = MaterialTheme.typography.titleLarge
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -146,8 +144,7 @@ fun ChatEmptyStateView(
                             Text(
                                 text = item.subtitle,
                                 color = TextTertiary,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 11.sp
+                                style = MaterialTheme.typography.labelMedium
                             )
                         }
                         Icon(

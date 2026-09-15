@@ -87,25 +87,25 @@ fun AddEventDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Starts in: +${startOffsetHours}h", color = TextSecondary, fontSize = 13.sp)
+                Text(text = "Starts in: +${startOffsetHours}h", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(
                         onClick = { if (startOffsetHours > 0) startOffsetHours-- },
                         modifier = Modifier.size(MaterialTheme.spacing.extraLarge).background(SurfaceHighlight, CircleShape)
                     ) {
-                        Text(text = "−", color = TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "−", color = TextPrimary, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                     IconButton(
                         onClick = { startOffsetHours++ },
                         modifier = Modifier.size(MaterialTheme.spacing.extraLarge).background(LumiCyan, CircleShape)
                     ) {
-                        Text(text = "+", color = ObsidianDark, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "+", color = ObsidianDark, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     }
                 }
             }
 
-            Text(text = stringResource(R.string.text_event_color_accent), color = TextSecondary, fontSize = 12.sp)
+            Text(text = stringResource(R.string.text_event_color_accent), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 colors.forEach { hex ->
                     val isSelected = selectedColor == hex

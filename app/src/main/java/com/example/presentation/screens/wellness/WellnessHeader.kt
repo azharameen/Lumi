@@ -54,7 +54,7 @@ fun WellnessHeader(
                     text = stringResource(R.string.text_mindfulness_hydration_energy_balance),
                     color = LumiPink,
                     style = MaterialTheme.typography.bodySmall,
-                    fontSize = 12.5.sp
+                    fontSize = 13.sp
                 )
             }
         }

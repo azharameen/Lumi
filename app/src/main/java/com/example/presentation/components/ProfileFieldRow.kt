@@ -144,7 +144,7 @@ fun ProfileFieldRow(label: String, value: String, icon: ImageVector) {
     ) {
         Icon(imageVector = icon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(MaterialTheme.spacing.medium))
         Spacer(modifier = Modifier.width(10.dp))
-        Text(text = "$label:", color = TextSecondary, fontSize = 13.sp, modifier = Modifier.width(130.dp))
-        Text(text = value, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(text = "$label:", color = TextSecondary, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.width(130.dp))
+        Text(text = value, color = TextPrimary, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }

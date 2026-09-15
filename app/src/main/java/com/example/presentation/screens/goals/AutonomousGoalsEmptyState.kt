@@ -41,14 +41,14 @@ fun AutonomousGoalsEmptyState(
             Text(
                 text = stringResource(R.string.text_no_active_goal_swarms_yet),
                 color = TextPrimary,
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = stringResource(R.string.text_try_planning_launch_mobile_product_run),
                 color = TextSecondary,
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
         }

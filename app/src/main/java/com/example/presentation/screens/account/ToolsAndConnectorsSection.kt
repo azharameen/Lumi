@@ -256,7 +256,7 @@ fun ToolsAndConnectorsSection() {
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Clear", tint = TextTertiary, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.desc_close), tint = TextTertiary, modifier = Modifier.size(16.dp))
                                 }
                             }
                         },

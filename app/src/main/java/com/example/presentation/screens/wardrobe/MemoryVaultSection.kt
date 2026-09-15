@@ -23,7 +23,7 @@ fun LazyListScope.memoryVaultSection(memories: List<PetMemory>) {
         Text(
             text = stringResource(R.string.text_lumis_longterm_memory_vault),
             color = TextPrimary,
-            fontSize = 16.sp,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
     }
@@ -48,7 +48,7 @@ fun LazyListScope.memoryVaultSection(memories: List<PetMemory>) {
                     Text(
                         text = stringResource(R.string.text_lumi_remembers_your_daily_habits_preferred),
                         color = TextSecondary,
-                        fontSize = 12.sp
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
@@ -71,20 +71,20 @@ fun LazyListScope.memoryVaultSection(memories: List<PetMemory>) {
                         Text(
                             text = mem.category.uppercase(Locale.ROOT),
                             color = MaterialTheme.colorScheme.primary,
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = "${mem.sentiment} • Impact: ${mem.emotionalImpact}/5",
                             color = TextSecondary,
-                            fontSize = 10.sp
+                            style = MaterialTheme.typography.labelSmall
                         )
                     }
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                     Text(
                         text = mem.memoryText,
                         color = TextPrimary,
-                        fontSize = 13.sp
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }

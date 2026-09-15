@@ -63,7 +63,7 @@ fun AddFactDialog(
                         Text(
                             text = cat,
                             color = if (isSelected) ObsidianDark else TextSecondary,
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                         )
@@ -100,7 +100,7 @@ fun AddFactDialog(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                Text(stringResource(id = R.string.text_pin_as_high_priority_core_cont), color = TextPrimary, fontSize = 12.sp)
+                Text(stringResource(id = R.string.text_pin_as_high_priority_core_cont), color = TextPrimary, style = MaterialTheme.typography.bodySmall)
             }
         }
     }

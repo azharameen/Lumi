@@ -151,7 +151,8 @@ fun ConnectorCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = SurfaceDark),
-        shape = RoundedCornerShape(MaterialTheme.spacing.medium),
+        shape = RoundedCornerShape(MaterialTheme.spacing.cornerMedium),
+        elevation = CardDefaults.cardElevation(defaultElevation = MaterialTheme.spacing.extraSmall),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -172,12 +173,12 @@ fun ConnectorCard(
             Spacer(modifier = Modifier.width(12.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, color = TextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                Text(text = subtitle, color = TextSecondary, fontSize = 11.sp)
+                Text(text = title, color = TextPrimary, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(text = subtitle, color = TextSecondary, style = MaterialTheme.typography.labelMedium)
                 Text(
                     text = accountText,
                     color = if (isConnected) accentColor else TextTertiary,
-                    fontSize = 11.sp,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium
                 )
             }

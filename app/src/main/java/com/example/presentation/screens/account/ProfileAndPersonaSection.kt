@@ -188,7 +188,7 @@ fun ProfileAndPersonaSection(
                             Text(
                                 text = "Account & Cloud Sync",
                                 color = CyberCyan,
-                                fontSize = 15.sp,
+                                style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Bold
                             )
                         }

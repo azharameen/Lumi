@@ -154,13 +154,13 @@ fun UserAccountScreen(
                                 Text(
                                     text = authUser?.displayName ?: userProfile.userName,
                                     color = TextPrimary,
-                                    fontSize = 18.sp,
+                                    style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
                                     text = authUser?.email ?: userProfile.userEmail,
                                     color = LumiMint,
-                                    fontSize = 12.sp,
+                                    style = MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
@@ -197,7 +197,7 @@ fun UserAccountScreen(
                         Text(
                             text = userProfile.roleOrTitle,
                             color = TextSecondary,
-                            fontSize = 12.sp,
+                            style = MaterialTheme.typography.bodySmall,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f)

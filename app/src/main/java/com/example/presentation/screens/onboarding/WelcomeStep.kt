@@ -23,9 +23,9 @@ import com.example.R
 import com.example.core.theme.*
 
 @Composable
-fun WelcomeStep(onNext: () -> Unit) {
+fun WelcomeStep(onNext: () -> Unit, modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .padding(MaterialTheme.spacing.large),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -92,7 +92,7 @@ fun WelcomeStep(onNext: () -> Unit) {
         ) {
             Text(
                 text = stringResource(id = R.string.text_begin_journey),
-                fontSize = 16.sp,
+                style = MaterialTheme.typography.titleMedium,
                 color = ObsidianDark,
                 fontWeight = FontWeight.Bold
             )

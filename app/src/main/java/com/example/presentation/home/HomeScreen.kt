@@ -256,7 +256,7 @@ private fun MascotInteractionArea(
         AnimatedVisibility(visible = rewardEffect != null, enter = fadeIn() + scaleIn(), exit = fadeOut() + scaleOut(), modifier = Modifier.align(Alignment.TopCenter).offset(y = 6.dp)) {
             rewardEffect?.let { text ->
                 Surface(color = petPrimary.copy(alpha = 0.92f), shape = RoundedCornerShape(12.dp), shadowElevation = MaterialTheme.spacing.small) {
-                    Text(text = text, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+                    Text(text = text, color = TextPrimary, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
                 }
             }
         }
@@ -293,8 +293,8 @@ private fun AppButton(title: String, subtitle: String, icon: androidx.compose.ui
             }
             Spacer(modifier = Modifier.width(10.dp))
             Column {
-                Text(title, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                Text(subtitle, color = TextSecondary, fontSize = 10.sp)
+                Text(title, color = TextPrimary, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                Text(subtitle, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
             }
         }
     }
@@ -312,7 +312,7 @@ private fun QuestsBottomSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss, containerColor = SurfaceDark, contentColor = TextPrimary,
-        scrimColor = Color.Black.copy(alpha = 0.65f), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+        scrimColor = ObsidianDark.copy(alpha = 0.65f), shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -322,7 +322,7 @@ private fun QuestsBottomSheet(
                     Text(stringResource(R.string.text_active_quests_bounties), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = TextPrimary)
                 }
                 Surface(color = SurfaceHighlight.copy(alpha = 0.5f), shape = RoundedCornerShape(10.dp)) {
-                    Text("${tasks.count { !it.isCompleted }} ${stringResource(R.string.text_active_count)}", color = LumiCyan, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.extraSmall))
+                    Text("${tasks.count { !it.isCompleted }} ${stringResource(R.string.text_active_count)}", color = LumiCyan, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = MaterialTheme.spacing.extraSmall))
                 }
             }
 
@@ -348,7 +348,7 @@ private fun QuestsBottomSheet(
             ) {
                 Icon(Icons.Default.Add, contentDescription = null, tint = petPrimary, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
-                Text(stringResource(R.string.text_create_new_quest_in_life_hub), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text(stringResource(R.string.text_create_new_quest_in_life_hub), color = TextPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
             }
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
         }
@@ -361,8 +361,8 @@ private fun EmptyQuestsPlaceholder() {
         Column(modifier = Modifier.padding(MaterialTheme.spacing.large), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(Icons.Default.CheckCircle, contentDescription = null, tint = LumiGreen, modifier = Modifier.size(48.dp))
             Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-            Text(stringResource(R.string.text_all_quests_cleared), color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text(stringResource(R.string.text_your_companion_is_thrilled_che), color = TextSecondary, fontSize = 13.sp, textAlign = TextAlign.Center)
+            Text(stringResource(R.string.text_all_quests_cleared), color = TextPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.text_your_companion_is_thrilled_che), color = TextSecondary, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
         }
     }
 }

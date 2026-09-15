@@ -124,7 +124,8 @@ fun LifeHubScreen(
     getMilestonesForGoal: (Long) -> kotlinx.coroutines.flow.Flow<List<com.example.domain.model.GoalMilestone>>,
     soundState: com.example.data.device.SoundscapeState,
     onAction: (com.example.presentation.viewmodel.LumiUiAction) -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     
@@ -135,7 +136,7 @@ fun LifeHubScreen(
     val subTabs = listOf("Schedule", "Tasks", "Goal Swarms", "Focus Audio")
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(ObsidianDark)
             .navigationBarsPadding()
@@ -168,7 +169,7 @@ fun LifeHubScreen(
                             Text(
                                 text = stringResource(R.string.text_productivity_hub),
                                 color = TextPrimary,
-                                fontSize = 22.sp,
+                                style = MaterialTheme.typography.headlineLarge,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -190,7 +191,7 @@ fun LifeHubScreen(
                                 Text(
                                     text = stringResource(R.string.text_lumi_sync),
                                     color = LumiGold,
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
@@ -234,7 +235,7 @@ fun LifeHubScreen(
                                         text = title,
                                         color = if (isSelected) tabColor else TextSecondary,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        fontSize = 12.sp,
+                                        style = MaterialTheme.typography.bodySmall,
                                         maxLines = 1
                                     )
                                 },

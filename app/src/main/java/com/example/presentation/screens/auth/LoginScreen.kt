@@ -246,7 +246,7 @@ fun LoginScreen(
                             .height(52.dp)
                             .testTag("guest_mode_button"),
                         shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                        border = BorderStroke(1.dp, TextPrimary.copy(alpha = 0.15f)),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = TextSecondary
                         )

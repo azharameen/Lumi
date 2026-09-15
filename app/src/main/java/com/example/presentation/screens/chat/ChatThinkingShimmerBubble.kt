@@ -148,7 +148,7 @@ fun ChatThinkingShimmerBubble(
                     Text(
                         text = "Thinking",
                         color = LumiViolet,
-                        fontSize = 9.sp,
+                        style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.SemiBold
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -217,7 +217,7 @@ fun ChatThinkingShimmerBubble(
                             Text(
                                 text = "Reasoning...",
                                 color = TextPrimary,
-                                fontSize = 13.sp,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -238,7 +238,7 @@ fun ChatThinkingShimmerBubble(
                         Text(
                             text = previewText,
                             color = TextSecondary,
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelMedium,
                             lineHeight = 15.sp,
                             maxLines = 2
                         )
@@ -264,7 +264,7 @@ fun ChatThinkingShimmerBubble(
                                     Text(
                                         text = thoughtText ?: "",
                                         color = LumiCyan,
-                                        fontSize = 11.sp,
+                                        style = MaterialTheme.typography.labelMedium,
                                         fontFamily = FontFamily.Monospace,
                                         lineHeight = 15.sp
                                     )
@@ -277,7 +277,7 @@ fun ChatThinkingShimmerBubble(
                                             Text(
                                                 text = "⚡ Executing $executingTool...",
                                                 color = LumiCyan,
-                                                fontSize = 10.sp,
+                                                style = MaterialTheme.typography.labelSmall,
                                                 fontWeight = FontWeight.SemiBold,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                             )
@@ -294,8 +294,7 @@ fun ChatThinkingShimmerBubble(
                                                     Text(
                                                         text = "✓ $tool",
                                                         color = LumiGreen,
-                                                        fontSize = 9.sp,
-                                                        fontWeight = FontWeight.Medium,
+                                                        style = MaterialTheme.typography.labelSmall,
                                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                                     )
                                                 }

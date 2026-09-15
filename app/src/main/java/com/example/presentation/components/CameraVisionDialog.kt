@@ -318,7 +318,7 @@ private fun CameraPreviewContent(
                         Text(
                             text = label,
                             color = if (isSelected) LumiCyan else TextSecondary,
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                         )

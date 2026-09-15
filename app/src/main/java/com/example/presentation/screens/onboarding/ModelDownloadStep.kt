@@ -72,10 +72,10 @@ fun ModelDownloadStep(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(rec.displayName, color = TextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text(rec.description, color = TextSecondary, fontSize = 11.sp)
+                            Text(rec.displayName, color = TextPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                            Text(rec.description, color = TextSecondary, style = MaterialTheme.typography.labelMedium)
                         }
-                        Text(rec.sizeDisplay, color = LumiCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(rec.sizeDisplay, color = LumiCyan, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -89,7 +89,7 @@ fun ModelDownloadStep(
             colors = ButtonDefaults.buttonColors(containerColor = LumiCyan),
             shape = RoundedCornerShape(MaterialTheme.spacing.medium)
         ) {
-            Text(stringResource(R.string.text_complete_setup_start_lumi), fontSize = 16.sp, color = ObsidianDark, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.text_complete_setup_start_lumi), style = MaterialTheme.typography.titleMedium, color = ObsidianDark, fontWeight = FontWeight.Bold)
         }
         Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraLarge))
     }

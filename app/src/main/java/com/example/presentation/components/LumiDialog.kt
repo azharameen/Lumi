@@ -95,7 +95,7 @@ fun LumiDialog(
                                 text = subtitle,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextSecondary,
-                                fontSize = 11.5.sp
+                                fontSize = 11.sp
                             )
                         }
                     }

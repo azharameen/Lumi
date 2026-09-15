@@ -22,8 +22,6 @@ import com.example.core.theme.*
 import com.example.core.utils.LumiHaptics
 import com.example.domain.agent.hitl.HitlPendingAction
 
-private val LumiAmber = Color(0xFFFFB300)
-
 @Composable
 fun HitlApprovalActionCard(
     action: HitlPendingAction,
@@ -37,8 +35,9 @@ fun HitlApprovalActionCard(
             .fillMaxWidth()
             .padding(horizontal = MaterialTheme.spacing.medium, vertical = 6.dp),
         colors = CardDefaults.cardColors(containerColor = SurfaceDarkVariant),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, LumiAmber.copy(alpha = 0.8f))
+        shape = RoundedCornerShape(MaterialTheme.spacing.cornerLarge),
+        border = BorderStroke(1.dp, LumiAmber.copy(alpha = 0.8f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = MaterialTheme.spacing.extraSmall)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -78,7 +77,7 @@ fun HitlApprovalActionCard(
                         text = "Tool: ${action.toolName}",
                         color = LumiCyan,
                         fontFamily = FontFamily.Monospace,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold
                     )
                     if (action.payloadPreview.isNotBlank()) {
@@ -87,7 +86,7 @@ fun HitlApprovalActionCard(
                             text = action.payloadPreview,
                             color = TextSecondary,
                             fontFamily = FontFamily.Monospace,
-                            fontSize = 11.sp
+                            style = MaterialTheme.typography.labelMedium
                         )
                     }
                 }
@@ -113,7 +112,7 @@ fun HitlApprovalActionCard(
                     Text(
                         text = stringResource(R.string.text_decline),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
 
@@ -132,7 +131,7 @@ fun HitlApprovalActionCard(
                     Text(
                         text = stringResource(R.string.text_approve),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }

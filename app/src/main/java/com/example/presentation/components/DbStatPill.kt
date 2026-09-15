@@ -145,8 +145,8 @@ fun DbStatPill(label: String, count: Int, color: Color, modifier: Modifier = Mod
             modifier = Modifier.padding(vertical = MaterialTheme.spacing.small, horizontal = MaterialTheme.spacing.extraSmall),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "$count", color = color, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-            Text(text = label, color = TextSecondary, fontSize = 10.sp)
+            Text(text = "$count", color = color, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold)
+            Text(text = label, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
         }
     }
 }

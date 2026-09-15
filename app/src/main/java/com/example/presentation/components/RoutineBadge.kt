@@ -148,8 +148,8 @@ fun RoutineBadge(label: String, time: String, color: Color, modifier: Modifier =
             Icon(imageVector = Icons.Default.Schedule, contentDescription = null, tint = color, modifier = Modifier.size(MaterialTheme.spacing.medium))
             Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
             Column {
-                Text(text = label, color = TextSecondary, fontSize = 10.sp)
-                Text(text = time, color = color, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(text = label, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+                Text(text = time, color = color, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
             }
         }
     }

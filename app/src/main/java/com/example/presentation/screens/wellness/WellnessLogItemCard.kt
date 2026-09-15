@@ -29,7 +29,8 @@ fun WellnessLogItemCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = SurfaceDarkVariant),
-        shape = RoundedCornerShape(MaterialTheme.spacing.medium),
+        shape = RoundedCornerShape(MaterialTheme.spacing.cornerMedium),
+        elevation = CardDefaults.cardElevation(defaultElevation = MaterialTheme.spacing.extraSmall),
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
@@ -44,28 +45,28 @@ fun WellnessLogItemCard(
                     Text(
                         text = log.moodLabel,
                         color = LumiPink,
-                        fontSize = 14.sp,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.width(MaterialTheme.spacing.small))
                     Text(
                         text = "Mood ${log.moodScore}/10 • Energy ${log.energyLevel}/10",
                         color = TextSecondary,
-                        fontSize = 11.sp
+                        style = MaterialTheme.typography.labelMedium
                     )
                 }
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                 Text(
                     text = "💧 ${log.hydrationCups} cups water • ${dateFormat.format(Date(log.timestamp))}",
                     color = MaterialTheme.colorScheme.primary,
-                    fontSize = 11.sp
+                    style = MaterialTheme.typography.labelMedium
                 )
                 if (!log.gratitudeNote.isNullOrBlank()) {
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                     Text(
                         text = "\"${log.gratitudeNote}\"",
                         color = TextPrimary.copy(alpha = 0.85f),
-                        fontSize = 12.sp
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }

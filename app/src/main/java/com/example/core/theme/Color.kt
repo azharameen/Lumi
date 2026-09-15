@@ -33,6 +33,9 @@ val LumiCoral = Color(0xFFFF5964)
 val LumiCoralGlow = Color(0x33FF5964)
 val LumiCoralDark = Color(0xFFE63946)
 
+val LumiAmber = Color(0xFFFFB300)
+val LumiAmberGlow = Color(0x33FFB300)
+
 val LumiCyanLight = Color(0xFF90E0EF)
 val LumiCyanTranslucent = Color(0x3300B4D8)
 

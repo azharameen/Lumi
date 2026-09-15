@@ -98,7 +98,7 @@ fun CreateGoalDecomposeDialog(
                         Text(
                             text = cat,
                             color = if (isSelected) ObsidianDark else TextSecondary,
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(vertical = MaterialTheme.spacing.small)

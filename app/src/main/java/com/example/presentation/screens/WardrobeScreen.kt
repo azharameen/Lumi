@@ -12,6 +12,7 @@ import com.example.R
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.core.theme.*
+import com.example.domain.model.BloubSkinColor
 import com.example.presentation.screens.wardrobe.*
 import com.example.presentation.viewmodel.PetViewModel
 import com.example.presentation.viewmodel.WellnessViewModel
@@ -34,7 +35,8 @@ fun WardrobeScreen(
     onEquipAccessory: (String) -> Unit,
     onBuyAccessory: (com.example.domain.model.PetAccessory, (Boolean) -> Unit) -> Unit,
     onSelectShape: (com.example.domain.model.BloubShape) -> Unit,
-    onSelectSkin: (com.example.domain.model.BloubSkinColor) -> Unit
+    onSelectSkin: (BloubSkinColor) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val remoteConfigManager = remember {
         try {
@@ -69,7 +71,7 @@ fun WardrobeScreen(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(ObsidianDark)
     ) {

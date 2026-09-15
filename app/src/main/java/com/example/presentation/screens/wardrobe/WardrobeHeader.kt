@@ -54,13 +54,13 @@ fun WardrobeHeader(
                 Text(
                     text = stringResource(R.string.text_lumi_wardrobe_shop),
                     color = TextPrimary,
-                    fontSize = 20.sp,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = stringResource(R.string.text_rpg_customization_accessories),
                     color = MaterialTheme.colorScheme.primary,
-                    fontSize = 12.sp
+                    style = MaterialTheme.typography.bodySmall
                 )
             }
         }
@@ -89,7 +89,7 @@ fun WardrobeHeader(
                     Text(
                         text = "$coins",
                         color = LumiGold,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -114,7 +114,7 @@ fun WardrobeHeader(
                     Text(
                         text = "$gems",
                         color = LumiCyanLight,
-                        fontSize = 12.sp,
+                        style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold
                     )
                 }

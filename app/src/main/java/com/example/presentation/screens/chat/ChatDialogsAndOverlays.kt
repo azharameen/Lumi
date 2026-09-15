@@ -241,7 +241,7 @@ fun PromptTemplatePickerModal(
                             Text(
                                 text = prompt,
                                 color = TextPrimary,
-                                fontSize = 12.sp,
+                                style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                             )
                         }
@@ -353,7 +353,7 @@ fun ChatImagePreviewDialog(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.CameraAlt, contentDescription = null, tint = LumiCyan, modifier = Modifier.size(48.dp))
                             Spacer(modifier = Modifier.height(8.dp))
-                            Text(stringResource(R.string.text_vision_payload_analyzed), color = TextSecondary, fontSize = 12.sp)
+                            Text(stringResource(R.string.text_vision_payload_analyzed), color = TextSecondary, style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }

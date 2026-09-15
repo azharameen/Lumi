@@ -61,12 +61,12 @@ fun MorphingShapeSection(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(text = shape.iconEmoji, fontSize = 24.sp)
+                        Text(text = shape.iconEmoji, style = MaterialTheme.typography.displaySmall)
                         Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
                         Text(
                             text = shape.displayName,
                             color = if (isSelected) MaterialTheme.colorScheme.primary else TextPrimary,
-                            fontSize = 11.sp,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                         )
                     }

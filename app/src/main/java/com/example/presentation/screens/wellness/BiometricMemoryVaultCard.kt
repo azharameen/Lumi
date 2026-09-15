@@ -52,7 +52,7 @@ fun BiometricMemoryVaultCard(
                     Text(
                         text = stringResource(R.string.text_biometric_memory_vault),
                         color = TextPrimary,
-                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -65,7 +65,7 @@ fun BiometricMemoryVaultCard(
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = MaterialTheme.spacing.extraSmall),
                         modifier = Modifier.height(30.dp)
                     ) {
-                        Text(stringResource(id = R.string.text_lock), fontSize = 11.sp)
+                        Text(stringResource(id = R.string.text_lock), style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
@@ -76,7 +76,7 @@ fun BiometricMemoryVaultCard(
                 Text(
                     text = stringResource(R.string.text_lumis_longterm_memory_bank_and_confidential),
                     color = TextSecondary,
-                    fontSize = 12.sp
+                    style = MaterialTheme.typography.bodySmall
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(
@@ -97,20 +97,20 @@ fun BiometricMemoryVaultCard(
                     Text(
                         text = stringResource(id = R.string.text_unlock_with_fingerprint_pin),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                        style = MaterialTheme.typography.titleSmall
                     )
                 }
 
                 vaultAuthError?.let { err ->
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text(text = err, color = LumiPink, fontSize = 11.sp)
+                    Text(text = err, color = LumiPink, style = MaterialTheme.typography.labelMedium)
                 }
             } else {
                 // Unlocked State: Show Lumi's Learned Memory Bank
                 Text(
                     text = "Unlocked: Lumi's Persistent Memory Bank (${memories.size} items stored)",
                     color = LumiGreen,
-                    fontSize = 12.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(10.dp))
@@ -119,7 +119,7 @@ fun BiometricMemoryVaultCard(
                     Text(
                         text = stringResource(R.string.text_lumi_hasnt_learned_memories_yet_chat),
                         color = TextSecondary,
-                        fontSize = 12.sp
+                        style = MaterialTheme.typography.bodySmall
                     )
                 } else {
                     memories.forEach { memory ->
@@ -145,13 +145,13 @@ fun BiometricMemoryVaultCard(
                                     Text(
                                         text = memory.category.uppercase(Locale.ROOT),
                                         color = MaterialTheme.colorScheme.primary,
-                                        fontSize = 10.sp,
+                                        style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
                                         text = memory.memoryText,
                                         color = TextPrimary,
-                                        fontSize = 12.sp
+                                        style = MaterialTheme.typography.bodySmall
                                     )
                                 }
                             }

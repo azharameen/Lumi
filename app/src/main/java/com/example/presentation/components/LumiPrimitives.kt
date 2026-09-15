@@ -53,19 +53,33 @@ fun LumiCard(
         else -> BorderStroke(borderWidth, SurfaceHighlight.copy(alpha = 0.6f))
     }
 
-    Surface(
-        color = backgroundColor,
-        shape = shape,
-        border = appliedBorder,
-        shadowElevation = shadowElevation,
-        modifier = modifier.then(
-            if (onClick != null) Modifier.clip(shape).clickable { onClick() } else Modifier
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(MaterialTheme.spacing.medium),
-            content = content
-        )
+    if (onClick != null) {
+        Surface(
+            onClick = onClick,
+            color = backgroundColor,
+            shape = shape,
+            border = appliedBorder,
+            shadowElevation = shadowElevation,
+            modifier = modifier
+        ) {
+            Column(
+                modifier = Modifier.padding(MaterialTheme.spacing.medium),
+                content = content
+            )
+        }
+    } else {
+        Surface(
+            color = backgroundColor,
+            shape = shape,
+            border = appliedBorder,
+            shadowElevation = shadowElevation,
+            modifier = modifier
+        ) {
+            Column(
+                modifier = Modifier.padding(MaterialTheme.spacing.medium),
+                content = content
+            )
+        }
     }
 }
 

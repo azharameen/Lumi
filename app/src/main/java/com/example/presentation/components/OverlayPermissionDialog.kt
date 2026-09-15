@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -24,7 +25,8 @@ import com.example.core.theme.TextSecondary
 @Composable
 fun OverlayPermissionDialog(
     onDismiss: () -> Unit,
-    onGranted: () -> Unit
+    onGranted: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
 
@@ -52,14 +54,14 @@ fun OverlayPermissionDialog(
             Text(
                 text = stringResource(R.string.text_allow_lumi_to_float_over_other),
                 color = TextSecondary,
-                fontSize = 13.sp,
+                style = MaterialTheme.typography.bodyMedium,
                 lineHeight = 19.sp
             )
             Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = "• Tap 'Grant Permission'\n• Toggle 'Allow display over other apps'\n• Return here to activate floating companion!",
                 color = LumiCyan,
-                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall,
                 lineHeight = 18.sp
             )
         }

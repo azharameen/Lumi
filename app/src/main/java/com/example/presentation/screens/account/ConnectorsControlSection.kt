@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -309,18 +310,19 @@ fun ConnectorsControlSection(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Feature Pill Grid
-                    FlowRow(
+                    LazyRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        listOf(
-                            "🔔 Proactive FCM Push",
-                            "⚙️ Remote Config",
-                            "🛡️ Crashlytics Logs",
-                            "📊 Companion Analytics",
-                            "⚡ Performance Tracing"
-                        ).forEach { tag ->
+                        items(
+                            listOf(
+                                "🔔 Proactive FCM Push",
+                                "⚙️ Remote Config",
+                                "🛡️ Crashlytics Logs",
+                                "📊 Companion Analytics",
+                                "⚡ Performance Tracing"
+                            )
+                        ) { tag ->
                             Surface(
                                 color = SurfaceDarkVariant,
                                 shape = RoundedCornerShape(6.dp),
@@ -329,7 +331,7 @@ fun ConnectorsControlSection(
                                 Text(
                                     text = tag,
                                     color = TextSecondary,
-                                    fontSize = 11.sp,
+                                    style = MaterialTheme.typography.labelMedium,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                 )
                             }

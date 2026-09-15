@@ -222,12 +222,11 @@ fun PromptTemplatePickerModal(
                     modifier = Modifier.padding(vertical = 6.dp)
                 )
 
-                FlowRow(
+                LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 ) {
-                    prompts.forEach { prompt ->
+                    items(prompts) { prompt ->
                         Surface(
                             color = SurfaceDarkVariant,
                             shape = RoundedCornerShape(12.dp),

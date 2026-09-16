@@ -16,6 +16,12 @@ import com.example.framework.tools.SystemToolSuite
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import android.util.Log
+import com.example.data.repository.ToolGroupRepositoryImpl
+import com.example.domain.mcp.McpClientEngine
+import com.example.domain.mcp.McpServerConfig
+import com.example.domain.tools.ToolCategory
+import com.example.domain.tools.ToolGroupRepository
+import com.example.domain.tools.ToolRegistry
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
@@ -61,10 +67,42 @@ class LumiApplication : Application() {
         val taskGoalRepository: com.example.domain.repository.TaskGoalRepository = koin.get()
         val wellnessRepository: com.example.domain.repository.WellnessRepository = koin.get()
         val integrationService: IntegrationService = koin.get()
-        
+        val mcpEngine: McpClientEngine = koin.get()
+        val toolGroupRepo: ToolGroupRepository = koin.get()
+
+        // Seed tool group enable/disable state from DataStore BEFORE registering tools
+        try {
+            val impl = toolGroupRepo as? ToolGroupRepositoryImpl
+            impl?.seedFromDisk()
+            Log.i("LumiApp", "Tool group state seeded from disk")
+        } catch (e: Exception) {
+            Log.w("LumiApp", "Tool group seeding failed: ${e.message}")
+        }
+
         SystemToolSuite.registerAll(this)
         CoreToolsModule.register(taskGoalRepository, wellnessRepository, integrationService)
         IntegrationToolsModule.register(integrationService)
+
+        // Register always-connected MCP servers (Streamable HTTP transport)
+        mcpEngine.registerServer(
+            McpServerConfig(
+                serverId = "microsoft_learn",
+                name = "Microsoft Learn",
+                endpointUrl = "https://learn.microsoft.com/api/mcp",
+                isEnabled = true,
+                useStreamableHttp = true,
+                toolCategory = ToolCategory.LEARN,
+                description = "Search and fetch Microsoft documentation"
+            )
+        )
+
+        // Discover and bridge MCP tools (registers dynamic groups automatically)
+        try {
+            mcpEngine.discoverAndBridgeTools()
+            Log.i("LumiApp", "MCP tool discovery complete. Total tools: ${ToolRegistry.getInstance().getToolCount()}")
+        } catch (e: Exception) {
+            Log.w("LumiApp", "MCP tool discovery failed: ${e.message}")
+        }
 
         // Initialize and sync SQLite FTS5 fast tool search index
         try {

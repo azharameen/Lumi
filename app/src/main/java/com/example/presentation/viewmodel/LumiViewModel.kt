@@ -2,24 +2,36 @@ package com.example.presentation.viewmodel
 
 import android.graphics.Bitmap
 import android.graphics.Bitmap.CompressFormat
-import com.example.domain.service.DeviceSensorsService
-import com.example.domain.service.AnalyticsService
 import androidx.lifecycle.ViewModel
-import com.example.domain.model.ChatMessage
 import androidx.lifecycle.viewModelScope
-import com.example.data.device.*
-import com.example.data.local.entity.*
+import com.example.data.device.BatteryStatus
+import com.example.data.device.LocationContext
+import com.example.data.device.NetworkStatus
+import com.example.data.remote.AiRoutingMode
 import com.example.domain.account.UserProfileRepository
-import com.example.domain.briefing.AutonomousBriefingEngine
+import com.example.domain.agent.AgentStatus
+import com.example.domain.agent.AgentStreamEvent
+import com.example.domain.briefing.BriefingType
 import com.example.domain.briefing.DailyBriefing
 import com.example.domain.model.PetEmotion
 import com.example.domain.model.PetStatus
-import com.example.domain.repository.*
+import com.example.domain.repository.ChatRepository
+import com.example.domain.repository.PetRepository
+import com.example.domain.repository.WellnessRepository
+import com.example.domain.service.DeviceSensorsService
 import com.example.domain.usecase.chat.SendMessageUseCase
-import com.example.domain.usecase.goal.DecomposeGoalUseCase
+import com.example.domain.usecase.device.HandleUserInteractionUseCase
+import com.example.domain.usecase.device.ManageAudioPerceptionUseCase
+import com.example.domain.usecase.device.ObserveEnvironmentUseCase
 import com.example.domain.usecase.pet.PetInteractionUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 
@@ -46,22 +58,13 @@ class LumiViewModel(
     private val petRepository: PetRepository,
     private val chatRepository: ChatRepository,
     private val wellnessRepository: WellnessRepository,
-    private val taskGoalRepository: TaskGoalRepository,
     private val sendMessageUseCase: SendMessageUseCase,
     private val petInteractionUseCase: PetInteractionUseCase,
     val userProfileManager: UserProfileRepository,
-    val voiceEngine: VoiceEngine,
-    val sensorsManager: DeviceSensorsService,
-    val batteryManager: BatteryStatusManager,
-    val locationEngine: ContextLocationEngine,
-    val clipboardAssistant: ClipboardAssistant,
-    val audioReactiveEngine: RealtimeAudioReactiveEngine,
-    val networkEngine: NetworkConnectivityEngine,
-    val headsetManager: AudioHeadsetManager,
-    val zenManager: ZenModeManager,
-    val biometricVault: BiometricVaultManager,
-    val briefingEngine: AutonomousBriefingEngine,
-    private val petMemoryRepository: com.example.domain.repository.PetMemoryRepository? = null
+    observeEnvironmentUseCase: ObserveEnvironmentUseCase,
+    private val manageAudioPerceptionUseCase: ManageAudioPerceptionUseCase,
+    private val handleUserInteractionUseCase: HandleUserInteractionUseCase,
+    val sensorsManager: DeviceSensorsService
 ) : ViewModel() {
     val userProfile = userProfileManager.userProfile
     val userFacts = userProfileManager.userFacts
@@ -69,38 +72,23 @@ class LumiViewModel(
     private val _uiState = MutableStateFlow(LumiUiState())
     val uiState: StateFlow<LumiUiState> = _uiState.asStateFlow()
 
-    private val _isBriefingSpeaking = MutableStateFlow(false)
-    val isBriefingSpeaking: StateFlow<Boolean> = _isBriefingSpeaking.asStateFlow()
-
-    val allWellnessLogs = wellnessRepository.allWellnessLogs.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val allMemories = (petMemoryRepository?.allMemories ?: kotlinx.coroutines.flow.emptyFlow()).stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(5000),
-        emptyList()
-    )
-    
     val chatMessages = chatRepository.chatMessages.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val aiExecutionLogs = chatRepository.aiExecutionLogs.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    val aiRoutingMode = chatRepository.aiRoutingMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), com.example.data.remote.AiRoutingMode.HYBRID_AUTO)
+    val aiRoutingMode = chatRepository.aiRoutingMode.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AiRoutingMode.HYBRID_AUTO)
 
     val petStatus = petRepository.petStatus.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PetStatus())
 
     private val _benchmarkStatus = MutableStateFlow<String?>(null)
     val benchmarkStatus: StateFlow<String?> = _benchmarkStatus.asStateFlow()
 
-    val batteryStatus = batteryManager.batteryStatus
-    val networkStatus = networkEngine.networkStatus
-    val headsetStatus = headsetManager.headsetStatus
-    val zenStatus = zenManager.zenStatus
-    val locationState = locationEngine.locationState
+    val environmentState = observeEnvironmentUseCase()
+    val batteryStatus: StateFlow<BatteryStatus> = environmentState.map { it.battery }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BatteryStatus())
+    val networkStatus: StateFlow<NetworkStatus> = environmentState.map { it.network }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NetworkStatus())
+    val locationState: StateFlow<LocationContext> = environmentState.map { it.location }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LocationContext())
 
     init {
-        locationEngine.startLocationUpdates()
-        viewModelScope.launch {
-            voiceEngine.isSpeaking.collect { isSpeaking ->
-                petRepository.setSpeaking(isSpeaking)
-            }
-        }
         sensorsManager.startListening(
             onShake = {
                 viewModelScope.launch {
@@ -109,8 +97,8 @@ class LumiViewModel(
                 }
             }
         )
-        batteryManager.startListening { status ->
-            viewModelScope.launch {
+        viewModelScope.launch {
+            batteryStatus.collect { status ->
                 if (status.isCharging) {
                     petRepository.setPetEmotion(PetEmotion.ENERGETIC)
                 } else if (status.isLow) {
@@ -118,12 +106,14 @@ class LumiViewModel(
                 }
             }
         }
-        clipboardAssistant.startListening { snippet ->
-            _uiState.value = _uiState.value.copy(detectedClipboardText = snippet)
+        viewModelScope.launch {
+            handleUserInteractionUseCase.getClipboardSnippet()?.let { snippet ->
+                _uiState.update { it.copy(detectedClipboardText = snippet) }
+            }
         }
-        networkEngine.startListening { net ->
-            if (!net.isConnected) {
-                viewModelScope.launch {
+        viewModelScope.launch {
+            networkStatus.collect { net ->
+                if (!net.isConnected) {
                     petRepository.setPetEmotion(PetEmotion.THINKING)
                 }
             }
@@ -146,10 +136,10 @@ class LumiViewModel(
         viewModelScope.launch {
             chatRepository.agentStreamEvents.collect { event ->
                 when (event) {
-                    is com.example.domain.agent.AgentStreamEvent.ToolExecuting -> {
+                    is AgentStreamEvent.ToolExecuting -> {
                         _uiState.update { it.copy(executingTool = event.toolName) }
                     }
-                    is com.example.domain.agent.AgentStreamEvent.ToolCompleted -> {
+                    is AgentStreamEvent.ToolCompleted -> {
                         _uiState.update { state ->
                             state.copy(
                                 executingTool = null,
@@ -157,8 +147,8 @@ class LumiViewModel(
                             )
                         }
                     }
-                    is com.example.domain.agent.AgentStreamEvent.StatusChanged -> {
-                        if (event.status == com.example.domain.agent.AgentStatus.COMPLETED || event.status == com.example.domain.agent.AgentStatus.FAILED) {
+                    is AgentStreamEvent.StatusChanged -> {
+                        if (event.status == AgentStatus.COMPLETED || event.status == AgentStatus.FAILED) {
                             _uiState.update { it.copy(executingTool = null) }
                         }
                     }
@@ -170,9 +160,9 @@ class LumiViewModel(
 
     fun setShowWardrobeScreen(show: Boolean) { _uiState.value = _uiState.value.copy(showWardrobeScreen = show) }
     fun setSelectedTab(tab: Int) { _uiState.value = _uiState.value.copy(selectedTab = tab) }
-    fun setLifeHubSubTab(subTab: Int) { _uiState.value = _uiState.value.copy(lifeHubSubTab = subTab) }
-    fun navigateToLifeHub(subTab: Int = 0) {
-        _uiState.value = _uiState.value.copy(selectedTab = 2, lifeHubSubTab = subTab)
+    fun setLifeHubSubTab(tab: Int) { _uiState.value = _uiState.value.copy(lifeHubSubTab = tab) }
+    fun navigateToLifeHub(subTab: Int) {
+        _uiState.value = _uiState.value.copy(selectedTab = 1, lifeHubSubTab = subTab)
     }
     fun setInputText(text: String) { _uiState.value = _uiState.value.copy(inputText = text) }
     fun setShowCamera(show: Boolean) { _uiState.value = _uiState.value.copy(showCameraDialog = show) }
@@ -186,7 +176,6 @@ class LumiViewModel(
     }
     fun toggleVoiceOutput() { _uiState.value = _uiState.value.copy(isTtsVoiceOutputEnabled = !_uiState.value.isTtsVoiceOutputEnabled) }
     fun dismissClipboardSnippet() { _uiState.value = _uiState.value.copy(detectedClipboardText = null) }
-    fun dismissSharedBanner() { _uiState.value = _uiState.value.copy(sharedIncomingBanner = null) }
 
     fun processClipboardWithLumi(snippet: String) {
         dismissClipboardSnippet()
@@ -204,14 +193,7 @@ class LumiViewModel(
         }
     }
 
-    fun logWellness(moodScore: Int, moodLabel: String, energyLevel: Int, hydrationCups: Int, gratitude: String) {
-        viewModelScope.launch { wellnessRepository.logWellness(moodScore, moodLabel, energyLevel, hydrationCups, gratitude) }
-    }
-    fun incrementHydration(logId: Long) {
-        viewModelScope.launch { wellnessRepository.incrementHydration(logId) }
-    }
-
-    fun setAiRoutingMode(mode: com.example.data.remote.AiRoutingMode) { chatRepository.setAiRoutingMode(mode) }
+    fun setAiRoutingMode(mode: AiRoutingMode) { chatRepository.setAiRoutingMode(mode) }
     fun clearAiAnalytics() { viewModelScope.launch { chatRepository.clearAiAnalyticsLogs() } }
     
     fun runGemmaBenchmark() {
@@ -235,45 +217,33 @@ class LumiViewModel(
             }
             val response = sendMessageUseCase(text, imageBytes)
             if (userProfile.value.enableSpeechOutput) {
-                voiceEngine.speak(response.content)
+                manageAudioPerceptionUseCase.playBriefingAudio(DailyBriefing(title = "Response", greeting = response.content, dateFormatted = "", highlights = emptyList(), motivationalQuote = "", focusGoal = "", recommendedAction = "", recommendedActionType = "", audioScript = response.content, type = BriefingType.MORNING))
             }
         }
     }
-    fun sendMessageToAi(prompt: String) { sendMessage(prompt) }
     fun startVoiceListening() { 
         viewModelScope.launch { petRepository.setListening(true) }
-        voiceEngine.startListening { text -> 
-            viewModelScope.launch { petRepository.setListening(false) }
-            if (text.isNotBlank()) {
-                sendMessageToAi(text)
-            }
-        } 
+        manageAudioPerceptionUseCase.startVoiceListening()
     } 
-    fun stopVoiceListening() { 
-        viewModelScope.launch { petRepository.setListening(false) }
-        voiceEngine.stopListening() 
+
+    fun logWellness(moodScore: Int, moodLabel: String, energyLevel: Int, hydrationCups: Int, gratitude: String) {
+        viewModelScope.launch { wellnessRepository.logWellness(moodScore, moodLabel, energyLevel, hydrationCups, gratitude) }
     }
-    fun startAudioReactiveMode() { audioReactiveEngine.startListening() }
-    fun stopAudioReactiveMode() { audioReactiveEngine.stopListening() }
 
     fun unlockMemoryVault() {
-        biometricVault.authenticate(
-            title = "Unlock Biometric Vault",
-            subtitle = "Verify identity to access private wellness logs and memories",
-            onSuccess = {
-                _uiState.value = _uiState.value.copy(isMemoryVaultUnlocked = true, vaultAuthError = null)
-            },
-            onError = { err ->
-                _uiState.value = _uiState.value.copy(vaultAuthError = err)
+        viewModelScope.launch {
+            val result = handleUserInteractionUseCase.unlockVault()
+            if (result.isSuccess) {
+                _uiState.update { it.copy(isMemoryVaultUnlocked = true, vaultAuthError = null) }
+            } else {
+                _uiState.update { it.copy(vaultAuthError = result.exceptionOrNull()?.localizedMessage ?: "Failed") }
             }
-        )
+        }
     }
     fun lockMemoryVault() {
-        _uiState.value = _uiState.value.copy(isMemoryVaultUnlocked = false)
+        handleUserInteractionUseCase.lockVault()
+        _uiState.update { it.copy(isMemoryVaultUnlocked = false) }
     }
-
-    fun playBriefingAudio(briefing: DailyBriefing) {} 
-    fun stopBriefingAudio() {} 
 
     fun addUserFact(category: String, factText: String, isPinned: Boolean = false) {
         viewModelScope.launch { userProfileManager.addUserFact(category, factText, isPinned) }
@@ -284,9 +254,6 @@ class LumiViewModel(
     fun togglePinFact(id: String) {
         viewModelScope.launch { userProfileManager.togglePinFact(id) }
     }
-    fun resetUserProfile() {
-        viewModelScope.launch { userProfileManager.resetToDefaults() }
-    }
 
     fun petTheCharacter() {
         viewModelScope.launch {
@@ -296,16 +263,6 @@ class LumiViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        voiceEngine.release()
         sensorsManager.stopListening()
-        batteryManager.stopListening()
-        clipboardAssistant.stopListening()
-        audioReactiveEngine.stopListening()
-        networkEngine.stopListening()
-        headsetManager.stopListening()
-        zenManager.stopListening()
     }
 }
-
-
-

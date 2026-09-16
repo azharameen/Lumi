@@ -1,26 +1,23 @@
 package com.example.presentation.viewmodel
 
-import android.app.Application
-import com.example.domain.service.DeviceSensorsService
-import com.example.domain.service.AnalyticsService
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.cachedIn
 import com.example.domain.model.PetMemory
 import com.example.domain.model.WellnessLog
-
-import com.example.data.device.BiometricVaultManager
+import com.example.domain.repository.PetMemoryRepository
+import com.example.domain.repository.WellnessRepository
+import com.example.domain.service.AnalyticsService
+import com.example.domain.usecase.device.HandleUserInteractionUseCase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import androidx.paging.cachedIn
 import kotlinx.coroutines.launch
-import com.example.domain.repository.WellnessRepository
-import com.example.domain.repository.PetMemoryRepository
 
 class WellnessViewModel(
     val wellnessRepository: WellnessRepository,
     val memoryRepository: PetMemoryRepository,
-    val biometricVault: BiometricVaultManager,
+    val handleUserInteractionUseCase: HandleUserInteractionUseCase,
     private val analytics: AnalyticsService? = null
 ) : ViewModel() {
 
@@ -47,6 +44,3 @@ class WellnessViewModel(
         }
     }
 }
-
-
-

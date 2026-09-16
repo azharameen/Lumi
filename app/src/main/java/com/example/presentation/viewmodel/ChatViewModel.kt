@@ -1,18 +1,23 @@
 package com.example.presentation.viewmodel
-import com.example.domain.account.UserProfileRepository
 
-import android.app.Application
 import android.graphics.Bitmap
-import java.io.ByteArrayOutputStream
 import android.graphics.Bitmap.CompressFormat
-import com.example.domain.model.ChatMessage
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.domain.service.AnalyticsService
+import androidx.paging.cachedIn
 import com.example.data.firebase.LumiPerformanceManager
+import com.example.data.remote.OnDeviceGemmaEngine
+import com.example.domain.account.UserProfileRepository
+import com.example.domain.briefing.BriefingType
+import com.example.domain.briefing.DailyBriefing
+import com.example.domain.model.ChatMessage
+import com.example.domain.prompt.DynamicPromptSuggester
 import com.example.domain.repository.ChatRepository
 import com.example.domain.repository.PetRepository
-import com.example.data.device.VoiceEngine
+import com.example.domain.service.AnalyticsService
+import com.example.domain.usecase.device.ManageAudioPerceptionUseCase
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,23 +26,23 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import androidx.paging.cachedIn
 import kotlinx.coroutines.launch
-import com.example.domain.prompt.DynamicPromptSuggester
+import java.io.ByteArrayOutputStream
 
 class ChatViewModel(
-    val chatRepository: ChatRepository, val petRepository: PetRepository,
-    val voiceEngine: VoiceEngine,
+    val chatRepository: ChatRepository,
+    val petRepository: PetRepository,
+    val manageAudioPerceptionUseCase: ManageAudioPerceptionUseCase,
     val userProfileManager: UserProfileRepository,
     private val analytics: AnalyticsService? = null,
     private val performance: LumiPerformanceManager? = null,
-    private val onDeviceGemmaEngine: com.example.data.remote.OnDeviceGemmaEngine? = null
+    private val onDeviceGemmaEngine: OnDeviceGemmaEngine? = null
 ) : ViewModel() {
     private val userProfile = userProfileManager.userProfile
 
     val pagedChatMessages = chatRepository.pagedChatMessages.cachedIn(viewModelScope)
 
-    val chatMessages: StateFlow<List<com.example.domain.model.ChatMessage>> = chatRepository.chatMessages.stateIn(
+    val chatMessages: StateFlow<List<ChatMessage>> = chatRepository.chatMessages.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
 
@@ -45,8 +50,14 @@ class ChatViewModel(
         viewModelScope, SharingStarted.WhileSubscribed(5000), null
     )
 
-    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
-    val quickPrompts: StateFlow<List<String>> = kotlinx.coroutines.flow.combine(
+    val isListening: StateFlow<Boolean> = manageAudioPerceptionUseCase.state.map { it.isListening }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val isSpeaking: StateFlow<Boolean> = manageAudioPerceptionUseCase.state.map { it.isBriefingSpeaking }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val quickPrompts: StateFlow<List<String>> = combine(
         chatRepository.chatMessages,
         chatRepository.streamingAiMessage
     ) { messages: List<ChatMessage>, streaming: ChatMessage? ->
@@ -55,8 +66,6 @@ class ChatViewModel(
         flow {
             val allMessages = if (streaming != null) messages + streaming else messages
             emit(DynamicPromptSuggester.getInitialPrompts(allMessages))
-            // Only run heavy on-device follow-up suggestion inference when AI has finished replying (streaming == null)
-            // and the last message is from the companion. Completely avoids contention with active user reasoning turns.
             if (streaming == null && allMessages.isNotEmpty() && allMessages.lastOrNull()?.sender != "user") {
                 val aiSuggestions = DynamicPromptSuggester.getQuickPrompts(
                     recentMessages = allMessages.takeLast(4),
@@ -73,19 +82,8 @@ class ChatViewModel(
         viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList()
     )
 
-    private val _currentlySpeakingMessageId = kotlinx.coroutines.flow.MutableStateFlow<Long?>(null)
+    private val _currentlySpeakingMessageId = MutableStateFlow<Long?>(null)
     val currentlySpeakingMessageId: StateFlow<Long?> = _currentlySpeakingMessageId.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            voiceEngine.isSpeaking.collect { isSpeaking ->
-                petRepository.setSpeaking(isSpeaking)
-                if (!isSpeaking) {
-                    _currentlySpeakingMessageId.value = null
-                }
-            }
-        }
-    }
 
     fun clearChatHistory() {
         viewModelScope.launch {
@@ -103,23 +101,21 @@ class ChatViewModel(
         if (text.isBlank()) {
             stopSpeaking()
         } else {
-            voiceEngine.speak(text)
+            manageAudioPerceptionUseCase.playBriefingAudio(DailyBriefing(title = "", greeting = text, dateFormatted = "", highlights = emptyList(), motivationalQuote = "", focusGoal = "", recommendedAction = "", recommendedActionType = "", audioScript = text, type = BriefingType.MORNING))
         }
     }
 
     fun stopSpeaking() {
-        voiceEngine.stopSpeaking()
+        manageAudioPerceptionUseCase.stopBriefingAudio()
         _currentlySpeakingMessageId.value = null
     }
 
     fun toggleSpeakMessage(messageId: Long, text: String) {
-        if (_currentlySpeakingMessageId.value == messageId && voiceEngine.isSpeaking.value) {
+        if (_currentlySpeakingMessageId.value == messageId && isSpeaking.value) {
             stopSpeaking()
         } else {
             _currentlySpeakingMessageId.value = messageId
-            voiceEngine.speak(text) {
-                _currentlySpeakingMessageId.value = null
-            }
+            speakMessage(text)
         }
     }
 
@@ -148,21 +144,17 @@ class ChatViewModel(
             }
             if (userProfileManager.userProfile.value.enableSpeechOutput) {
                 _currentlySpeakingMessageId.value = response.id
-                voiceEngine.speak(response.content) {
-                    _currentlySpeakingMessageId.value = null
-                }
+                speakMessage(response.content)
             }
         }
     }
     
     fun sendMessageToAi(prompt: String) { sendMessage(prompt) }
 
-    /** Exposes the currently selected chat model ID. Empty string means Auto. */
     val selectedChatModelId: StateFlow<String> = userProfileManager.userProfile
         .map { it.selectedChatModelId }
         .stateIn(viewModelScope, SharingStarted.Eagerly, "")
 
-    /** Updates the selected chat model and persists the preference. */
     fun setSelectedModel(modelId: String) {
         viewModelScope.launch {
             userProfileManager.updateProfile(
@@ -173,24 +165,11 @@ class ChatViewModel(
 
     fun startVoiceListening() {
         viewModelScope.launch { petRepository.setListening(true) }
-        voiceEngine.startListening { text ->
-            viewModelScope.launch { petRepository.setListening(false) }
-            if (text.isNotBlank()) {
-                sendMessage(text)
-            }
-        }
+        manageAudioPerceptionUseCase.startVoiceListening()
     }
 
     fun stopVoiceListening() {
         viewModelScope.launch { petRepository.setListening(false) }
-        voiceEngine.stopListening()
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        voiceEngine.release()
+        manageAudioPerceptionUseCase.stopVoiceListening()
     }
 }
-
-
-

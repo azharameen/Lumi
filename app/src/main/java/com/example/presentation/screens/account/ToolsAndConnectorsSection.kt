@@ -97,26 +97,56 @@ fun ToolsAndConnectorsSection() {
     var showGithubDialog by remember { mutableStateOf(false) }
     var showSlackDialog by remember { mutableStateOf(false) }
 
+    // Tool Group Repository for enable/disable management
+    val toolGroupRepo: ToolGroupRepository = remember {
+        try { GlobalContext.get().get<ToolGroupRepository>() } catch (_: Exception) { throw IllegalStateException("ToolGroupRepository not found") }
+    }
+    val allGroupStates by toolGroupRepo.allGroups.collectAsStateWithLifecycle(emptyList())
+
     // Dynamically retrieve all registered tools from the authoritative ToolRegistry
     val toolRegistry = remember { ToolRegistry.getInstance() }
     val registeredTools = remember { toolRegistry.getAllTools().sortedBy { it.displayName } }
+
+    // Build grouped view: map each tool to its group
+    val groupedTools: Map<String, List<LumiTool>> = remember(registeredTools, allGroupStates) {
+        val grouped = LinkedHashMap<String, MutableList<LumiTool>>()
+        for (tool in registeredTools) {
+            val gid = ToolGroupCatalog.resolveGroupForTool(tool.id)?.groupId ?: "ungrouped"
+            grouped.getOrPut(gid) { mutableListOf() }.add(tool)
+        }
+        grouped.entries
+            .sortedWith(compareBy(
+                { entry ->
+                    val state = allGroupStates.find { s -> s.groupId == entry.key }
+                    state?.category?.ordinal ?: 99
+                },
+                { entry ->
+                    val state = allGroupStates.find { s -> s.groupId == entry.key }
+                    state?.displayName ?: entry.key
+                }
+            ))
+            .associate { it.key to it.value }
+    }
 
     var selectedSubTab by remember { mutableIntStateOf(0) } // 0 = Tools Catalog, 1 = Connectors
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategoryFilter by remember { mutableStateOf<ToolCategory?>(null) }
     var expandedToolId by remember { mutableStateOf<String?>(null) }
+    var expandedGroupId by remember { mutableStateOf<String?>(null) }
 
-    val filteredTools = remember(registeredTools, searchQuery, selectedCategoryFilter) {
-        registeredTools.filter { tool ->
-            val matchesCategory = selectedCategoryFilter == null || tool.category == selectedCategoryFilter
-            val matchesSearch = searchQuery.isBlank() ||
-                tool.displayName.contains(searchQuery, ignoreCase = true) ||
-                tool.id.contains(searchQuery, ignoreCase = true) ||
-                tool.description.contains(searchQuery, ignoreCase = true) ||
-                tool.category.name.contains(searchQuery, ignoreCase = true)
-            matchesCategory && matchesSearch
-        }
+    val filteredGroupedTools = remember(groupedTools, searchQuery, selectedCategoryFilter) {
+        groupedTools.mapValues { (_, tools) ->
+            tools.filter { tool ->
+                val matchesCategory = selectedCategoryFilter == null || tool.category == selectedCategoryFilter
+                val matchesSearch = searchQuery.isBlank() ||
+                    tool.displayName.contains(searchQuery, ignoreCase = true) ||
+                    tool.id.contains(searchQuery, ignoreCase = true) ||
+                    tool.description.contains(searchQuery, ignoreCase = true)
+                matchesCategory && matchesSearch
+            }
+        }.filterValues { it.isNotEmpty() }
     }
+    val filteredTools = registeredTools // kept for count display
 
     LazyColumn(
         modifier = Modifier
@@ -141,7 +171,7 @@ fun ToolsAndConnectorsSection() {
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Live detected capabilities from ToolRegistry (${registeredTools.size} Tools • 6 Connectors)",
+                            text = "Live detected capabilities from ToolRegistry (${registeredTools.size} Tools • ${allGroupStates.size} Groups)",
                             color = TextSecondary,
                             fontSize = 12.sp,
                             modifier = Modifier.padding(top = 2.dp)
@@ -341,8 +371,8 @@ fun ToolsAndConnectorsSection() {
                         ToolCategory.COMMUNICATION -> LumiGold
                         ToolCategory.HEALTH -> LumiPink
                         ToolCategory.CONNECTORS -> LumiYellow
-                        ToolCategory.UTILITY -> androidx.compose.material3.MaterialTheme.colorScheme.primary
                         ToolCategory.IOT -> LumiCyan
+                        else -> MaterialTheme.colorScheme.primary
                     }
                     val categoryIcon = when (tool.category) {
                         ToolCategory.SYSTEM -> Icons.Default.SettingsSuggest
@@ -350,8 +380,8 @@ fun ToolsAndConnectorsSection() {
                         ToolCategory.COMMUNICATION -> Icons.Default.Email
                         ToolCategory.HEALTH -> Icons.Default.FitnessCenter
                         ToolCategory.CONNECTORS -> Icons.Default.Hub
-                        ToolCategory.UTILITY -> Icons.Default.Build
                         ToolCategory.IOT -> Icons.Default.DeveloperBoard
+                        else -> Icons.Default.Build
                     }
 
                     Card(

@@ -242,9 +242,9 @@ fun ChatMessageBubble(
                         ToolCategory.COMMUNICATION -> Icons.Default.Phone
                         ToolCategory.HEALTH -> Icons.Default.Favorite
                         ToolCategory.CONNECTORS -> Icons.Default.Cloud
-                        ToolCategory.UTILITY -> Icons.Default.CheckCircle
                         ToolCategory.IOT -> Icons.Default.Tune
                         null -> Icons.Default.AutoAwesome
+                        else -> Icons.Default.CheckCircle
                     }
 
                     var isToolExpanded by remember { mutableStateOf(false) }

@@ -1,6 +1,5 @@
 package com.example.domain.mcp
 
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -68,7 +67,7 @@ class McpJsonRpcClient {
                 return@withContext list
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Failed MCP tools/list on $endpointUrl", e)
+            println("[$TAG] Failed MCP tools/list on $endpointUrl: ${e.message}")
         }
         emptyList()
     }
@@ -104,7 +103,7 @@ class McpJsonRpcClient {
                 return@withContext responseStr
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed MCP tools/call on $endpointUrl", e)
+            println("[$TAG] Failed MCP tools/call on $endpointUrl: ${e.message}")
             return@withContext "MCP execution error: ${e.localizedMessage}"
         }
         "MCP server returned HTTP failure"

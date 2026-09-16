@@ -10,8 +10,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.core.theme.*
+import com.example.data.device.DeviceCapabilityScannerImpl
 import com.example.domain.account.UserProfileData
-import com.example.domain.onboarding.DeviceCapabilityScanner
 import com.example.domain.onboarding.DeviceProfile
 import com.example.presentation.screens.onboarding.*
 import com.example.presentation.viewmodel.LumiViewModel
@@ -24,7 +24,7 @@ fun OnboardingScreen(
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle(initialValue = UserProfileData())
     var currentStep by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
-    val scanner = remember { DeviceCapabilityScanner(context) }
+    val scanner = remember { DeviceCapabilityScannerImpl(context) }
     var deviceProfile by remember { mutableStateOf<DeviceProfile?>(null) }
 
     // Aesthetic gradient background

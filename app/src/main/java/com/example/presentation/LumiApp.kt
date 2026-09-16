@@ -89,8 +89,8 @@ fun LumiApp(
     val wellnessLogs by wellnessViewModel.allWellnessLogs.collectAsStateWithLifecycle()
     val memories by wellnessViewModel.allMemories.collectAsStateWithLifecycle()
 
-    val isListening by chatViewModel.voiceEngine.isListening.collectAsStateWithLifecycle()
-    val isSpeaking by chatViewModel.voiceEngine.isSpeaking.collectAsStateWithLifecycle()
+    val isListening by chatViewModel.isListening.collectAsStateWithLifecycle()
+    val isSpeaking by chatViewModel.isSpeaking.collectAsStateWithLifecycle()
     val pendingHitlActions by chatViewModel.pendingHitlActions.collectAsStateWithLifecycle()
     val streamingAiMessage by chatViewModel.streamingAiMessage.collectAsStateWithLifecycle()
     val currentlySpeakingMessageId by chatViewModel.currentlySpeakingMessageId.collectAsStateWithLifecycle()
